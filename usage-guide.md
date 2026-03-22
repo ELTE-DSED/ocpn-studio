@@ -1,6 +1,6 @@
 ## Introduction
 
-Welcome to OCPN Tools! This tool allows you to create, edit, and simulate Object-Centric Petri Nets (OCPNs). This guide will help you understand how to use the various features of the editor.
+Welcome to OCPN Studio! This tool allows you to create, edit, and simulate Object-Centric Petri Nets (OCPNs). This guide will help you understand how to use the various features of the editor.
 
 ## Basic Navigation
 
@@ -78,7 +78,7 @@ Define Rhai functions that can be used in your Petri Net.
 
 ## Rhai Scripting Language
 
-OCPN Tools uses [Rhai](https://rhai.rs/) as its scripting language for guards, arc inscriptions, and functions.
+OCPN Studio uses [Rhai](https://rhai.rs/) as its scripting language for guards, arc inscriptions, and functions.
 
 ### Basic Syntax
 
@@ -154,7 +154,7 @@ Here are some examples of valid code expressions for arc inscriptions:
 ✅ var1
 ✅ "test"
 ```
-OCPN Tools will always try to bind a variable, therefore, a simple string like this will not work (except if "test" is a declared variable):
+OCPN Studio will always try to bind a variable, therefore, a simple string like this will not work (except if "test" is a declared variable):
 ```
 ❌ test
 ```
@@ -306,7 +306,7 @@ Each event records which objects were involved, with qualifiers indicating the o
 
 ## Calendar & Time Functions
 
-OCPN Tools provides calendar-aware functions for modeling time-dependent behavior. These require a **Simulation Epoch** to be set (in Simulation Settings), which defines the real-world start time of the simulation.
+OCPN Studio provides calendar-aware functions for modeling time-dependent behavior. These require a **Simulation Epoch** to be set (in Simulation Settings), which defines the real-world start time of the simulation.
 
 ### Current Time
 
@@ -427,7 +427,7 @@ time_until(earliest(
 
 ## Random Distribution Functions
 
-OCPN Tools supports all 14 random distribution functions from CPN Tools for stochastic simulations. These can be used in time delay inscriptions, arc inscriptions, and guards.
+OCPN Studio supports all 14 random distribution functions from CPN Tools for stochastic simulations. These can be used in time delay inscriptions, arc inscriptions, and guards.
 
 ### Available Distributions
 
@@ -513,10 +513,34 @@ uniform(0.0, 1.0) > 0.3
 
 ## Migration Guide
 
-After importing a CPN in the .cpn format of CPN Tools, some manual adjustments are necessary. Here are the most common ones:
+### Importing PNML files
+
+OCPN Studio provides partial support for the **PNML** format (Petri Net Markup Language, ISO/IEC 15909-2). You can open `.pnml` files via the **Open** dialog or import them as subpages.
+
+**What is imported automatically:**
+- Places, transitions, and arcs with their names and positions
+- Place types from `<type>` elements (e.g., `SITE`, `MESSAGE`) — corresponding color sets are created automatically
+- Arc inscriptions from both `<inscription>` (P/T nets) and `<hlinscription>` (high-level nets), e.g., `1\`x`
+- Initial markings from `<initialMarking>` and `<hlinitialMarking>`, e.g., `U()`
+- Sort declarations (`<arbitrarysort>`, `<namedsort>` including product sorts) → color sets
+- Variable declarations (`<variabledecl>`) → variables with correct sort references
+- Standard built-in sorts are mapped: `DOT`→unit, `BOOL`→bool, `INT`/`INTEGER`/`NAT`/`POS`→int, `STRING`→string
+
+**Manual work typically needed after import:**
+- Abstract sorts (like `SITE`) are imported as `unit` — you may need to change their definition to match your domain (e.g., an enumeration or record type)
+- Operator declarations (`U()`, `S(x)`, `R(x)`) from the PNML are not imported as functions — you'll need to define these manually
+- Complex arc inscription structures (the XML `<structure>` trees) are not interpreted; only the `<text>` representation is used
+- Guards and conditions need to be added manually if the original model used them
+- The `<toolspecific>` data from other tools (e.g., ePNK diagram info) is ignored
+
+You can also **save** OCPN models as `.pnml` files. OCPN-specific data (color sets, guards, time inscriptions, etc.) is preserved in `<toolspecific tool="ocpn-studio">` elements for round-trip compatibility.
+
+### Importing CPN Tools files
+
+After importing a CPN in the `.cpn` format of CPN Tools, some manual adjustments are necessary. Here are the most common ones:
 
 - Guards like `[items = doSomething(order)]` need to be changed to `items = doSomething(order)` (remove the square brackets)
-- Functions need to be translated from Standard ML to Rhai (a scripting language embeddable to Rust). We recommend either doing that manually or with the help of an LLM like ChatGPT. The recommended prompt is `Please turn this Standard ML into Rhai script (Rust embedded): fun doo(x: INT): INT = x+1;`. The outcome can be pasted into the function editor of OCPN Tools.
+- Functions need to be translated from Standard ML to Rhai (a scripting language embeddable to Rust). We recommend either doing that manually or with the help of an LLM like ChatGPT. The recommended prompt is `Please turn this Standard ML into Rhai script (Rust embedded): fun doo(x: INT): INT = x+1;`. The outcome can be pasted into the function editor of OCPN Studio.
 
 ### Standard ML to Rhai Conversion Examples
 
