@@ -493,7 +493,7 @@ export function convertToPNML(data: PetriNetData): string {
           <position x="${Math.round(place.position.x)}" y="${Math.round(place.position.y)}"/>
         </graphics>${numericMarking ? `
         <initialMarking><text>${numericMarking}</text></initialMarking>` : ''}${pd.colorSet || initialMarking ? `
-        <toolspecific tool="ocpn-tools" version="1.0">${pd.colorSet ? `
+        <toolspecific tool="ocpn-studio" version="1.0">${pd.colorSet ? `
           <colorSet>${escapeXML(pd.colorSet)}</colorSet>` : ''}${initialMarking && !numericMarking ? `
           <initialMarking>${escapeXML(String(initialMarking))}</initialMarking>` : ''}${pd.portType ? `
           <portType>${pd.portType}</portType>` : ''}
@@ -512,7 +512,7 @@ export function convertToPNML(data: PetriNetData): string {
         <graphics>
           <position x="${Math.round(transition.position.x)}" y="${Math.round(transition.position.y)}"/>
         </graphics>${hasToolData ? `
-        <toolspecific tool="ocpn-tools" version="1.0">${td.guard ? `
+        <toolspecific tool="ocpn-studio" version="1.0">${td.guard ? `
           <guard>${escapeXML(td.guard)}</guard>` : ''}${td.time ? `
           <time>${escapeXML(td.time)}</time>` : ''}${td.priority ? `
           <priority>${escapeXML(td.priority)}</priority>` : ''}${td.codeSegment ? `
@@ -529,7 +529,7 @@ export function convertToPNML(data: PetriNetData): string {
         const hasInscription = label || edge.data?.isBidirectional || edge.data?.arcType || edge.data?.delay;
         return `      <arc id="${escapeXML(edge.id)}" source="${escapeXML(edge.source)}" target="${escapeXML(edge.target)}">
         <name><text>${escapeXML(label)}</text></name>${hasInscription ? `
-        <toolspecific tool="ocpn-tools" version="1.0">${edge.data?.isBidirectional ? `
+        <toolspecific tool="ocpn-studio" version="1.0">${edge.data?.isBidirectional ? `
           <isBidirectional>true</isBidirectional>` : ''}${edge.data?.arcType ? `
           <arcType>${escapeXML(String(edge.data.arcType))}</arcType>` : ''}${edge.data?.delay ? `
           <delay>${escapeXML(String(edge.data.delay))}</delay>` : ''}
@@ -548,7 +548,7 @@ ${arcsXML}
 
   // Store declarations as toolspecific data at the net level
   const declarationsXML = (data.colorSets.length || data.variables.length || data.priorities.length || data.functions.length) ? `
-    <toolspecific tool="ocpn-tools" version="1.0">
+    <toolspecific tool="ocpn-studio" version="1.0">
       <declarations>${data.colorSets.map((cs) => `
         <colorSet id="${escapeXML(cs.id || '')}" name="${escapeXML(cs.name)}" type="${escapeXML(cs.type)}" color="${escapeXML(cs.color || '')}">
           <definition>${escapeXML(cs.definition)}</definition>
@@ -572,7 +572,7 @@ ${nets.join('\n')}
 
 // Parse PNML (Petri Net Markup Language) content into PetriNetData.
 // Partial support: reads places, transitions, arcs with names and positions.
-// Reads ocpn-tools toolspecific extensions if present.
+// Reads ocpn-studio toolspecific extensions if present.
 export function parsePNML(content: string): PetriNetData {
   const parser = new DOMParser();
   const doc = parser.parseFromString(content, 'text/xml');
@@ -592,11 +592,11 @@ export function parsePNML(content: string): PetriNetData {
     return el?.textContent?.trim() || '';
   }
 
-  // Helper to get toolspecific element for ocpn-tools
+  // Helper to get toolspecific element for ocpn-studio
   function getToolspecific(parent: Element): Element | null {
     const toolspecifics = parent.querySelectorAll(':scope > toolspecific');
     for (const ts of toolspecifics) {
-      if (ts.getAttribute('tool') === 'ocpn-tools') return ts;
+      if (ts.getAttribute('tool') === 'ocpn-studio') return ts;
     }
     return null;
   }
@@ -618,7 +618,7 @@ export function parsePNML(content: string): PetriNetData {
   for (const net of nets) {
     ocpnName = getText(net, 'name', 'text') || net.getAttribute('id') || 'Petri Net';
 
-    // Parse declarations from toolspecific if present (ocpn-tools round-trip)
+    // Parse declarations from toolspecific if present (ocpn-studio round-trip)
     const netToolspecific = getToolspecific(net);
     if (netToolspecific) {
       const decls = netToolspecific.querySelector(':scope > declarations');
@@ -911,7 +911,7 @@ function parsePNMLPage(
     }
 
     let portType: string | undefined;
-    // OCPN-tools extended data (for round-trip)
+    // ocpn-studio extended data (for round-trip)
     const ts = getToolspecific(placeEl);
     if (ts) {
       const tsColorSet = getText(ts, 'colorSet');
@@ -1023,7 +1023,7 @@ export function parseFileContent(content: string, fileName: string): PetriNetDat
     const extension = fileName.split(".").pop()?.toLowerCase()
 
     if (extension === 'ocpn') {
-      // Handle OCPN Tools JSON format
+      // Handle OCPN Studio JSON format
       return parseJSON(content);
     } else if (extension === "json") {
       const json = parseCPNPyJSON(content);

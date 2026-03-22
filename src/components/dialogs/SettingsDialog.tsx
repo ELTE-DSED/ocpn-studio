@@ -33,7 +33,7 @@ export function SettingsDialog({ open, onOpenChange, apiKey, onApiKeyChange }: S
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
-          <DialogDescription>Configure your OCPN Tools preferences.</DialogDescription>
+          <DialogDescription>Configure your OCPN Studio preferences.</DialogDescription>
         </DialogHeader>
 
 

@@ -1,10 +1,10 @@
-# OCPN Tools
+# OCPN Studio
 
-**OCPN Tools** is a modern web application for designing **Object-centric Colored Petri Nets (OCPNs)** and generating simulated **OCEL 2.0** event logs — making what used to be a complex, StandardML-heavy workflow super easy and smooth, right in your browser.
+**OCPN Studio** is a modern web application for designing **Object-centric Colored Petri Nets (OCPNs)** and generating simulated **OCEL 2.0** event logs — making what used to be a complex, StandardML-heavy workflow super easy and smooth, right in your browser.
 
-**[Launch OCPN Tools](https://rwth-pads.github.io/ocpn-tools)**
+**[Launch OCPN Studio](https://elte-dsed.github.io/ocpn-studio)**
 
-<img width="1291" height="750" alt="OCPN Tools screenshot showing the built-in Airport Ground Handling example" src="https://github.com/user-attachments/assets/83fa9c27-d6aa-405e-8490-e061233dc3ef" />
+<img width="1291" height="750" alt="OCPN Studio screenshot showing the built-in Airport Ground Handling example" src="https://github.com/user-attachments/assets/83fa9c27-d6aa-405e-8490-e061233dc3ef" />
 
 ## Features
 
@@ -23,7 +23,7 @@
 
 ## Getting Started
 
-The easiest way to use OCPN Tools is the hosted version at **[rwth-pads.github.io/ocpn-tools](https://rwth-pads.github.io/ocpn-tools)**.
+The easiest way to use OCPN Studio is the hosted version at **[elte-dsed.github.io/ocpn-studio](https://elte-dsed.github.io/ocpn-studio)**.
 
 - Click the **?** (Help) button in the top-right corner for an interactive guide that explains the app's functionality in detail.
 - Click **Open** in the top-left corner and select the built-in **Airport Ground Handling** example to explore a complete OCPN model.
@@ -39,8 +39,8 @@ The easiest way to use OCPN Tools is the hosted version at **[rwth-pads.github.i
 ### Setup
 
 ```bash
-git clone https://github.com/rwth-pads/ocpn-tools.git
-cd ocpn-tools
+git clone https://github.com/ELTE-DSED/ocpn-studio.git
+cd ocpn-studio
 pnpm install
 ```
 

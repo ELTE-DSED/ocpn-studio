@@ -1,8 +1,8 @@
-# OCPN Tools - AI Coding Instructions
+# OCPN Studio - AI Coding Instructions
 
 ## Project Overview
 
-OCPN Tools is a React/TypeScript web app for designing Object-centric Colored Petri Nets (OCPNs), aiming to replicate CPN Tools functionality in a modern web interface. It uses React Flow for the visual canvas, Zustand for state management, and integrates with `@rwth-pads/cpnsim` (a WASM-based CPN simulator).
+OCPN Studio is a React/TypeScript web app for designing Object-centric Colored Petri Nets (OCPNs), aiming to replicate CPN Tools functionality in a modern web interface. It uses React Flow for the visual canvas, Zustand for state management, and integrates with `@rwth-pads/cpnsim` (a WASM-based CPN simulator).
 
 ## Architecture
 

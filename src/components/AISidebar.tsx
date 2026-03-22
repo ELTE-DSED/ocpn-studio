@@ -23,7 +23,7 @@ interface Message {
 }
 
 // Local storage key for OpenAI API key
-const OPENAI_API_KEY_STORAGE_KEY = "ocpn-tools-openai-api-key";
+const OPENAI_API_KEY_STORAGE_KEY = "ocpn-studio-openai-api-key";
 
 export function AISidebar() {
   const [messages, setMessages] = useState<Message[]>([

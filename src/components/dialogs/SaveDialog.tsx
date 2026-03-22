@@ -42,7 +42,7 @@ export function SaveDialog({ open, onOpenChange, onSave, petriNetName }: SaveDia
                   OCPN JSON
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  Simple JSON format. Best for OCPN Tools.
+                  Simple JSON format. Best for OCPN Studio.
                 </p>
               </div>
             </div>

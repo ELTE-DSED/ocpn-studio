@@ -123,8 +123,8 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
     try {
       const formData = new FormData();
       formData.append("access_key", WEB3FORMS_ACCESS_KEY);
-      formData.append("subject", `OCPN Tools Feedback: ${categoryLabels[category]}`);
-      formData.append("from_name", "OCPN Tools Feedback");
+      formData.append("subject", `OCPN Studio Feedback: ${categoryLabels[category]}`);
+      formData.append("from_name", "OCPN Studio Feedback");
       formData.append("category", categoryLabels[category]);
       formData.append("message", message);
       formData.append("h-captcha-response", captchaToken);
@@ -133,7 +133,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         formData.append("email", email);
         formData.append("replyto", email);
       } else {
-        formData.append("email", "noreply@ocpn-tools.feedback");
+        formData.append("email", "noreply@ocpn-studio.feedback");
       }
 
       if (includeModel) {
@@ -182,7 +182,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         <DialogHeader>
           <DialogTitle>Send Feedback</DialogTitle>
           <DialogDescription>
-            Help us improve OCPN Tools. Your feedback is greatly appreciated!
+            Help us improve OCPN Studio. Your feedback is greatly appreciated!
           </DialogDescription>
         </DialogHeader>
 

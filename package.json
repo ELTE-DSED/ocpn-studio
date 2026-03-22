@@ -1,8 +1,8 @@
 {
-  "name": "ocpn-tools",
+  "name": "OCPN Studio",
   "version": "0.6.5",
-  "homepage": "https://rwth-pads.github.io/ocpn-tools",
-  "description": "OCPN Tools is a web application for designing Object-centric Colored Petri Nets",
+  "homepage": "https://elte-dsed.github.io/ocpn-studio",
+  "description": "OCPN Studio is a web application for designing, simulating and analyzing Object-Centric Petri Nets",
   "type": "module",
   "scripts": {
     "dev": "vite",

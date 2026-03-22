@@ -96,7 +96,7 @@ const Sidebar = () => {
   return (
     <div className="relative flex flex-col h-full overflow-hidden shrink-0 border-r" style={{ width }}>
       <div className="px-4 py-2 flex-shrink-0">
-        <h3 className="text-lg font-medium">OCPN Tools</h3>
+        <h3 className="text-lg font-medium">OCPN Studio</h3>
       </div>
       <div className="px-4 py-2 flex-1 flex flex-col overflow-hidden">
         <Tabs value={activeMode} onValueChange={(v) => setActiveMode(v as ActiveMode)} className="flex flex-col flex-1 overflow-hidden">

@@ -38,7 +38,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
       <DialogContent className="sm:max-w-[800px] max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>Help & Documentation</DialogTitle>
-          <DialogDescription>Learn how to use OCPN Tools with this guide.</DialogDescription>
+          <DialogDescription>Learn how to use OCPN Studio with this guide.</DialogDescription>
         </DialogHeader>
         <ScrollArea className="flex-1 pr-4 h-[60vh]">
           <div className="prose prose-sm dark:prose-invert max-w-none [&_table]:border-collapse [&_table]:w-full [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:p-2 [&_th]:text-left [&_td]:border [&_td]:border-gray-300 [&_td]:p-2 dark:[&_th]:border-gray-600 dark:[&_th]:bg-gray-800 dark:[&_td]:border-gray-600">
