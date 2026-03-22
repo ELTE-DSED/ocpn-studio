@@ -7,10 +7,12 @@ import { UndoableInput as Input, UndoableAutoExpandingInput } from "@/components
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { RecordMarkingDialog } from '@/components/dialogs/RecordMarkingDialog';
 import { TimedMarkingDialog, TimedToken } from '@/components/dialogs/TimedMarkingDialog';
 import { ColorSet } from '@/declarations';
+import type { PlaceNodeData } from '@/nodes/PlaceNode';
 import { Separator } from "@/components/ui/separator";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -30,6 +32,7 @@ interface SelectedPlaceData {
   initialMarking?: string;
   portType?: 'in' | 'out' | 'io';
   fusionSetId?: string;
+  overrideColor?: string;
 }
 
 // Define the type for the selected place state
@@ -334,6 +337,38 @@ const PlaceProperties = ({ colorSets }: { colorSets: ColorSet[] }) => {
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="overrideColor"
+          checked={!!data.overrideColor}
+          onCheckedChange={(checked) => {
+            if (activePetriNetId) {
+              const colorSetObj = colorSets.find((cs) => cs.name === data.colorSet);
+              updateNodeData(activePetriNetId, id, {
+                ...data,
+                overrideColor: checked ? (colorSetObj?.color || '#000000') : undefined,
+              } as PlaceNodeData);
+            }
+          }}
+        />
+        <Label htmlFor="overrideColor" className="text-sm">Override color</Label>
+        {data.overrideColor && (
+          <input
+            type="color"
+            value={data.overrideColor}
+            onChange={(e) => {
+              if (activePetriNetId) {
+                updateNodeData(activePetriNetId, id, {
+                  ...data,
+                  overrideColor: e.target.value,
+                } as PlaceNodeData);
+              }
+            }}
+            className="w-6 h-6 rounded border cursor-pointer"
+          />
+        )}
       </div>
 
       <div className="grid w-full items-center gap-1.5">

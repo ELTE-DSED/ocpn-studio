@@ -17,6 +17,7 @@ export interface PlaceNodeData {
   portType?: 'in' | 'out' | 'io'; // Port type for places on subpages
   fusionSetId?: string; // Links this place to a fusion set
   // Offset positions for draggable inscriptions
+  overrideColor?: string;
   colorSetOffset?: { x: number; y: number };
   tokenCountOffset?: { x: number; y: number };
   markingOffset?: { x: number; y: number };
@@ -197,7 +198,7 @@ export const PlaceNode: React.FC<PlaceNodeProps> = ({ id, data, selected }) => {
   const colorSet = useStore((state) =>
     state.colorSets.find((cs) => cs.name === data.colorSet)
   );
-  const colorSetColor = colorSet?.color || '#000000';
+  const colorSetColor = data.overrideColor || colorSet?.color || '#000000';
   // Check if this is a UNIT type colorset
   const isUnitType = colorSet?.type === 'basic' && colorSet?.definition?.includes('= unit;');
   // Check if this is a list type colorset

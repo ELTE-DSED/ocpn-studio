@@ -16,6 +16,7 @@ export interface TransitionNodeData {
   // Hierarchy: substitution transition
   subPageId?: string; // ID of the subpage petri net (makes this a substitution transition)
   socketAssignments?: { portPlaceId: string; socketPlaceId: string }[];
+  overrideColor?: string;
   // Offset positions for draggable inscriptions
   guardOffset?: { x: number; y: number };
   timeOffset?: { x: number; y: number };
@@ -229,7 +230,7 @@ export const TransitionNode: React.FC<TransitionNodeProps> = ({ id, data, select
   // }, [activePetriNetId, id, data, updateNodeData]);
 
   return (
-    <div className="relative cpn-node transition-node">
+    <div className="relative cpn-node transition-node" style={data.overrideColor ? { borderColor: data.overrideColor } : undefined}>
 
       <NodeResizer
         isVisible={selected}

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { CodeSegmentEditor } from "@/components/CodeSegmentEditor";
 
 import type { Priority } from "@/declarations";
+import type { TransitionNodeData } from '@/nodes/TransitionNode';
 
 // Parse relative time from milliseconds
 function msToRelativeTime(totalMs: number): { ms: number; s: number; m: number; h: number; d: number } {
@@ -99,7 +100,7 @@ const TransitionProperties = ({ priorities }: { priorities: Priority[] }) => {
   // Extract node data safely (for use in useEffect before early returns)
   const isValidNode = selectedElement && selectedElement.type === 'node' && selectedElement.element;
   const nodeId = isValidNode ? selectedElement.element.id : null;
-  const nodeData = isValidNode ? selectedElement.element.data as { label?: string; colorSet?: string; isArcMode?: boolean; type?: string; initialMarking?: string; guard?: string; time?: string; priority?: string; codeSegment?: string; subPageId?: string; socketAssignments?: { portPlaceId: string; socketPlaceId: string }[] } : null;
+  const nodeData = isValidNode ? selectedElement.element.data as { label?: string; colorSet?: string; isArcMode?: boolean; type?: string; initialMarking?: string; guard?: string; time?: string; priority?: string; codeSegment?: string; subPageId?: string; socketAssignments?: { portPlaceId: string; socketPlaceId: string }[]; overrideColor?: string } : null;
 
   // Initialize time state when node changes - must be called before any early returns
   /* eslint-disable react-hooks/set-state-in-effect -- Form init on selection change */
@@ -179,6 +180,41 @@ const TransitionProperties = ({ priorities }: { priorities: Priority[] }) => {
           }
           }
         />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Label htmlFor="overrideColor" className="text-sm">Color</Label>
+        <input
+          type="color"
+          id="overrideColor"
+          value={data.overrideColor || '#000000'}
+          onChange={(e) => {
+            if (activePetriNetId) {
+              updateNodeData(activePetriNetId, id, {
+                ...data,
+                overrideColor: e.target.value === '#000000' ? undefined : e.target.value,
+              } as TransitionNodeData);
+            }
+          }}
+          className="w-6 h-6 rounded border cursor-pointer"
+        />
+        {data.overrideColor && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-xs"
+            onClick={() => {
+              if (activePetriNetId) {
+                updateNodeData(activePetriNetId, id, {
+                  ...data,
+                  overrideColor: undefined,
+                } as TransitionNodeData);
+              }
+            }}
+          >
+            Reset
+          </Button>
+        )}
       </div>
 
       <div className="grid w-full items-center gap-1.5">

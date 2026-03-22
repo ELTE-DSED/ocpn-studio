@@ -4,6 +4,7 @@ import type { ArcType } from '@/types';
 
 import { Label } from "@/components/ui/label";
 import { UndoableInput as Input, UndoableTextarea as Textarea } from "@/components/ui/undoable-input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -291,6 +292,35 @@ const ArcProperties = () => {
           />
         </div>
       )}
+
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="overrideColor"
+          checked={!!data?.overrideColor}
+          onCheckedChange={(checked) => {
+            if (activePetriNetId) {
+              updateEdgeData(activePetriNetId, id, {
+                overrideColor: checked ? '#000000' : undefined,
+              });
+            }
+          }}
+        />
+        <Label htmlFor="overrideColor" className="text-sm">Override color</Label>
+        {!!data?.overrideColor && (
+          <input
+            type="color"
+            value={data.overrideColor as string}
+            onChange={(e) => {
+              if (activePetriNetId) {
+                updateEdgeData(activePetriNetId, id, {
+                  overrideColor: e.target.value,
+                });
+              }
+            }}
+            className="w-6 h-6 rounded border cursor-pointer"
+          />
+        )}
+      </div>
 
       {arcType === 'normal' && (
         <div className="grid w-full items-center gap-1.5">

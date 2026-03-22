@@ -45,6 +45,7 @@ interface FloatingEdgeProps {
     labelOffset?: { x: number; y: number }; // Custom offset for the label position
     arcType?: ArcType; // Type of arc: normal, reset, or inhibitor
     delay?: string; // Per-arc time delay expression
+    overrideColor?: string; // User-specified color override
   };
 }
 
@@ -162,9 +163,12 @@ function ArcEdge({ id, source, target, style, label, data }: FloatingEdgeProps) 
     return { parallelArcIndex: arcIndex, totalParallelArcs: totalArcs };
   }, [edges, id, source, target]);
 
-  // Determine arc color based on the connected place's colorset
+  // Determine arc color based on the connected place's colorset (or override)
   // For arcs, one end is always a place and the other is a transition
   const colorSetColor = useStore((state) => {
+    // Check edge-level override color first
+    if (data?.overrideColor) return data.overrideColor as string;
+
     const activePetriNetId = state.activePetriNetId;
     const petriNet = activePetriNetId ? state.petriNetsById[activePetriNetId] : null;
     
@@ -178,6 +182,11 @@ function ArcEdge({ id, source, target, style, label, data }: FloatingEdgeProps) 
     const placeNode = sourceNodeData?.type === 'place' ? sourceNodeData : 
                       targetNodeData?.type === 'place' ? targetNodeData : null;
     
+    // Check place-level override color
+    if (placeNode?.data?.overrideColor) {
+      return placeNode.data.overrideColor as string;
+    }
+
     if (placeNode && placeNode.data?.colorSet) {
       const placeColorSet = state.colorSets.find(cs => cs.name === placeNode.data.colorSet);
       if (placeColorSet?.color) {
