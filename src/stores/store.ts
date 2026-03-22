@@ -19,6 +19,47 @@ import { TransitionNodeData } from '@/nodes/TransitionNode';
 import { AuxTextNodeData } from '@/nodes/AuxTextNode';
 import type { ArcType } from '@/types';
 import { validateModel, type ValidationErrors } from '@/utils/validation';
+import type { ColorSet } from '@/declarations';
+
+/** Parse an initialMarking string into a marking array, without requiring the simulator. */
+function parseInitialMarkingToArray(
+  initialMarking: string | undefined,
+  colorSets: ColorSet[],
+): (string | number | null)[] {
+  if (!initialMarking || typeof initialMarking !== 'string' || initialMarking.trim() === '') {
+    return [];
+  }
+  // UNIT type marking: [(), (), ...]
+  const unitMatch = initialMarking.match(/^\s*\[\s*((?:\(\)\s*,?\s*)*)\s*\]\s*$/);
+  if (unitMatch) {
+    const unitCount = (initialMarking.match(/\(\)/g) || []).length;
+    return Array(unitCount).fill(null);
+  }
+  // .all() syntax: "ColorSetName.all()"
+  if (initialMarking.endsWith('.all()')) {
+    const colorSetName = initialMarking.substring(0, initialMarking.length - '.all()'.length).trim();
+    const colorSet = colorSets.find(cs => cs.name === colorSetName);
+    if (colorSet && colorSet.definition.includes('int')) {
+      const rangeMatch = colorSet.definition.match(/with\s+(\d+)\.\.(\d+)(?:\s+timed)?;/);
+      if (rangeMatch) {
+        const start = parseInt(rangeMatch[1], 10);
+        const end = parseInt(rangeMatch[2], 10);
+        if (!isNaN(start) && !isNaN(end)) {
+          return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+        }
+      }
+    }
+    return [];
+  }
+  // Try JSON parsing
+  try {
+    const parsed = JSON.parse(initialMarking);
+    return Array.isArray(parsed) ? parsed : [parsed];
+  } catch {
+    // Not valid JSON — it's a Rhai expression; leave marking empty for WASM to evaluate
+    return [];
+  }
+}
 
 // define the initial state
 const emptyState: AppState = {
@@ -369,10 +410,19 @@ const useStore = create<StoreState>()(temporal((set) => ({
         codeSegment: 'codeSegment',
       };
       
-      // First pass: update the target node
-      let updatedNodes = petriNet.nodes.map((node) =>
-        node.id === id ? { ...node, data: { ...node.data, ...newData } } : node
-      );
+      // First pass: update the target node, recomputing marking when initialMarking changes on a place
+      let updatedNodes = petriNet.nodes.map((node) => {
+        if (node.id !== id) return node;
+        const mergedData = { ...node.data, ...newData } as Record<string, unknown>;
+        // Auto-recompute marking from initialMarking for place nodes
+        if (node.type === 'place' && 'initialMarking' in newData && (newData as PlaceNodeData).initialMarking !== node.data.initialMarking) {
+          mergedData.marking = parseInitialMarkingToArray(
+            (newData as PlaceNodeData).initialMarking,
+            state.colorSets,
+          );
+        }
+        return { ...node, data: mergedData };
+      });
       
       // Second pass: update any child inscription nodes whose labels should reflect parent data
       updatedNodes = updatedNodes.map((node) => {
@@ -515,78 +565,15 @@ const useStore = create<StoreState>()(temporal((set) => ({
       for (const [netId, petriNet] of Object.entries(updatedNetsById)) {
         const updatedNodes = petriNet.nodes.map((node) => {
           if (node.type === 'place') {
-            let marking: (string | number | null)[] = []; // Include null for unit tokens
-            if (node.data.initialMarking) {
-              try {
-                if (typeof node.data.initialMarking === 'string' && node.data.initialMarking.trim() !== '') {
-                  let parsedMarking: (string | number | null)[] = []; // Include null for unit tokens
-                  
-                  // Check for UNIT type marking: [(), (), ...]
-                  const unitMatch = node.data.initialMarking.match(/^\s*\[\s*((?:\(\)\s*,?\s*)*)\s*\]\s*$/);
-                  if (unitMatch) {
-                    // Count the number of () in the array
-                    const unitCount = (node.data.initialMarking.match(/\(\)/g) || []).length;
-                    // Create array of null values to represent unit tokens
-                    parsedMarking = Array(unitCount).fill(null);
-                  } else if (node.data.initialMarking.endsWith('.all()')) {
-                    const colorSetName = node.data.initialMarking.substring(0, node.data.initialMarking.length - '.all()'.length).trim();
-                    const colorSet = state.colorSets.find(cs => cs.name === colorSetName);
-
-                    if (colorSet && colorSet.definition.includes('int')) {
-                      const rangeMatch = colorSet.definition.match(/with\s+(\d+)\.\.(\d+)(?:\s+timed)?;/);
-                      if (rangeMatch) {
-                        const start = parseInt(rangeMatch[1], 10);
-                        const end = parseInt(rangeMatch[2], 10);
-                        if (!isNaN(start) && !isNaN(end)) {
-                          // Generate array from start to end (inclusive)
-                          parsedMarking = Array.from({ length: end - start + 1 }, (_, i) => start + i);
-                        } else {
-                          console.warn(`Invalid range values in color set definition: "${colorSet.definition}"`);
-                        }
-                      } else {
-                        console.warn(`No valid range found in color set definition: "${colorSet.definition}"`);
-                      }
-                    } else {
-                      console.warn(`Cannot apply '.all()' to color set "${colorSetName}". It's either not found, not a 'basic' type, or doesn't contain 'int' in its definition.`);
-                      parsedMarking = []; // Default to empty if conditions aren't met
-                    }
-                  } else {
-                    // Try to parse as JSON; if it fails, treat as a Rhai expression
-                    // that WASM will evaluate (e.g., all_orders())
-                    try {
-                      const parsed = JSON.parse(node.data.initialMarking);
-                      // Ensure result is an array
-                      if (Array.isArray(parsed)) {
-                        parsedMarking = parsed;
-                      } else {
-                        // Single value - wrap in array
-                        parsedMarking = [parsed];
-                      }
-                    } catch {
-                      // Not valid JSON — it's a Rhai expression (e.g., function call).
-                      // Leave marking empty; WASM will evaluate initialMarking directly.
-                      parsedMarking = [];
-                    }
-                  }
-                  marking = parsedMarking;
-                }
-              } catch (error) {
-                console.error(`Error parsing initial marking for node ${node.id}:`, node.data.initialMarking, error);
-                marking = []; // Default to empty on error
-              }
-            }
-            // Ensure data retains other properties and update marking
-            return {
-              ...node,
-              data: { ...node.data, marking },
-            };
+            const marking = parseInitialMarkingToArray(
+              node.data.initialMarking as string | undefined,
+              state.colorSets,
+            );
+            return { ...node, data: { ...node.data, marking } };
           }
           return node;
         });
-        updatedNetsById[netId] = {
-          ...petriNet,
-          nodes: updatedNodes,
-        };
+        updatedNetsById[netId] = { ...petriNet, nodes: updatedNodes };
       }
       return { petriNetsById: updatedNetsById };
     });

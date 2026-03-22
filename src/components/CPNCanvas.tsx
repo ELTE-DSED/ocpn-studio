@@ -472,6 +472,9 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
         });
       }
 
+      // Compute marking arrays from initialMarking strings so tokens are visible
+      useStore.getState().applyInitialMarkings();
+
       // Mark the store as clean (no unsaved changes)
       markClean();
     }

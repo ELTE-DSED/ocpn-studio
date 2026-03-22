@@ -7,7 +7,7 @@ export const initialNodes = [
   { id: 'a',
     type: 'place',
     position: { x: -200, y: 0 },
-    data: { label: 'start', colorSet: 'INT', initialMarking: '[1, 5, 5, 10]' }
+    data: { label: 'start', colorSet: 'INT', initialMarking: '[1, 5, 5, 10]', marking: [1, 5, 5, 10], tokenCountOffset: { x: 25, y: -20 }, markingOffset: { x: 40, y: -25 } }
   },
   {
     id: 'b',
@@ -23,7 +23,7 @@ export const initialNodes = [
     position: { x: 0, y: 200 },
     width: 50,
     height: 30,
-    data: { label: 'end place', colorSet: 'INT' },
+    data: { label: 'end place', colorSet: 'INT', initialMarking: '', marking: [] },
   },
 ];
 
