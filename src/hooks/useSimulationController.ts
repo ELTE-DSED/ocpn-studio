@@ -226,9 +226,17 @@ function flattenHierarchicalNet(
           (n) => !(n.type === 'place' && n.data?.portType)
         );
 
-        // Add non-port nodes to this net (with position offset)
-        const offsetX = subTrans.position?.x || 0;
-        const offsetY = subTrans.position?.y || 0;
+        // Add non-port nodes to this net (with position offset from socket assignment)
+        let offsetX = 0, offsetY = 0;
+        if (socketAssignments.length > 0) {
+          const firstAssignment = socketAssignments[0];
+          const portPlace = subPage.nodes.find((n) => n.id === firstAssignment.portPlaceId);
+          const socketPlace = net.nodes.find((n) => n.id === firstAssignment.socketPlaceId);
+          if (portPlace && socketPlace) {
+            offsetX = (socketPlace.position?.x || 0) - (portPlace.position?.x || 0);
+            offsetY = (socketPlace.position?.y || 0) - (portPlace.position?.y || 0);
+          }
+        }
         for (const node of subpageNonPortNodes) {
           net.nodes.push({
             ...node,

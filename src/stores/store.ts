@@ -1321,9 +1321,18 @@ const useStore = create<StoreState>()(temporal((set) => ({
         (n) => !(n.type === 'place' && n.data?.portType)
       );
 
-      // Adjust positions of subpage nodes relative to the transition position
-      const offsetX = transition.position.x - 300;
-      const offsetY = transition.position.y - 200;
+      // Compute position offset from socket assignments: the delta between
+      // a socket place on the parent and its corresponding port place on the subpage
+      let offsetX = 0, offsetY = 0;
+      if (socketAssignments.length > 0) {
+        const firstAssignment = socketAssignments[0];
+        const portPlace = subPage.nodes.find((n) => n.id === firstAssignment.portPlaceId);
+        const socketPlace = parentNet.nodes.find((n) => n.id === firstAssignment.socketPlaceId);
+        if (portPlace && socketPlace) {
+          offsetX = socketPlace.position.x - portPlace.position.x;
+          offsetY = socketPlace.position.y - portPlace.position.y;
+        }
+      }
       const repositionedNodes = subpageNonPortNodes.map((n) => ({
         ...n,
         id: n.id, // Keep original IDs
