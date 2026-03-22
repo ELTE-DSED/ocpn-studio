@@ -1,6 +1,6 @@
 {
   "name": "ocpn-tools",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "homepage": "https://rwth-pads.github.io/ocpn-tools",
   "description": "OCPN Tools is a web application for designing Object-centric Colored Petri Nets",
   "type": "module",
