@@ -438,30 +438,38 @@ export function SimulationPanel() {
   // Subpage note for EventLog
   const subpageNote = !isMainPage && activePetriNetId ? 'Showing only events for transitions on this subpage.' : undefined;
 
-  // Get transitions and places from active Petri net
+  // Get transitions and places from all relevant Petri nets
+  // On main page: include all nets (but exclude substitution transitions)
+  // On subpage: include only the active net
   const getModelData = useCallback(() => {
     if (!activePetriNetId) return { transitions: [], places: [] };
-    
-    const petriNet = petriNetsById[activePetriNetId];
-    if (!petriNet) return { transitions: [], places: [] };
-    
-    const transitions = petriNet.nodes
-      .filter(node => node.type === 'transition')
-      .map(node => ({
-        id: node.id,
-        name: (node.data?.label as string) || node.id
-      }));
-    
-    const places = petriNet.nodes
-      .filter(node => node.type === 'place')
-      .map(node => ({
-        id: node.id,
-        name: (node.data?.label as string) || node.id,
-        colorSet: (node.data?.colorSet as string) || ''
-      }));
-    
+
+    const netsToInclude = isMainPage
+      ? Object.values(petriNetsById)
+      : [petriNetsById[activePetriNetId]].filter(Boolean);
+
+    const transitions: { id: string; name: string }[] = [];
+    const places: { id: string; name: string; colorSet: string }[] = [];
+
+    for (const petriNet of netsToInclude) {
+      for (const node of petriNet.nodes) {
+        if (node.type === 'transition' && !node.data?.subPageId) {
+          transitions.push({
+            id: node.id,
+            name: (node.data?.label as string) || node.id,
+          });
+        } else if (node.type === 'place') {
+          places.push({
+            id: node.id,
+            name: (node.data?.label as string) || node.id,
+            colorSet: (node.data?.colorSet as string) || '',
+          });
+        }
+      }
+    }
+
     return { transitions, places };
-  }, [activePetriNetId, petriNetsById]);
+  }, [activePetriNetId, petriNetsById, isMainPage]);
 
   const handleExportOcel = (format: 'json' | 'xml' | 'sqlite') => {
     const { transitions, places } = getModelData();
