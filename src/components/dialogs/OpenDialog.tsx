@@ -87,7 +87,7 @@ export function OpenDialog({ open, onOpenChange, onFileLoaded }: OpenDialogProps
         <DialogHeader>
           <DialogTitle>Open Petri Net</DialogTitle>
           <DialogDescription>
-            Load a CPN Tools .cpn or cpn-py JSON file to visualize your Petri Net.
+            Load a CPN Tools .cpn, PNML .pnml, or cpn-py JSON file to visualize your Petri Net.
           </DialogDescription>
         </DialogHeader>
         <div
@@ -105,7 +105,7 @@ export function OpenDialog({ open, onOpenChange, onFileLoaded }: OpenDialogProps
             <input
               ref={fileInputRef}
               type="file"
-              accept=".xml,.json,.cpn,.ocpn"
+              accept=".xml,.json,.cpn,.ocpn,.pnml"
               className="hidden"
               onChange={handleFileInputChange}
             />

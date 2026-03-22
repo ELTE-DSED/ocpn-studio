@@ -459,6 +459,564 @@ export function saveFile(content: string, filename: string) {
   URL.revokeObjectURL(url)
 }
 
+// ─── PNML (Petri Net Markup Language) support ─────────────────────────────
+
+// Escape special XML characters
+function escapeXML(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+// Convert Petri Net data to PNML format (ISO/IEC 15909-2)
+// Partial support: exports places, transitions, arcs with names and positions.
+// Color sets, guards, and arc inscriptions are stored as toolspecific data.
+export function convertToPNML(data: PetriNetData): string {
+  const nets = data.petriNetOrder.map((netId) => {
+    const petriNet = data.petriNetsById[netId];
+
+    const placesXML = petriNet.nodes
+      .filter((node) => node.type === 'place')
+      .map((place) => {
+        const pd = place.data as unknown as PlaceNodeProps['data'];
+        const initialMarking = pd.initialMarking || '';
+        // Try to extract a numeric initial marking for standard PNML
+        const numericMarking = typeof initialMarking === 'string'
+          ? (initialMarking.match(/^(\d+)$/) ? initialMarking : '')
+          : '';
+        return `      <place id="${escapeXML(place.id)}">
+        <name><text>${escapeXML(String(pd.label || ''))}</text></name>
+        <graphics>
+          <position x="${Math.round(place.position.x)}" y="${Math.round(place.position.y)}"/>
+        </graphics>${numericMarking ? `
+        <initialMarking><text>${numericMarking}</text></initialMarking>` : ''}${pd.colorSet || initialMarking ? `
+        <toolspecific tool="ocpn-tools" version="1.0">${pd.colorSet ? `
+          <colorSet>${escapeXML(pd.colorSet)}</colorSet>` : ''}${initialMarking && !numericMarking ? `
+          <initialMarking>${escapeXML(String(initialMarking))}</initialMarking>` : ''}${pd.portType ? `
+          <portType>${pd.portType}</portType>` : ''}
+        </toolspecific>` : ''}
+      </place>`;
+      })
+      .join('\n');
+
+    const transitionsXML = petriNet.nodes
+      .filter((node) => node.type === 'transition')
+      .map((transition) => {
+        const td = transition.data as unknown as TransitionNodeProps['data'];
+        const hasToolData = td.guard || td.time || td.priority || td.codeSegment || td.subPageId;
+        return `      <transition id="${escapeXML(transition.id)}">
+        <name><text>${escapeXML(String(td.label || ''))}</text></name>
+        <graphics>
+          <position x="${Math.round(transition.position.x)}" y="${Math.round(transition.position.y)}"/>
+        </graphics>${hasToolData ? `
+        <toolspecific tool="ocpn-tools" version="1.0">${td.guard ? `
+          <guard>${escapeXML(td.guard)}</guard>` : ''}${td.time ? `
+          <time>${escapeXML(td.time)}</time>` : ''}${td.priority ? `
+          <priority>${escapeXML(td.priority)}</priority>` : ''}${td.codeSegment ? `
+          <codeSegment>${escapeXML(td.codeSegment)}</codeSegment>` : ''}${td.subPageId ? `
+          <subPageId>${escapeXML(td.subPageId)}</subPageId>` : ''}
+        </toolspecific>` : ''}
+      </transition>`;
+      })
+      .join('\n');
+
+    const arcsXML = petriNet.edges
+      .map((edge) => {
+        const label = typeof edge.label === 'string' ? edge.label : '';
+        const hasInscription = label || edge.data?.isBidirectional || edge.data?.arcType || edge.data?.delay;
+        return `      <arc id="${escapeXML(edge.id)}" source="${escapeXML(edge.source)}" target="${escapeXML(edge.target)}">
+        <name><text>${escapeXML(label)}</text></name>${hasInscription ? `
+        <toolspecific tool="ocpn-tools" version="1.0">${edge.data?.isBidirectional ? `
+          <isBidirectional>true</isBidirectional>` : ''}${edge.data?.arcType ? `
+          <arcType>${escapeXML(String(edge.data.arcType))}</arcType>` : ''}${edge.data?.delay ? `
+          <delay>${escapeXML(String(edge.data.delay))}</delay>` : ''}
+        </toolspecific>` : ''}
+      </arc>`;
+      })
+      .join('\n');
+
+    return `    <page id="${escapeXML(netId)}">
+      <name><text>${escapeXML(petriNet.name)}</text></name>
+${placesXML}
+${transitionsXML}
+${arcsXML}
+    </page>`;
+  });
+
+  // Store declarations as toolspecific data at the net level
+  const declarationsXML = (data.colorSets.length || data.variables.length || data.priorities.length || data.functions.length) ? `
+    <toolspecific tool="ocpn-tools" version="1.0">
+      <declarations>${data.colorSets.map((cs) => `
+        <colorSet id="${escapeXML(cs.id || '')}" name="${escapeXML(cs.name)}" type="${escapeXML(cs.type)}" color="${escapeXML(cs.color || '')}">
+          <definition>${escapeXML(cs.definition)}</definition>
+        </colorSet>`).join('')}${data.variables.map((v) => `
+        <variable id="${escapeXML(v.id || '')}" name="${escapeXML(v.name)}" colorSet="${escapeXML(v.colorSet)}"/>`).join('')}${data.priorities.map((p) => `
+        <priority id="${escapeXML(p.id || '')}" name="${escapeXML(p.name)}" level="${p.level}"/>`).join('')}${data.functions.map((f) => `
+        <function id="${escapeXML(f.id || '')}" name="${escapeXML(f.name)}">
+          <code>${escapeXML(f.code)}</code>
+        </function>`).join('')}
+      </declarations>
+    </toolspecific>` : '';
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<pnml xmlns="http://www.pnml.org/version-2009/grammar/pnml">
+  <net id="${escapeXML(data.ocpnName || 'net1')}" type="http://www.pnml.org/version-2009/grammar/ptnet">
+    <name><text>${escapeXML(data.ocpnName || 'Petri Net')}</text></name>${declarationsXML}
+${nets.join('\n')}
+  </net>
+</pnml>`;
+}
+
+// Parse PNML (Petri Net Markup Language) content into PetriNetData.
+// Partial support: reads places, transitions, arcs with names and positions.
+// Reads ocpn-tools toolspecific extensions if present.
+export function parsePNML(content: string): PetriNetData {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(content, 'text/xml');
+
+  const parserError = doc.querySelector('parsererror');
+  if (parserError) {
+    throw new Error('Invalid PNML XML: ' + parserError.textContent);
+  }
+
+  // Helper to get text content from a child element path
+  function getText(parent: Element, ...path: string[]): string {
+    let el: Element | null = parent;
+    for (const tag of path) {
+      if (!el) return '';
+      el = el.querySelector(':scope > ' + tag);
+    }
+    return el?.textContent?.trim() || '';
+  }
+
+  // Helper to get toolspecific element for ocpn-tools
+  function getToolspecific(parent: Element): Element | null {
+    const toolspecifics = parent.querySelectorAll(':scope > toolspecific');
+    for (const ts of toolspecifics) {
+      if (ts.getAttribute('tool') === 'ocpn-tools') return ts;
+    }
+    return null;
+  }
+
+  const petriNetsById: Record<string, PetriNet> = {};
+  const petriNetOrder: string[] = [];
+  const colorSets: ColorSet[] = [];
+  const variables: Variable[] = [];
+  const priorities: Priority[] = [];
+  const functions: Function[] = [];
+
+  // Track sort names discovered from place types / declarations
+  const discoveredSorts = new Set<string>();
+
+  // Find all net elements
+  const nets = doc.querySelectorAll('pnml > net');
+  let ocpnName = '';
+
+  for (const net of nets) {
+    ocpnName = getText(net, 'name', 'text') || net.getAttribute('id') || 'Petri Net';
+
+    // Parse declarations from toolspecific if present (ocpn-tools round-trip)
+    const netToolspecific = getToolspecific(net);
+    if (netToolspecific) {
+      const decls = netToolspecific.querySelector(':scope > declarations');
+      if (decls) {
+        for (const csEl of decls.querySelectorAll(':scope > colorSet')) {
+          const csName = csEl.getAttribute('name') || '';
+          colorSets.push({
+            id: csEl.getAttribute('id') || uuidv4(),
+            name: csName,
+            type: csEl.getAttribute('type') || 'basic',
+            color: csEl.getAttribute('color') || generateRandomColor(),
+            definition: getText(csEl, 'definition'),
+          });
+          if (csName) discoveredSorts.add(csName);
+        }
+        for (const vEl of decls.querySelectorAll(':scope > variable')) {
+          variables.push({
+            id: vEl.getAttribute('id') || uuidv4(),
+            name: vEl.getAttribute('name') || '',
+            colorSet: vEl.getAttribute('colorSet') || '',
+          });
+        }
+        for (const pEl of decls.querySelectorAll(':scope > priority')) {
+          priorities.push({
+            id: pEl.getAttribute('id') || uuidv4(),
+            name: pEl.getAttribute('name') || '',
+            level: parseInt(pEl.getAttribute('level') || '1000', 10),
+          });
+        }
+        for (const fEl of decls.querySelectorAll(':scope > function')) {
+          functions.push({
+            id: fEl.getAttribute('id') || uuidv4(),
+            name: fEl.getAttribute('name') || '',
+            code: getText(fEl, 'code'),
+          });
+        }
+      }
+    }
+
+    // Parse standard PNML declarations from <declaration> elements inside pages
+    const declEls = net.querySelectorAll('declaration');
+    for (const declEl of declEls) {
+      const declsContainer = declEl.querySelector('structure > declarations');
+      if (!declsContainer) continue;
+      parsePNMLDeclarations(declsContainer, colorSets, variables, discoveredSorts);
+    }
+
+    // Parse pages (subpages)
+    const pages = net.querySelectorAll(':scope > page');
+    if (pages.length === 0) {
+      // No pages - treat the net itself as a single page
+      const netId = uuidv4();
+      const { nodes, edges } = parsePNMLPage(net, getToolspecific, getText, discoveredSorts);
+      petriNetsById[netId] = {
+        id: netId,
+        name: ocpnName,
+        nodes,
+        edges,
+        selectedElement: null,
+      };
+      petriNetOrder.push(netId);
+    } else {
+      for (const page of pages) {
+        const pageId = page.getAttribute('id') || uuidv4();
+        const pageName = getText(page, 'name', 'text') || 'Page';
+        // Parse declarations inside this page too
+        const pageDeclEls = page.querySelectorAll(':scope > declaration');
+        for (const declEl of pageDeclEls) {
+          const declsContainer = declEl.querySelector('structure > declarations');
+          if (declsContainer) {
+            parsePNMLDeclarations(declsContainer, colorSets, variables, discoveredSorts);
+          }
+        }
+        const { nodes, edges } = parsePNMLPage(page, getToolspecific, getText, discoveredSorts);
+        petriNetsById[pageId] = {
+          id: pageId,
+          name: pageName,
+          nodes,
+          edges,
+          selectedElement: null,
+        };
+        petriNetOrder.push(pageId);
+      }
+    }
+  }
+
+  // Ensure all discovered sorts have corresponding color sets
+  const existingNames = new Set(colorSets.map((cs) => cs.name));
+  for (const sortName of discoveredSorts) {
+    if (!existingNames.has(sortName)) {
+      // Map standard PNML built-in sorts to CPN definitions
+      const builtinDef = pnmlBuiltinSortDefinition(sortName);
+      colorSets.push({
+        id: uuidv4(),
+        name: sortName,
+        type: builtinDef ? 'basic' : 'basic',
+        definition: builtinDef || `colset ${sortName} = unit;`,
+        color: generateRandomColor(),
+      });
+      existingNames.add(sortName);
+    }
+  }
+
+  // If no nets found, create an empty one
+  if (petriNetOrder.length === 0) {
+    const netId = uuidv4();
+    petriNetsById[netId] = {
+      id: netId,
+      name: 'Main',
+      nodes: [],
+      edges: [],
+      selectedElement: null,
+    };
+    petriNetOrder.push(netId);
+  }
+
+  return {
+    ocpnName: ocpnName || undefined,
+    petriNetsById,
+    petriNetOrder,
+    colorSets,
+    variables,
+    priorities,
+    functions,
+    uses: [],
+    values: [],
+  };
+}
+
+// Map standard PNML built-in sort names to CPN-style definitions
+function pnmlBuiltinSortDefinition(sortName: string): string | null {
+  const upper = sortName.toUpperCase();
+  const map: Record<string, string> = {
+    'UNIT': 'colset UNIT = unit;',
+    'DOT': 'colset DOT = unit;',
+    'BOOL': 'colset BOOL = bool;',
+    'BOOLEAN': 'colset BOOLEAN = bool;',
+    'INT': 'colset INT = int;',
+    'INTEGER': 'colset INTEGER = int;',
+    'NAT': 'colset NAT = int;',       // natural numbers (approximation)
+    'NATURAL': 'colset NATURAL = int;',
+    'POS': 'colset POS = int;',       // positive integers (approximation)
+    'POSITIVE': 'colset POSITIVE = int;',
+    'STRING': 'colset STRING = string;',
+    'REAL': 'colset REAL = real;',
+  };
+  return map[upper] || null;
+}
+
+// Parse standard PNML <declarations> structure into colorSets and variables
+function parsePNMLDeclarations(
+  declsContainer: Element,
+  colorSets: ColorSet[],
+  variables: Variable[],
+  discoveredSorts: Set<string>,
+) {
+  const existingNames = new Set(colorSets.map((cs) => cs.name));
+
+  // Parse sorts: <arbitrarysort>, <namedsort>
+  // <arbitrarysort id="id1" name="SITE"/> — abstract/opaque sort
+  for (const sortEl of declsContainer.querySelectorAll(':scope > arbitrarysort')) {
+    const sortName = sortEl.getAttribute('name') || '';
+    if (sortName && !existingNames.has(sortName)) {
+      colorSets.push({
+        id: sortEl.getAttribute('id') || uuidv4(),
+        name: sortName,
+        type: 'basic',
+        definition: pnmlBuiltinSortDefinition(sortName) || `colset ${sortName} = unit;`,
+        color: generateRandomColor(),
+      });
+      existingNames.add(sortName);
+      discoveredSorts.add(sortName);
+    }
+  }
+
+  // <namedsort id="id2" name="MESSAGE"><productsort>...</productsort></namedsort>
+  // Build id-to-name map for sort resolution first
+  const sortIdToName = new Map<string, string>();
+  for (const cs of colorSets) {
+    if (cs.id) sortIdToName.set(cs.id, cs.name);
+  }
+  for (const el of declsContainer.querySelectorAll(':scope > arbitrarysort, :scope > namedsort')) {
+    const id = el.getAttribute('id');
+    const name = el.getAttribute('name');
+    if (id && name) sortIdToName.set(id, name);
+  }
+
+  for (const sortEl of declsContainer.querySelectorAll(':scope > namedsort')) {
+    const sortName = sortEl.getAttribute('name') || '';
+    if (sortName && !existingNames.has(sortName)) {
+      // Try to build a definition from the structure
+      const definition = buildSortDefinition(sortName, sortEl, sortIdToName);
+      colorSets.push({
+        id: sortEl.getAttribute('id') || uuidv4(),
+        name: sortName,
+        type: sortEl.querySelector(':scope > productsort') ? 'product' : 'basic',
+        definition,
+        color: generateRandomColor(),
+      });
+      existingNames.add(sortName);
+      discoveredSorts.add(sortName);
+    }
+  }
+
+  // Parse variables: <variabledecl id="id7" name="x"><usersort declaration="id1"/></variabledecl>
+  const existingVarNames = new Set(variables.map((v) => v.name));
+  for (const varEl of declsContainer.querySelectorAll(':scope > variabledecl')) {
+    const varName = varEl.getAttribute('name') || '';
+    if (varName && !existingVarNames.has(varName)) {
+      const usersort = varEl.querySelector(':scope > usersort');
+      const sortRef = usersort?.getAttribute('declaration') || '';
+      const sortName = sortIdToName.get(sortRef) || sortRef || 'UNIT';
+      variables.push({
+        id: varEl.getAttribute('id') || uuidv4(),
+        name: varName,
+        colorSet: sortName,
+      });
+      existingVarNames.add(varName);
+    }
+  }
+}
+
+// Build a CPN-style definition from a PNML sort structure
+function buildSortDefinition(sortName: string, sortEl: Element, sortIdToName: Map<string, string>): string {
+  const productSort = sortEl.querySelector(':scope > productsort');
+  if (productSort) {
+    // Collect component sort names
+    const components: string[] = [];
+    for (const child of productSort.children) {
+      if (child.tagName === 'usersort') {
+        const ref = child.getAttribute('declaration') || '';
+        components.push(sortIdToName.get(ref) || ref);
+      } else if (child.tagName === 'dot') {
+        components.push('UNIT');
+      } else if (child.tagName === 'natural' || child.tagName === 'positive' || child.tagName === 'integer') {
+        components.push('INT');
+      } else if (child.tagName === 'bool') {
+        components.push('BOOL');
+      } else {
+        components.push(child.tagName.toUpperCase());
+      }
+    }
+    return `colset ${sortName} = product ${components.join(' * ')};`;
+  }
+
+  // Check for built-in sorts used as structure
+  const struct = sortEl.querySelector(':scope > positive, :scope > natural, :scope > integer, :scope > bool, :scope > dot, :scope > string');
+  if (struct) {
+    const tagMap: Record<string, string> = {
+      'positive': 'int', 'natural': 'int', 'integer': 'int',
+      'bool': 'bool', 'dot': 'unit', 'string': 'string',
+    };
+    return `colset ${sortName} = ${tagMap[struct.tagName] || 'unit'};`;
+  }
+
+  return pnmlBuiltinSortDefinition(sortName) || `colset ${sortName} = unit;`;
+}
+
+// Parse places, transitions, and arcs from a PNML page/net element
+function parsePNMLPage(
+  pageEl: Element,
+  getToolspecific: (el: Element) => Element | null,
+  getText: (parent: Element, ...path: string[]) => string,
+  discoveredSorts: Set<string>,
+): { nodes: PetriNet['nodes']; edges: PetriNet['edges'] } {
+  const nodes: PetriNet['nodes'] = [];
+  const edges: PetriNet['edges'] = [];
+
+  // Parse places
+  for (const placeEl of pageEl.querySelectorAll(':scope > place')) {
+    const id = placeEl.getAttribute('id') || uuidv4();
+    const name = getText(placeEl, 'name', 'text');
+    const graphics = placeEl.querySelector(':scope > graphics > position');
+    const x = parseFloat(graphics?.getAttribute('x') || '0');
+    const y = parseFloat(graphics?.getAttribute('y') || '0');
+
+    // Standard PNML initial marking (P/T nets)
+    let initialMarking = getText(placeEl, 'initialMarking', 'text');
+    // High-level net initial marking
+    if (!initialMarking) {
+      initialMarking = getText(placeEl, 'hlinitialMarking', 'text');
+    }
+
+    // Read place type from <type><text> (high-level nets)
+    let colorSet = '';
+    const typeText = getText(placeEl, 'type', 'text');
+    if (typeText) {
+      colorSet = typeText;
+      discoveredSorts.add(typeText);
+    }
+
+    let portType: string | undefined;
+    // OCPN-tools extended data (for round-trip)
+    const ts = getToolspecific(placeEl);
+    if (ts) {
+      const tsColorSet = getText(ts, 'colorSet');
+      if (tsColorSet) colorSet = tsColorSet;
+      const tsMarking = getText(ts, 'initialMarking');
+      if (tsMarking) initialMarking = tsMarking;
+      const pt = getText(ts, 'portType');
+      if (pt) portType = pt;
+    }
+
+    // Default to UNIT if no type found
+    if (!colorSet) {
+      colorSet = 'UNIT';
+      discoveredSorts.add('UNIT');
+    }
+
+    nodes.push({
+      id,
+      type: 'place',
+      position: { x, y },
+      data: {
+        label: name || id,
+        colorSet: colorSet || 'UNIT',
+        initialMarking: initialMarking || '',
+        marking: [],
+        portType: portType || undefined,
+      },
+    });
+  }
+
+  // Parse transitions
+  for (const transEl of pageEl.querySelectorAll(':scope > transition')) {
+    const id = transEl.getAttribute('id') || uuidv4();
+    const name = getText(transEl, 'name', 'text');
+    const graphics = transEl.querySelector(':scope > graphics > position');
+    const x = parseFloat(graphics?.getAttribute('x') || '0');
+    const y = parseFloat(graphics?.getAttribute('y') || '0');
+
+    let guard = '';
+    let time = '';
+    let priority = '';
+    let codeSegment = '';
+    let subPageId: string | undefined;
+    const ts = getToolspecific(transEl);
+    if (ts) {
+      guard = getText(ts, 'guard');
+      time = getText(ts, 'time');
+      priority = getText(ts, 'priority');
+      codeSegment = getText(ts, 'codeSegment');
+      const sp = getText(ts, 'subPageId');
+      if (sp) subPageId = sp;
+    }
+
+    nodes.push({
+      id,
+      type: 'transition',
+      position: { x, y },
+      data: {
+        label: name || id,
+        guard,
+        time,
+        priority,
+        codeSegment,
+        subPageId,
+      },
+    });
+  }
+
+  // Parse arcs
+  for (const arcEl of pageEl.querySelectorAll(':scope > arc')) {
+    const id = arcEl.getAttribute('id') || uuidv4();
+    const source = arcEl.getAttribute('source') || '';
+    const target = arcEl.getAttribute('target') || '';
+    // Try standard PNML inscription, then high-level inscription, then arc name
+    const inscription = getText(arcEl, 'inscription', 'text')
+      || getText(arcEl, 'hlinscription', 'text')
+      || getText(arcEl, 'name', 'text');
+
+    let isBidirectional = false;
+    let arcType: string | undefined;
+    let delay = '';
+    const ts = getToolspecific(arcEl);
+    if (ts) {
+      isBidirectional = getText(ts, 'isBidirectional') === 'true';
+      const at = getText(ts, 'arcType');
+      if (at) arcType = at;
+      delay = getText(ts, 'delay');
+    }
+
+    edges.push({
+      id,
+      source,
+      target,
+      label: inscription,
+      data: {
+        isBidirectional,
+        arcType,
+        delay,
+      },
+    });
+  }
+
+  return { nodes, edges };
+}
+
 // Parse file content based on file extension
 export function parseFileContent(content: string, fileName: string): PetriNetData | null {
   try {
@@ -479,6 +1037,8 @@ export function parseFileContent(content: string, fileName: string): PetriNetDat
         // Parse CPN Tools XML
         return parseCPNToolsXML(content)
       }
+    } else if (extension === "pnml") {
+      return parsePNML(content);
     }
 
     throw new Error("Unsupported file format")

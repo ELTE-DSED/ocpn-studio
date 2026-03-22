@@ -64,6 +64,7 @@ import {
   saveFile,
   parseFileContent,
   PetriNetData,
+  convertToPNML,
 } from '@/utils/FileOperations';
 
 import { nodeTypes } from '../nodes';
@@ -591,6 +592,10 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
         });
         //filename = `${petriNetsById.name.replace(/\s+/g, "_")}.cpn`;
         filename = `${ocpnName.replace(/\s+/g, '_')}.cpn`;
+        break;
+      case "pnml":
+        content = convertToPNML(petriNetData);
+        filename = `${ocpnName.replace(/\s+/g, '_')}.pnml`;
         break;
       case "cpn-py":
         content = convertToCPNPyJSON(petriNetData);
@@ -1197,6 +1202,24 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
     saveFile(content, `${petriNet.name.replace(/\s+/g, '_')}.ocpn`);
   };
 
+  const handleSaveSubpageAsPNML = (id: string) => {
+    const petriNet = petriNetsById[id];
+    if (!petriNet) return;
+    const singleNetData: PetriNetData = {
+      ocpnName: petriNet.name,
+      petriNetsById: { [id]: petriNet },
+      petriNetOrder: [id],
+      colorSets,
+      variables,
+      priorities,
+      functions,
+      uses,
+      values,
+    };
+    const content = convertToPNML(singleNetData);
+    saveFile(content, `${petriNet.name.replace(/\s+/g, '_')}.pnml`);
+  };
+
   // Export the state space graph as a Graphviz DOT file
   const handleSaveGraphviz = () => {
     const graph = stateSpaceResult?.graph;
@@ -1530,6 +1553,9 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
                     <DropdownMenuItem onClick={() => handleSaveSubpageAsNet(id)}>
                       Save as Petri Net
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleSaveSubpageAsPNML(id)}>
+                      Save as PNML
+                    </DropdownMenuItem>
                     {!isMain && (
                       <>
                         <DropdownMenuSeparator />
@@ -1633,13 +1659,13 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
             >
               <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground/60" />
               <p className="text-sm text-muted-foreground">
-                Drop an <span className="font-medium text-foreground">.ocpn</span> or <span className="font-medium text-foreground">.cpn</span> file here
+                Drop an <span className="font-medium text-foreground">.ocpn</span>, <span className="font-medium text-foreground">.cpn</span>, or <span className="font-medium text-foreground">.pnml</span> file here
               </p>
               <p className="text-xs text-muted-foreground/60 mt-1">or click to browse</p>
               <input
                 id="import-subpage-file"
                 type="file"
-                accept=".ocpn,.cpn,.json,.xml"
+                accept=".ocpn,.cpn,.json,.xml,.pnml"
                 className="hidden"
                 onChange={handleSubpageFileSelect}
               />

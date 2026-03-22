@@ -16,7 +16,7 @@
 - **State space analysis** — Compute the full state space with BFS exploration, SCC decomposition, dead/home markings, place bounds, and transition liveness — with deterministic overrides for models using stochastic distribution functions
 - **Reachability graph** — Visualize the state space as an interactive graph with clickable nodes showing full marking details
 - **OCEL 2.0 export** — Export simulated event logs in the OCEL 2.0 standard format for process mining
-- **File format support** — Open and save `.ocpn` (native JSON), `.cpn` (CPN Tools XML), and `.json` (CPNPy) files
+- **File format support** — Open and save `.ocpn` (native JSON), `.cpn` (CPN Tools XML), `.pnml` (PNML, partial support), and `.json` (CPNPy) files
 - **Auto-layout** — Arrange nets automatically using Dagre, ELK, or our own Sugiyama-based layouting algorithm developed in our research
 - **Built-in examples** — Get started instantly with the Airport Ground Handling process example via the **Open** button
 - **AI assistant** — Optional AI-powered sidebar for modeling guidance (OpenAI API key required)

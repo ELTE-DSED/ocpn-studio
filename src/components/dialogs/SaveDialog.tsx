@@ -58,6 +58,17 @@ export function SaveDialog({ open, onOpenChange, onSave, petriNetName }: SaveDia
               </div>
             </div>
             <div className="flex items-start space-x-3 space-y-0">
+              <RadioGroupItem value="pnml" id="pnml" />
+              <div className="grid gap-1.5">
+                <Label htmlFor="pnml" className="font-medium">
+                  PNML
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Petri Net Markup Language (ISO/IEC 15909-2). Partial support.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3 space-y-0">
               <RadioGroupItem value="cpn-py" id="cpn-py"/>
               <div className="grid gap-1.5">
                 <Label htmlFor="cpn-py" className="font-medium">

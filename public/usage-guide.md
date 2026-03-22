@@ -513,7 +513,31 @@ uniform(0.0, 1.0) > 0.3
 
 ## Migration Guide
 
-After importing a CPN in the .cpn format of CPN Tools, some manual adjustments are necessary. Here are the most common ones:
+### Importing PNML files
+
+OCPN Tools provides partial support for the **PNML** format (Petri Net Markup Language, ISO/IEC 15909-2). You can open `.pnml` files via the **Open** dialog or import them as subpages.
+
+**What is imported automatically:**
+- Places, transitions, and arcs with their names and positions
+- Place types from `<type>` elements (e.g., `SITE`, `MESSAGE`) — corresponding color sets are created automatically
+- Arc inscriptions from both `<inscription>` (P/T nets) and `<hlinscription>` (high-level nets), e.g., `1\`x`
+- Initial markings from `<initialMarking>` and `<hlinitialMarking>`, e.g., `U()`
+- Sort declarations (`<arbitrarysort>`, `<namedsort>` including product sorts) → color sets
+- Variable declarations (`<variabledecl>`) → variables with correct sort references
+- Standard built-in sorts are mapped: `DOT`→unit, `BOOL`→bool, `INT`/`INTEGER`/`NAT`/`POS`→int, `STRING`→string
+
+**Manual work typically needed after import:**
+- Abstract sorts (like `SITE`) are imported as `unit` — you may need to change their definition to match your domain (e.g., an enumeration or record type)
+- Operator declarations (`U()`, `S(x)`, `R(x)`) from the PNML are not imported as functions — you'll need to define these manually
+- Complex arc inscription structures (the XML `<structure>` trees) are not interpreted; only the `<text>` representation is used
+- Guards and conditions need to be added manually if the original model used them
+- The `<toolspecific>` data from other tools (e.g., ePNK diagram info) is ignored
+
+You can also **save** OCPN models as `.pnml` files. OCPN-specific data (color sets, guards, time inscriptions, etc.) is preserved in `<toolspecific tool="ocpn-tools">` elements for round-trip compatibility.
+
+### Importing CPN Tools files
+
+After importing a CPN in the `.cpn` format of CPN Tools, some manual adjustments are necessary. Here are the most common ones:
 
 - Guards like `[items = doSomething(order)]` need to be changed to `items = doSomething(order)` (remove the square brackets)
 - Functions need to be translated from Standard ML to Rhai (a scripting language embeddable to Rust). We recommend either doing that manually or with the help of an LLM like ChatGPT. The recommended prompt is `Please turn this Standard ML into Rhai script (Rust embedded): fun doo(x: INT): INT = x+1;`. The outcome can be pasted into the function editor of OCPN Tools.
