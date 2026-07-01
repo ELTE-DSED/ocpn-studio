@@ -66,7 +66,8 @@ export type MonitorType =
   | 'transition-count'
   | 'breakpoint-place'
   | 'breakpoint-transition'
-  | 'data-collector';
+  | 'data-collector'
+  | 'interval-duration';
 
 export interface Monitor {
   id: string;
@@ -79,6 +80,9 @@ export interface Monitor {
   // Type-specific config
   config: {
     stopCondition?: 'empty' | 'not-empty' | 'enabled' | 'not-enabled';
+    startTransitionId?: string;
+    endTransitionId?: string;
+    correlationKey?: string;
   };
   // Rhai scripts for DataCollector monitors
   observationScript?: string;  // Rhai expression returning a numeric value

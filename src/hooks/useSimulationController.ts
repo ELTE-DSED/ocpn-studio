@@ -352,6 +352,9 @@ function monitorToWasmConfig(monitor: Monitor): Record<string, unknown> {
     observationScript: monitor.observationScript ?? '',
     predicateScript: monitor.predicateScript ?? '',
     stopCondition: monitor.config.stopCondition ?? null,
+    startTransitionId: monitor.config.startTransitionId ?? null,
+    endTransitionId: monitor.config.endTransitionId ?? null,
+    correlationKey: monitor.config.correlationKey ?? '',
   };
 }
 

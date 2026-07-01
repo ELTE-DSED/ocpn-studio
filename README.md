@@ -67,6 +67,10 @@ pnpm install
 | Layout | [Dagre](https://github.com/dagrejs/dagre) + [ELK](https://github.com/kieler/elkjs) |
 | Linting | [ESLint 10](https://eslint.org/) + [typescript-eslint](https://typescript-eslint.io/) |
 
+## Architecture
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for a slide-style conceptual overview of the frontend, the WebAssembly integration boundary, and the internal `cpnsim` engine layers.
+
 ## Contributing
 
 Contributions are welcome! Feel free to open an issue or submit a pull request — any help is greatly appreciated. The easiest way to reach out is via the **Feedback** button directly in the app.

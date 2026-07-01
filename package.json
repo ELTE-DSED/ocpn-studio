@@ -1,6 +1,6 @@
 {
   "name": "OCPN Studio",
-  "version": "0.6.5",
+  "version": "0.6.7",
   "homepage": "https://elte-dsed.github.io/ocpn-studio",
   "description": "OCPN Studio is a web application for designing, simulating and analyzing Object-Centric Petri Nets",
   "type": "module",
@@ -36,7 +36,7 @@
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@radix-ui/react-visually-hidden": "^1.2.4",
-    "@rwth-pads/cpnsim": "^0.4.8",
+    "@rwth-pads/cpnsim": "^0.4.9",
     "@tailwindcss/vite": "^4.2.1",
     "@xyflow/react": "^12.10.0",
     "class-variance-authority": "^0.7.1",

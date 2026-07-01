@@ -33,6 +33,7 @@ const MONITOR_TYPES: { value: MonitorType; label: string; description: string }[
   { value: 'breakpoint-place', label: 'Place Breakpoint', description: 'Stop when place meets condition' },
   { value: 'breakpoint-transition', label: 'Transition Breakpoint', description: 'Stop when transition fires' },
   { value: 'data-collector', label: 'Data Collector', description: 'Custom Rhai script to observe data' },
+  { value: 'interval-duration', label: 'Duration', description: 'Measure time between start/end transitions' },
 ];
 
 export function AddMonitorDialog({ open, onOpenChange, editMonitor }: AddMonitorDialogProps) {
@@ -57,6 +58,15 @@ export function AddMonitorDialog({ open, onOpenChange, editMonitor }: AddMonitor
   );
   const [predicateScript, setPredicateScript] = useState<string>(
     editMonitor?.predicateScript ?? '',
+  );
+  const [startTransitionId, setStartTransitionId] = useState<string>(
+    editMonitor?.config.startTransitionId ?? '',
+  );
+  const [endTransitionId, setEndTransitionId] = useState<string>(
+    editMonitor?.config.endTransitionId ?? '',
+  );
+  const [correlationKey, setCorrelationKey] = useState<string>(
+    editMonitor?.config.correlationKey ?? 'ac.id',
   );
 
   // Collect all places and transitions across all nets
@@ -91,6 +101,7 @@ export function AddMonitorDialog({ open, onOpenChange, editMonitor }: AddMonitor
   const needsTransitions = type === 'transition-count' || type === 'breakpoint-transition';
   const needsStopCondition = type === 'breakpoint-place' || type === 'breakpoint-transition';
   const needsScripts = type === 'data-collector';
+  const needsDurationConfig = type === 'interval-duration';
 
   const togglePlace = (id: string) => {
     setSelectedPlaceIds((prev) => {
@@ -122,6 +133,9 @@ export function AddMonitorDialog({ open, onOpenChange, editMonitor }: AddMonitor
         stopCondition: needsStopCondition
           ? (stopCondition as Monitor['config']['stopCondition'])
           : undefined,
+        startTransitionId: needsDurationConfig ? startTransitionId : undefined,
+        endTransitionId: needsDurationConfig ? endTransitionId : undefined,
+        correlationKey: needsDurationConfig ? correlationKey.trim() : undefined,
       },
       observationScript: needsScripts ? observationScript : undefined,
       predicateScript: needsScripts && predicateScript.trim() ? predicateScript : undefined,
@@ -142,13 +156,17 @@ export function AddMonitorDialog({ open, onOpenChange, editMonitor }: AddMonitor
     setStopCondition('empty');
     setObservationScript('');
     setPredicateScript('');
+    setStartTransitionId('');
+    setEndTransitionId('');
+    setCorrelationKey('ac.id');
   };
 
   const isValid =
     name.trim().length > 0 &&
     ((needsPlaces && selectedPlaceIds.size > 0) ||
       (needsTransitions && selectedTransitionIds.size > 0) ||
-      (needsScripts && observationScript.trim().length > 0));
+      (needsScripts && observationScript.trim().length > 0) ||
+      (needsDurationConfig && startTransitionId && endTransitionId && correlationKey.trim().length > 0));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -262,6 +280,58 @@ export function AddMonitorDialog({ open, onOpenChange, editMonitor }: AddMonitor
                 </SelectContent>
               </Select>
             </div>
+          )}
+
+          {needsDurationConfig && (
+            <>
+              <div className="space-y-1">
+                <Label>Start Transition</Label>
+                <Select value={startTransitionId} onValueChange={setStartTransitionId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select start transition" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {transitions.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        <span className="font-medium">{t.label}</span>
+                        <span className="text-muted-foreground text-xs ml-2">{t.netName}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label>End Transition</Label>
+                <Select value={endTransitionId} onValueChange={setEndTransitionId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select end transition" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {transitions.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        <span className="font-medium">{t.label}</span>
+                        <span className="text-muted-foreground text-xs ml-2">{t.netName}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="correlation-key">Correlation Key (Rhai)</Label>
+                <p className="text-xs text-muted-foreground">
+                  Expression evaluated on both firings to pair start and end events, e.g. <code>ac.id</code>.
+                </p>
+                <Input
+                  id="correlation-key"
+                  value={correlationKey}
+                  onChange={(e) => setCorrelationKey(e.target.value)}
+                  placeholder="ac.id"
+                  spellCheck={false}
+                />
+              </div>
+            </>
           )}
 
           {/* Rhai script editors for DataCollector monitors */}

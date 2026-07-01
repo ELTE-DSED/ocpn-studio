@@ -1,0 +1,73 @@
+flowchart LR
+    classDef app fill:#f4f7fb,stroke:#58708a,color:#0f1720,stroke-width:1.2px;
+    classDef runtime fill:#e9f7ef,stroke:#2f7d57,color:#0f1720,stroke-width:1.2px;
+    classDef wasm fill:#fff1db,stroke:#b7791f,color:#0f1720,stroke-width:1.2px;
+    classDef data fill:#f8e8ef,stroke:#a64d79,color:#0f1720,stroke-width:1.2px;
+
+    User([Modeler / Analyst])
+
+    subgraph Studio[OCPN Studio Browser Application]
+      direction LR
+
+      subgraph Experience[Authoring Experience]
+        Canvas[Canvas Editor\nReact Flow]
+        Sidebar[Sidebar Panels\nModel • Simulation • Analysis]
+        Dialogs[Dialogs & Tools\nOpen/Save • Layout • Assistants]
+      end
+
+      subgraph FrontendCore[Frontend Core]
+        Store[Zustand Store\nPetri nets • declarations • selection • UI state]
+        Controller[Simulation Controller\ninitialize WASM • run steps • sync results]
+        IO[Import / Export\n.ocpn • .cpn • .json • PNML]
+        Validation[Validation\nmodel checks before / during use]
+      end
+
+      Experience --> FrontendCore
+      Canvas <--> Store
+      Sidebar <--> Store
+      Dialogs <--> Store
+      Store --> Validation
+      Store <--> IO
+      Sidebar --> Controller
+      Canvas --> Controller
+      Controller <--> Store
+    end
+
+    subgraph PackageCpnsim[cpnsim npm Package]
+      direction TB
+      Loader[JS Loader + Type Definitions]
+      Binary[WebAssembly Binary]
+      Loader --> Binary
+    end
+
+    subgraph Engine[cpnsim Rust Engine]
+      direction LR
+      API[WASM API\nWasmSimulator]
+      Core[Simulation Core\nstep execution • bindings • markings • time]
+      Rhai[Rhai Evaluation\nguards • arc inscriptions • code segments]
+      Monitor[Monitors\ncounters • breakpoints • collectors]
+      StateSpace[State Space Analysis\nreachability graph • SCCs • bounds]
+      Model[Net Schema\nplaces • transitions • arcs • declarations]
+
+      API --> Core
+      Core --> Rhai
+      Core --> Monitor
+      Core --> StateSpace
+      Core --> Model
+    end
+
+    User --> Canvas
+    User --> Sidebar
+    User --> Dialogs
+
+    IO -->|serialize active OCPN as JSON| Controller
+    Controller -->|init + create simulator| Loader
+    Loader --> API
+    API -->|events • markings • enabled transitions • analysis results| Loader
+    Loader --> Controller
+    Controller -->|write back simulation state| Store
+
+    class Canvas,Sidebar,Dialogs,Store,Controller,IO,Validation app;
+    class Loader,Binary wasm;
+    class API,Core,Rhai,Monitor,StateSpace,Model runtime;
+    class User data;

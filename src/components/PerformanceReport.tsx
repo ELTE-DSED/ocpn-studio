@@ -14,9 +14,16 @@ interface PerformanceReportProps {
 }
 
 /** Format a number for display (up to 2 decimal places) */
-function fmt(value: number): string {
+function fmtNumber(value: number): string {
   if (Number.isInteger(value)) return value.toString();
   return value.toFixed(2);
+}
+
+function fmt(value: number, monitorType?: string): string {
+  if (monitorType === 'interval-duration') {
+    return `${fmtNumber(value / 60_000)} min`;
+  }
+  return fmtNumber(value);
 }
 
 export function PerformanceReport({ results }: PerformanceReportProps) {
@@ -51,14 +58,15 @@ export function PerformanceReport({ results }: PerformanceReportProps) {
             const monitor = monitorMap.get(result.monitorId);
             const name = monitor?.name ?? result.monitorId;
             const { statistics: s } = result;
+            const monitorType = monitor?.type ?? result.monitorType;
             return (
               <TableRow key={result.monitorId}>
                 <TableCell className="text-xs font-medium">{name}</TableCell>
                 <TableCell className="text-xs text-right tabular-nums">{s.count}</TableCell>
-                <TableCell className="text-xs text-right tabular-nums">{fmt(s.avg)}</TableCell>
-                <TableCell className="text-xs text-right tabular-nums">{fmt(s.min)}</TableCell>
-                <TableCell className="text-xs text-right tabular-nums">{fmt(s.max)}</TableCell>
-                <TableCell className="text-xs text-right tabular-nums">{fmt(s.stdDev)}</TableCell>
+                <TableCell className="text-xs text-right tabular-nums">{fmt(s.avg, monitorType)}</TableCell>
+                <TableCell className="text-xs text-right tabular-nums">{fmt(s.min, monitorType)}</TableCell>
+                <TableCell className="text-xs text-right tabular-nums">{fmt(s.max, monitorType)}</TableCell>
+                <TableCell className="text-xs text-right tabular-nums">{fmt(s.stdDev, monitorType)}</TableCell>
               </TableRow>
             );
           })}

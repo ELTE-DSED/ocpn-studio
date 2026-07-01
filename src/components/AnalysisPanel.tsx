@@ -105,6 +105,8 @@ const TYPE_LABELS: Record<string, string> = {
   'transition-count': 'Count',
   'breakpoint-place': 'BP Place',
   'breakpoint-transition': 'BP Trans',
+  'data-collector': 'Data',
+  'interval-duration': 'Duration',
 };
 
 const TYPE_VARIANTS: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
@@ -112,6 +114,8 @@ const TYPE_VARIANTS: Record<string, 'default' | 'secondary' | 'outline' | 'destr
   'transition-count': 'secondary',
   'breakpoint-place': 'destructive',
   'breakpoint-transition': 'destructive',
+  'data-collector': 'outline',
+  'interval-duration': 'default',
 };
 
 export function AnalysisPanel() {
