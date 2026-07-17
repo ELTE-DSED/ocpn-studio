@@ -1,5 +1,5 @@
 import { useState, useContext, useCallback, useMemo, useEffect } from 'react';
-import { Clock, Hash, Settings } from 'lucide-react';
+import { Clock, Hash, Settings, Play, MousePointerClick } from 'lucide-react';
 import { EventLog, SimulationEvent, TransitionFilterItem } from '@/components/EventLog';
 import { OCELExportDialog } from '@/components/dialogs/OCELExportDialog';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import {
 // Correct the import path for SimulationContext
 import { SimulationContext, type SimulationConfig } from '@/context/useSimulationContextHook';
 import useStore from '@/stores/store';
-import { formatDateTimeFull } from '@/utils/timeFormat';
+import { formatSimulationTime } from '@/utils/timeFormat';
 
 // OCEL 2.0 Types
 interface OCEL2ObjectType {
@@ -48,6 +48,19 @@ interface OCEL2Export {
   eventTypes: OCEL2EventType[];
   objects: OCEL2Object[];
   events: OCEL2Event[];
+}
+
+/**
+ * Format a millisecond delay as a short relative label (e.g. "+1.5s", "+3m 20s") for the
+ * "Enabled Transitions" list — how much simulation time firing a future-enabled transition
+ * would advance the clock by.
+ */
+function formatRelativeDelay(ms: number): string {
+  if (ms < 1000) return `+${ms}ms`;
+  if (ms < 60000) return `+${(ms / 1000).toFixed(ms % 1000 === 0 ? 0 : 1)}s`;
+  const minutes = Math.floor(ms / 60000);
+  const seconds = Math.round((ms % 60000) / 1000);
+  return seconds > 0 ? `+${minutes}m ${seconds}s` : `+${minutes}m`;
 }
 
 /**
@@ -309,7 +322,7 @@ export function SimulationPanel() {
   if (!context) {
     throw new Error('SimulationPanel must be used within a SimulationProvider');
   }
-  const { events, clearEvents, isInitialized, stepCounter, simulationTime, simulationConfig, setSimulationConfig } = context;
+  const { events, clearEvents, isInitialized, stepCounter, simulationTime, simulationConfig, setSimulationConfig, enabledTransitions, fireTransition, isRunning } = context;
 
   // Get model data from store for OCEL export
   const colorSets = useStore((state) => state.colorSets);
@@ -323,6 +336,18 @@ export function SimulationPanel() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [tempConfig, setTempConfig] = useState<SimulationConfig>(simulationConfig);
   const [filteredTransitionIds, setFilteredTransitionIds] = useState<Set<string> | null>(null);
+  const [firingId, setFiringId] = useState<string | null>(null);
+  const isFireMode = useStore((state) => state.isFireMode);
+  const toggleFireMode = useStore((state) => state.toggleFireMode);
+
+  const handleFireTransition = useCallback(async (transitionId: string) => {
+    setFiringId(transitionId);
+    try {
+      await fireTransition(transitionId);
+    } finally {
+      setFiringId(null);
+    }
+  }, [fireTransition]);
 
   // Determine if currently viewing the main (root) page
   const isMainPage = petriNetOrder.length > 0 && activePetriNetId === petriNetOrder[0];
@@ -374,14 +399,12 @@ export function SimulationPanel() {
   }, [activePetriNetId, petriNetsById, colorSets, isMainPage]);
 
   // Initialize filter to record-involving transitions when they change (e.g. model reload)
-  /* eslint-disable react-hooks/set-state-in-effect -- Legitimate reset on model change */
   useEffect(() => {
     const defaultIds = new Set(
       transitionFilterItems.filter(t => t.involvesRecordType).map(t => t.id)
     );
     setFilteredTransitionIds(defaultIds);
   }, [transitionFilterItems]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Convert stored epoch (UTC ISO string) to local datetime string for the input
   const epochToLocal = (epoch: string | null | undefined): string => {
@@ -437,6 +460,13 @@ export function SimulationPanel() {
 
   // Subpage note for EventLog
   const subpageNote = !isMainPage && activePetriNetId ? 'Showing only events for transitions on this subpage.' : undefined;
+
+  // Enabled transitions to display: same subpage-scoping as events, so the list only
+  // shows transitions the user can actually see on the currently-viewed page.
+  const visibleEnabledTransitions = useMemo(() => {
+    if (!activeSubpageTransitionIds) return enabledTransitions;
+    return enabledTransitions.filter((t) => activeSubpageTransitionIds.has(t.transitionId));
+  }, [enabledTransitions, activeSubpageTransitionIds]);
 
   // Get transitions and places from all relevant Petri nets
   // On main page: include all nets (but exclude substitution transitions)
@@ -544,24 +574,13 @@ ${evt.relationships.map(r => `      <relationship objectId="${r.objectId}" quali
   // Format simulation time for display (time is in milliseconds)
   const epoch = simulationEpoch ? new Date(simulationEpoch) : null;
   
-  const formatTime = (time: number | undefined) => {
-    if (time === undefined || time === null) time = 0;
-    
-    // If epoch is set, show absolute datetime
-    if (epoch) {
-      const absoluteDate = new Date(epoch.getTime() + time);
-      return formatDateTimeFull(absoluteDate);
-    }
-    
-    // No epoch - show plain integer time
-    return String(time);
-  };
+  const formatTime = (time: number | undefined) => formatSimulationTime(time ?? 0, epoch);
 
   return (
     <div className="flex flex-col h-full gap-3 overflow-hidden">
       {/* Simulation Status Box */}
       <div className="border border-border rounded-lg p-4 bg-card flex-shrink-0">
-        <div className="flex justify-between items-center mb-3">
+        <div className="flex justify-between items-start mb-3">
           <span className="text-sm font-semibold leading-none tracking-tight">Simulation Status</span>
           <Button
             variant="outline"
@@ -588,6 +607,81 @@ ${evt.relationships.map(r => `      <relationship objectId="${r.objectId}" quali
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Enabled Transitions Box */}
+      <div className="border border-border rounded-lg p-4 bg-card flex-shrink-0">
+        <div className="flex justify-between items-start mb-3">
+          <span className="text-sm font-semibold leading-none tracking-tight">
+            Enabled Transitions
+            {visibleEnabledTransitions.length > 0 && (
+              <span className="text-muted-foreground font-normal ml-1">({visibleEnabledTransitions.length})</span>
+            )}
+          </span>
+          <Button
+            variant={isFireMode ? 'secondary' : 'outline'}
+            size="icon"
+            onClick={() => toggleFireMode(!isFireMode)}
+            disabled={isRunning}
+            aria-pressed={isFireMode}
+            title="Click a transition on the canvas to fire it"
+          >
+            <MousePointerClick className={`h-4 w-4 ${isFireMode ? 'text-primary' : ''}`} />
+          </Button>
+        </div>
+        {!isInitialized ? (
+          <p className="text-xs text-muted-foreground">Start the simulation to see enabled transitions.</p>
+        ) : visibleEnabledTransitions.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No transitions enabled — the simulation is deadlocked.</p>
+        ) : (
+          <div className="space-y-1 max-h-40 overflow-y-auto">
+            {visibleEnabledTransitions.map((t) => (
+              <div
+                key={t.transitionId}
+                className="flex items-center justify-between gap-2 px-2 py-1 rounded hover:bg-accent"
+              >
+                <button
+                  type="button"
+                  className="text-sm truncate flex items-center gap-1.5 text-left hover:underline"
+                  title={`Highlight "${t.transitionName}" on the canvas`}
+                  onClick={() => {
+                    if (activePetriNetId) {
+                      useStore.getState().requestFocus({
+                        netId: activePetriNetId,
+                        elementId: t.transitionId,
+                        elementType: 'node',
+                        keepMode: true,
+                      });
+                    }
+                  }}
+                >
+                  {t.transitionName}
+                  {t.isFuture && (
+                    <span
+                      className="inline-flex items-center gap-0.5 text-[10px] text-amber-600 font-mono"
+                      title={`Not enabled yet at the current time — firing this will advance simulation time to ${t.atTime}`}
+                    >
+                      <Clock className="h-3 w-3" />
+                      {formatRelativeDelay(t.atTime - simulationTime)}
+                    </span>
+                  )}
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 shrink-0"
+                  disabled={isRunning || firingId === t.transitionId}
+                  onClick={() => handleFireTransition(t.transitionId)}
+                  title={t.isFuture
+                    ? `Fire "${t.transitionName}" (advances time by ${formatRelativeDelay(t.atTime - simulationTime)})`
+                    : `Fire "${t.transitionName}"`}
+                >
+                  <Play className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Event Log */}

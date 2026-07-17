@@ -270,18 +270,32 @@ export function convertToJSON(data: PetriNetData): string {
             size: transition.measured || { width: 50, height: 30 }, // Replace "measured" with "size"
             subPageId: transition.data.subPageId || undefined,
             socketAssignments: transition.data.socketAssignments || undefined,
+            declareUnary: transition.data.declareUnary || undefined, // Unary Declare constraints (Existence/Absence)
           })),
-        arcs: petriNet.edges.map((arc) => ({
-          id: arc.id,
-          source: arc.source,
-          target: arc.target,
-          inscription: arc.label || "", // Use "inscription" instead of "label"
-          delay: (arc.data as Record<string, unknown>)?.delay || "", // Per-arc time delay expression
-          isBidirectional: arc.data?.isBidirectional || false, // Include bidirectional flag
-          arcType: arc.data?.arcType || undefined, // Include arc type if not normal
-          labelOffset: arc.data?.labelOffset || undefined, // Include label offset if set
-          bendpoints: arc.data?.bendpoints || undefined, // Include bendpoints if set
-        })),
+        // Declare-constraint edges (transition→transition) are NOT regular arcs — they're kept
+        // separate so the WASM simulator's arc model never sees them (see declareConstraints below).
+        arcs: petriNet.edges
+          .filter((arc) => arc.type !== 'declare-constraint')
+          .map((arc) => ({
+            id: arc.id,
+            source: arc.source,
+            target: arc.target,
+            inscription: arc.label || "", // Use "inscription" instead of "label"
+            delay: (arc.data as Record<string, unknown>)?.delay || "", // Per-arc time delay expression
+            isBidirectional: arc.data?.isBidirectional || false, // Include bidirectional flag
+            arcType: arc.data?.arcType || undefined, // Include arc type if not normal
+            labelOffset: arc.data?.labelOffset || undefined, // Include label offset if set
+            bendpoints: arc.data?.bendpoints || undefined, // Include bendpoints if set
+          })),
+        declareConstraints: petriNet.edges
+          .filter((arc) => arc.type === 'declare-constraint')
+          .map((arc) => ({
+            id: arc.id,
+            source: arc.source,
+            target: arc.target,
+            template: (arc.data as { template?: unknown })?.template,
+            enabled: (arc.data as { enabled?: boolean })?.enabled ?? true,
+          })),
       };
     }),
     colorSets: data.colorSets,
@@ -339,6 +353,7 @@ export function parseJSON(content: string): PetriNetData {
       size?: { width: number; height: number };
       subPageId?: string;
       socketAssignments?: { portPlaceId: string; socketPlaceId: string }[];
+      declareUnary?: { id: string; template: 'existence' | 'absence'; enabled: boolean }[];
     }[];
     arcs: {
       id: string;
@@ -350,6 +365,13 @@ export function parseJSON(content: string): PetriNetData {
       arcType?: string;
       labelOffset?: { x: number; y: number };
       bendpoints?: { x: number; y: number }[];
+    }[];
+    declareConstraints?: {
+      id: string;
+      source: string;
+      target: string;
+      template: string;
+      enabled?: boolean;
     }[];
   }) => {
     const places = petriNet.places.map((place) => ({
@@ -383,6 +405,7 @@ export function parseJSON(content: string): PetriNetData {
         codeSegment: transition.codeSegment || "",
         subPageId: transition.subPageId || undefined,
         socketAssignments: transition.socketAssignments || undefined,
+        declareUnary: transition.declareUnary || undefined,
       },
       width: transition.size?.width || 50,
       height: transition.size?.height || 30,
@@ -402,11 +425,25 @@ export function parseJSON(content: string): PetriNetData {
       },
     }));
 
+    // Declare-constraint edges are stored separately from arcs (see convertToJSON) so the
+    // WASM simulator's arc model never has to parse a transition→transition "arc".
+    const declareConstraintEdges = (petriNet.declareConstraints || []).map((c) => ({
+      id: c.id,
+      type: 'declare-constraint',
+      source: c.source,
+      target: c.target,
+      label: '',
+      data: {
+        template: c.template,
+        enabled: c.enabled ?? true,
+      },
+    }));
+
     const net: PetriNet = {
       id: petriNet.id,
       name: petriNet.name,
       nodes: [...places, ...transitions],
-      edges: arcs,
+      edges: [...arcs, ...declareConstraintEdges],
       selectedElement: null, // Default selectedElement
     };
 

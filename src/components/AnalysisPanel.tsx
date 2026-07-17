@@ -3,6 +3,8 @@ import useStore from '@/stores/store';
 import { useShallow } from 'zustand/react/shallow';
 import { SimulationContext } from '@/context/useSimulationContextHook';
 import type { Monitor } from '@/types';
+import { NON_BLOCKING_DECLARE_TEMPLATES } from '@/types';
+import type { BlockedTransitionInfo } from '@/types';
 import type { TransitionNodeData } from '@/nodes/TransitionNode';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,8 +17,8 @@ import {
   Plus,
   Trash2,
   Edit,
-  ChevronRight,
   ChevronDown,
+  ChevronUp,
   Activity,
   BarChart3,
   Network,
@@ -27,6 +29,9 @@ import {
   GitGraph,
   Dice5,
   Search,
+  ShieldAlert,
+  ShieldCheck,
+  Ban,
 } from 'lucide-react';
 import { AddMonitorDialog } from '@/components/dialogs/AddMonitorDialog';
 import { PerformanceReport } from '@/components/PerformanceReport';
@@ -118,6 +123,10 @@ const TYPE_VARIANTS: Record<string, 'default' | 'secondary' | 'outline' | 'destr
   'interval-duration': 'default',
 };
 
+// Stable empty-array fallback so `blockedTransitions ?? []` doesn't hand the memo below a
+// fresh array identity (and therefore a spurious "changed" dependency) on every render.
+const EMPTY_BLOCKED_TRANSITIONS: BlockedTransitionInfo[] = [];
+
 export function AnalysisPanel() {
   const { monitors, updateMonitor, deleteMonitor, stateSpaceResult, setStateSpaceResult, setActiveSpecialTab,
     petriNetsById, petriNetOrder, colorSets, variables, functions: modelFunctions } = useStore(
@@ -138,8 +147,29 @@ export function AnalysisPanel() {
 
   const simulationContext = useContext(SimulationContext);
   const monitorResults = simulationContext?.monitorResults ?? [];
+  const declareResults = simulationContext?.declareResults ?? [];
+  const blockedTransitions = simulationContext?.blockedTransitions ?? EMPTY_BLOCKED_TRANSITIONS;
+
+  // Constraints currently the reason some transition can't fire (proactive-blocking
+  // templates only — see DeclareConstraintEdge/TransitionNode for the live pulse).
+  const blockingConstraintIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const bt of blockedTransitions) for (const cid of bt.blockingConstraintIds) ids.add(cid);
+    return ids;
+  }, [blockedTransitions]);
+  const currentlyBlocking = declareResults.filter((r) => blockingConstraintIds.has(r.constraintId));
+
+  // Templates that can never be enforced by blocking (Existence, Response, Responded
+  // Existence, Co-Existence, Choice) only ever show "pending" — if the run has reached a
+  // deadlock while one is still pending, it will never resolve. See the deadlock toast in
+  // useSimulationController for the same check at the moment it happens.
+  const nonBlockingTemplates: readonly string[] = NON_BLOCKING_DECLARE_TEMPLATES;
+  const unresolvedConstraints = declareResults.filter(
+    (r) => r.state === 'pending' && nonBlockingTemplates.includes(r.template),
+  );
 
   const [isMonitorsOpen, setIsMonitorsOpen] = useState(true);
+  const [isDeclareOpen, setIsDeclareOpen] = useState(true);
   const [isResultsOpen, setIsResultsOpen] = useState(true);
   const [isStateSpaceOpen, setIsStateSpaceOpen] = useState(true);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -310,29 +340,28 @@ export function AnalysisPanel() {
   }, [simulationContext, maxStates, maxArcs, setStateSpaceResult, buildOverrideMaps]);
 
   return (
-    <div className="space-y-3 text-sm">
+    <div className="space-y-2 text-sm">
       {/* Monitors Section */}
-      <Collapsible open={isMonitorsOpen} onOpenChange={setIsMonitorsOpen}>
-        <div className="flex items-center justify-between">
-          <CollapsibleTrigger className="flex items-center gap-1 font-semibold text-sm hover:underline">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <Collapsible open={isMonitorsOpen} onOpenChange={setIsMonitorsOpen}>
+          <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-accent/50 transition-colors">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
+              <Activity className="h-4 w-4" />
+            </span>
+            <span className="font-semibold text-sm flex-1">
+              Monitors{monitors.length > 0 ? ` (${monitors.length})` : ''}
+            </span>
             {isMonitorsOpen ? (
-              <ChevronDown className="h-4 w-4" />
+              <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
             ) : (
-              <ChevronRight className="h-4 w-4" />
+              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
             )}
-            <Activity className="h-4 w-4" />
-            Monitors
-            <span className="text-muted-foreground font-normal ml-1">({monitors.length})</span>
           </CollapsibleTrigger>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setAddDialogOpen(true)}>
-            <Plus className="h-3.5 w-3.5" />
-          </Button>
-        </div>
 
-        <CollapsibleContent className="mt-2 space-y-1">
+          <CollapsibleContent className="px-3 pb-3 space-y-1">
           {monitors.length === 0 ? (
-            <p className="text-xs text-muted-foreground px-1">
-              No monitors defined. Click + to add one.
+            <p className="text-xs text-muted-foreground px-1 pt-1">
+              No monitors defined yet.
             </p>
           ) : (
             monitors.map((monitor) => (
@@ -387,39 +416,139 @@ export function AnalysisPanel() {
               </div>
             ))
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full border-dashed text-primary hover:text-primary"
+            onClick={() => setAddDialogOpen(true)}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" /> Add Monitor
+          </Button>
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
+
+      {/* Declare Constraints Section */}
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <Collapsible open={isDeclareOpen} onOpenChange={setIsDeclareOpen}>
+        <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-accent/50 transition-colors">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
+            <ShieldAlert className="h-4 w-4" />
+          </span>
+          <span className="font-semibold text-sm flex-1">
+            Declare Constraints
+            {(currentlyBlocking.length > 0 || unresolvedConstraints.length > 0) && (
+              <span className="text-destructive font-normal ml-1">
+                ({currentlyBlocking.length + unresolvedConstraints.length})
+              </span>
+            )}
+          </span>
+          {isDeclareOpen ? (
+            <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+          )}
+        </CollapsibleTrigger>
+
+        <CollapsibleContent className="px-3 pb-3 space-y-2">
+          {declareResults.length === 0 ? (
+            <p className="text-xs text-muted-foreground px-1">
+              No simulation run yet — run or step the simulation to see live constraint state here.
+            </p>
+          ) : (
+            <>
+              {currentlyBlocking.length > 0 && (
+                <div className="px-1 space-y-1">
+                  <div className="text-xs font-medium flex items-center gap-1 text-destructive">
+                    <Ban className="h-3.5 w-3.5" />
+                    Blocking right now
+                  </div>
+                  <div className="rounded border border-destructive/30 bg-destructive/5 divide-y divide-destructive/10">
+                    {currentlyBlocking.map((r) => {
+                      const blockedHere = blockedTransitions.filter((bt) => bt.blockingConstraintIds.includes(r.constraintId));
+                      return (
+                        <div key={r.constraintId} className="px-2 py-1.5">
+                          <div className="text-xs font-medium truncate">{r.constraintName}</div>
+                          <div className="text-[10px] text-muted-foreground truncate">
+                            Withholding {blockedHere.length} transition{blockedHere.length === 1 ? '' : 's'} from firing
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {unresolvedConstraints.length > 0 && (
+                <div className="px-1 space-y-1">
+                  <div className="text-xs font-medium flex items-center gap-1 text-amber-600">
+                    <ShieldAlert className="h-3.5 w-3.5" />
+                    Still open
+                  </div>
+                  <div className="rounded border border-amber-500/30 bg-amber-500/5 divide-y divide-amber-500/10">
+                    {unresolvedConstraints.map((r) => (
+                      <div key={r.constraintId} className="px-2 py-1.5">
+                        <div className="text-xs font-medium truncate">{r.constraintName}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          Not yet satisfied. This template can&apos;t be enforced by blocking a
+                          firing, so it stays &quot;pending&quot; until it resolves — or the
+                          simulation deadlocks with it still open.
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {currentlyBlocking.length === 0 && unresolvedConstraints.length === 0 && (
+                <p className="text-xs text-muted-foreground px-1 flex items-center gap-1">
+                  <ShieldCheck className="h-3.5 w-3.5 text-green-600" />
+                  Nothing blocking, nothing left open.
+                </p>
+              )}
+            </>
+          )}
         </CollapsibleContent>
-      </Collapsible>
+        </Collapsible>
+      </div>
 
       {/* Performance Report Section */}
-      <Collapsible open={isResultsOpen} onOpenChange={setIsResultsOpen}>
-        <CollapsibleTrigger className="flex items-center gap-1 font-semibold text-sm hover:underline">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <Collapsible open={isResultsOpen} onOpenChange={setIsResultsOpen}>
+        <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-accent/50 transition-colors">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
+            <BarChart3 className="h-4 w-4" />
+          </span>
+          <span className="font-semibold text-sm flex-1">Performance Report</span>
           {isResultsOpen ? (
-            <ChevronDown className="h-4 w-4" />
+            <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
           ) : (
-            <ChevronRight className="h-4 w-4" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
           )}
-          <BarChart3 className="h-4 w-4" />
-          Performance Report
         </CollapsibleTrigger>
 
-        <CollapsibleContent className="mt-2">
+        <CollapsibleContent className="px-3 pb-3">
           <PerformanceReport results={monitorResults} />
         </CollapsibleContent>
-      </Collapsible>
+        </Collapsible>
+      </div>
 
       {/* State Space Analysis */}
-      <Collapsible open={isStateSpaceOpen} onOpenChange={setIsStateSpaceOpen}>
-        <CollapsibleTrigger className="flex items-center gap-1 font-semibold text-sm hover:underline">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <Collapsible open={isStateSpaceOpen} onOpenChange={setIsStateSpaceOpen}>
+        <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-accent/50 transition-colors">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
+            <Network className="h-4 w-4" />
+          </span>
+          <span className="font-semibold text-sm flex-1">State Space</span>
           {isStateSpaceOpen ? (
-            <ChevronDown className="h-4 w-4" />
+            <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
           ) : (
-            <ChevronRight className="h-4 w-4" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
           )}
-          <Network className="h-4 w-4" />
-          State Space
         </CollapsibleTrigger>
 
-        <CollapsibleContent className="mt-2 space-y-3">
+        <CollapsibleContent className="px-3 pb-3 space-y-3">
           {/* Settings */}
           <div className="grid grid-cols-2 gap-2 px-1">
             <div>
@@ -567,7 +696,8 @@ export function AnalysisPanel() {
             <StateSpaceReportView report={stateSpaceResult.report} />
           )}
         </CollapsibleContent>
-      </Collapsible>
+        </Collapsible>
+      </div>
 
       {/* Add/Edit Monitor Dialog */}
       <AddMonitorDialog

@@ -11,6 +11,20 @@ import { CodeSegmentEditor } from "@/components/CodeSegmentEditor";
 
 import type { Priority } from "@/declarations";
 import type { TransitionNodeData } from '@/nodes/TransitionNode';
+import type { UnaryDeclareConstraint, UnaryDeclareTemplate } from '@/types';
+import { Trash2, Plus } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
+
+// Short labels for the Declare-constraint select trigger — the dropdown items themselves
+// keep the full descriptive text, but showing that same long text in the trigger is what
+// was blowing out the properties panel's width.
+const UNARY_TEMPLATE_SHORT_LABELS: Record<UnaryDeclareTemplate, string> = {
+  existence: 'Existence',
+  absence: 'Absence',
+  exactly: 'Exactly',
+  init: 'Init',
+  last: 'Last',
+};
 
 // Parse relative time from milliseconds
 function msToRelativeTime(totalMs: number): { ms: number; s: number; m: number; h: number; d: number } {
@@ -25,6 +39,15 @@ function msToRelativeTime(totalMs: number): { ms: number; s: number; m: number; 
   const ms = remaining % 1000;
   return { ms, s, m, h, d };
 }
+
+// Field order/labels/bounds for the relative time delay grid below
+const RELATIVE_TIME_FIELDS: { key: 'd' | 'h' | 'm' | 's' | 'ms'; label: string; max?: number }[] = [
+  { key: 'd', label: 'Days' },
+  { key: 'h', label: 'Hours', max: 23 },
+  { key: 'm', label: 'Minutes', max: 59 },
+  { key: 's', label: 'Seconds', max: 59 },
+  { key: 'ms', label: 'Milliseconds', max: 999 },
+];
 
 // Convert relative time to Rhai delay expression
 function relativeTimeToExpression(rel: { ms: number; s: number; m: number; h: number; d: number }): string {
@@ -100,7 +123,7 @@ const TransitionProperties = ({ priorities }: { priorities: Priority[] }) => {
   // Extract node data safely (for use in useEffect before early returns)
   const isValidNode = selectedElement && selectedElement.type === 'node' && selectedElement.element;
   const nodeId = isValidNode ? selectedElement.element.id : null;
-  const nodeData = isValidNode ? selectedElement.element.data as { label?: string; colorSet?: string; isArcMode?: boolean; type?: string; initialMarking?: string; guard?: string; time?: string; priority?: string; codeSegment?: string; subPageId?: string; socketAssignments?: { portPlaceId: string; socketPlaceId: string }[]; overrideColor?: string } : null;
+  const nodeData = isValidNode ? selectedElement.element.data as { label?: string; colorSet?: string; isArcMode?: boolean; type?: string; initialMarking?: string; guard?: string; time?: string; priority?: string; codeSegment?: string; subPageId?: string; socketAssignments?: { portPlaceId: string; socketPlaceId: string }[]; overrideColor?: string; declareUnary?: UnaryDeclareConstraint[] } : null;
 
   // Initialize time state when node changes - must be called before any early returns
   /* eslint-disable react-hooks/set-state-in-effect -- Form init on selection change */
@@ -131,6 +154,7 @@ const TransitionProperties = ({ priorities }: { priorities: Priority[] }) => {
       guard: 'guard',
       time: 'time-expression',
       codeSegment: 'code-segment',
+      declareUnary: 'declare-unary',
     };
     const domId = fieldIdMap[focusField];
     if (!domId) return;
@@ -248,156 +272,42 @@ const TransitionProperties = ({ priorities }: { priorities: Priority[] }) => {
             <TabsTrigger value="expression">Expression</TabsTrigger>
           </TabsList>
           <TabsContent value="relative" className="mt-2">
-            <div className="flex flex-wrap gap-2">
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="0"
-                  value={relativeTime.d}
-                  onChange={(e) => {
-                    const newRel = { ...relativeTime, d: parseInt(e.target.value, 10) || 0 };
-                    setRelativeTime(newRel);
-                    const expr = relativeTimeToExpression(newRel);
-                    setExpressionValue(expr);
-                    if (activePetriNetId) {
-                      updateNodeData(activePetriNetId, id, {
-                        ...data,
-                        label: data.label || "",
-                        time: expr,
-                        isArcMode: data.isArcMode || false,
-                        type: data.type || "defaultType",
-                        colorSet: data.colorSet,
-                        initialMarking: data.initialMarking,
-                        priority: data.priority,
-                        codeSegment: data.codeSegment || "",
-                        guard: data.guard || "",
-                      });
-                    }
-                  }}
-                  className="w-14 h-8 text-sm"
-                />
-                <span className="text-xs text-muted-foreground">d</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="0"
-                  max="23"
-                  value={relativeTime.h}
-                  onChange={(e) => {
-                    const newRel = { ...relativeTime, h: parseInt(e.target.value, 10) || 0 };
-                    setRelativeTime(newRel);
-                    const expr = relativeTimeToExpression(newRel);
-                    setExpressionValue(expr);
-                    if (activePetriNetId) {
-                      updateNodeData(activePetriNetId, id, {
-                        ...data,
-                        label: data.label || "",
-                        time: expr,
-                        isArcMode: data.isArcMode || false,
-                        type: data.type || "defaultType",
-                        colorSet: data.colorSet,
-                        initialMarking: data.initialMarking,
-                        priority: data.priority,
-                        codeSegment: data.codeSegment || "",
-                        guard: data.guard || "",
-                      });
-                    }
-                  }}
-                  className="w-14 h-8 text-sm"
-                />
-                <span className="text-xs text-muted-foreground">h</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="0"
-                  max="59"
-                  value={relativeTime.m}
-                  onChange={(e) => {
-                    const newRel = { ...relativeTime, m: parseInt(e.target.value, 10) || 0 };
-                    setRelativeTime(newRel);
-                    const expr = relativeTimeToExpression(newRel);
-                    setExpressionValue(expr);
-                    if (activePetriNetId) {
-                      updateNodeData(activePetriNetId, id, {
-                        ...data,
-                        label: data.label || "",
-                        time: expr,
-                        isArcMode: data.isArcMode || false,
-                        type: data.type || "defaultType",
-                        colorSet: data.colorSet,
-                        initialMarking: data.initialMarking,
-                        priority: data.priority,
-                        codeSegment: data.codeSegment || "",
-                        guard: data.guard || "",
-                      });
-                    }
-                  }}
-                  className="w-14 h-8 text-sm"
-                />
-                <span className="text-xs text-muted-foreground">m</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="0"
-                  max="59"
-                  value={relativeTime.s}
-                  onChange={(e) => {
-                    const newRel = { ...relativeTime, s: parseInt(e.target.value, 10) || 0 };
-                    setRelativeTime(newRel);
-                    const expr = relativeTimeToExpression(newRel);
-                    setExpressionValue(expr);
-                    if (activePetriNetId) {
-                      updateNodeData(activePetriNetId, id, {
-                        ...data,
-                        label: data.label || "",
-                        time: expr,
-                        isArcMode: data.isArcMode || false,
-                        type: data.type || "defaultType",
-                        colorSet: data.colorSet,
-                        initialMarking: data.initialMarking,
-                        priority: data.priority,
-                        codeSegment: data.codeSegment || "",
-                        guard: data.guard || "",
-                      });
-                    }
-                  }}
-                  className="w-14 h-8 text-sm"
-                />
-                <span className="text-xs text-muted-foreground">s</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="0"
-                  max="999"
-                  value={relativeTime.ms}
-                  onChange={(e) => {
-                    const newRel = { ...relativeTime, ms: parseInt(e.target.value, 10) || 0 };
-                    setRelativeTime(newRel);
-                    const expr = relativeTimeToExpression(newRel);
-                    setExpressionValue(expr);
-                    if (activePetriNetId) {
-                      updateNodeData(activePetriNetId, id, {
-                        ...data,
-                        label: data.label || "",
-                        time: expr,
-                        isArcMode: data.isArcMode || false,
-                        type: data.type || "defaultType",
-                        colorSet: data.colorSet,
-                        initialMarking: data.initialMarking,
-                        priority: data.priority,
-                        codeSegment: data.codeSegment || "",
-                        guard: data.guard || "",
-                      });
-                    }
-                  }}
-                  className="w-16 h-8 text-sm"
-                />
-                <span className="text-xs text-muted-foreground">ms</span>
-              </div>
+            <div className="grid grid-cols-3 gap-2">
+              {RELATIVE_TIME_FIELDS.map((field) => (
+                <div key={field.key} className="rounded-lg border bg-muted/20 p-3">
+                  <label htmlFor={`time-${field.key}`} className="text-xs text-muted-foreground">
+                    {field.label}
+                  </label>
+                  <Input
+                    id={`time-${field.key}`}
+                    type="number"
+                    min="0"
+                    max={field.max}
+                    value={relativeTime[field.key]}
+                    onChange={(e) => {
+                      const newRel = { ...relativeTime, [field.key]: parseInt(e.target.value, 10) || 0 };
+                      setRelativeTime(newRel);
+                      const expr = relativeTimeToExpression(newRel);
+                      setExpressionValue(expr);
+                      if (activePetriNetId) {
+                        updateNodeData(activePetriNetId, id, {
+                          ...data,
+                          label: data.label || "",
+                          time: expr,
+                          isArcMode: data.isArcMode || false,
+                          type: data.type || "defaultType",
+                          colorSet: data.colorSet,
+                          initialMarking: data.initialMarking,
+                          priority: data.priority,
+                          codeSegment: data.codeSegment || "",
+                          guard: data.guard || "",
+                        });
+                      }
+                    }}
+                    className="w-full border-0 bg-transparent p-0 h-auto text-2xl font-bold shadow-none focus-visible:ring-0"
+                  />
+                </div>
+              ))}
             </div>
           </TabsContent>
           <TabsContent value="expression" className="mt-2">
@@ -435,7 +345,7 @@ const TransitionProperties = ({ priorities }: { priorities: Priority[] }) => {
       <div className="grid w-full items-center gap-1.5">
         <Label htmlFor="priority">Priority</Label>
         <Select
-          value={data.priority && !priorities.some(p => p.name === data.priority) ? "CUSTOM" : (data.priority || "NONE")}
+          value={data.priority !== undefined && !priorities.some(p => p.name === data.priority) ? "CUSTOM" : (data.priority ?? "NONE")}
           onValueChange={(value) => {
             if (activePetriNetId) {
               updateNodeData(activePetriNetId, id, {
@@ -467,9 +377,10 @@ const TransitionProperties = ({ priorities }: { priorities: Priority[] }) => {
           </SelectContent>
         </Select>
         {data.priority !== undefined && !priorities.some(p => p.name === data.priority) && (
+          <>
           <Input
             type="number"
-            placeholder="Priority level (lower = higher priority)"
+            placeholder="e.g. 100"
             value={data.priority}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               if (activePetriNetId) {
@@ -489,6 +400,10 @@ const TransitionProperties = ({ priorities }: { priorities: Priority[] }) => {
               }
             }}
           />
+          <p className="text-xs text-muted-foreground">
+            Lower value = higher priority.
+          </p>
+          </>
         )}
       </div>
 
@@ -515,6 +430,16 @@ const TransitionProperties = ({ priorities }: { priorities: Priority[] }) => {
           }
         />
       </div>
+
+      <Separator />
+
+      <DeclareUnarySection
+        activePetriNetId={activePetriNetId}
+        transitionId={id}
+        constraints={data.declareUnary || []}
+        updateNodeData={updateNodeData}
+        data={data}
+      />
 
       <SubpageSection
         activePetriNetId={activePetriNetId}
@@ -720,6 +645,110 @@ function SubpageSection({
         </Button>
       )}
     </>
+  );
+}
+
+/** Unary Declare constraints (Existence/Absence) attached directly to this transition */
+function DeclareUnarySection({
+  activePetriNetId,
+  transitionId,
+  constraints,
+  updateNodeData,
+  data,
+}: {
+  activePetriNetId: string | null;
+  transitionId: string;
+  constraints: UnaryDeclareConstraint[];
+  updateNodeData: (petriNetId: string, id: string, newData: TransitionNodeData) => void;
+  data: { label?: string; isArcMode?: boolean; type?: string; guard?: string; time?: string; priority?: string; codeSegment?: string };
+}) {
+  const commit = (newConstraints: UnaryDeclareConstraint[]) => {
+    if (!activePetriNetId) return;
+    updateNodeData(activePetriNetId, transitionId, {
+      ...data,
+      label: data.label || "",
+      isArcMode: data.isArcMode || false,
+      type: data.type || "defaultType",
+      guard: data.guard || "",
+      time: data.time || "",
+      priority: data.priority,
+      codeSegment: data.codeSegment || "",
+      declareUnary: newConstraints,
+    } as TransitionNodeData);
+  };
+
+  const handleAdd = () => {
+    // CPN Tools allows only a single "roof" per transition — some unary templates are
+    // mutually exclusive (e.g. Init and Last), so stacking several never made sense.
+    if (constraints.length > 0) return;
+    commit([{ id: uuidv4(), template: 'existence', enabled: true }]);
+  };
+
+  const handleUpdate = (constraintId: string, patch: Partial<UnaryDeclareConstraint>) => {
+    commit(constraints.map((c) => (c.id === constraintId ? { ...c, ...patch } : c)));
+  };
+
+  const handleDelete = (constraintId: string) => {
+    commit(constraints.filter((c) => c.id !== constraintId));
+  };
+
+  return (
+    <div className="grid w-full items-center gap-1.5">
+      <Label>Declare Constraint</Label>
+      {constraints.length > 0 && (
+        <div className="space-y-2">
+          {constraints.map((c) => (
+            <div key={c.id} className="space-y-1">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={c.enabled}
+                  onChange={(e) => handleUpdate(c.id, { enabled: e.target.checked })}
+                  className="cursor-pointer shrink-0"
+                  title="Enabled"
+                />
+                <Select
+                  value={c.template}
+                  onValueChange={(value) => handleUpdate(c.id, { template: value as UnaryDeclareTemplate })}
+                >
+                  <SelectTrigger className="h-8 text-sm flex-1 min-w-0">
+                    <SelectValue>{UNARY_TEMPLATE_SHORT_LABELS[c.template]}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="existence">Existence — must fire at least n times</SelectItem>
+                    <SelectItem value="absence">Absence — must fire at most n−1 times</SelectItem>
+                    <SelectItem value="exactly">Exactly — must fire exactly n times</SelectItem>
+                    <SelectItem value="init">Init — must be the first to fire</SelectItem>
+                    <SelectItem value="last">Last — must be the last to fire</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" title="Delete constraint" onClick={() => handleDelete(c.id)}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+              {(c.template === 'existence' || c.template === 'absence' || c.template === 'exactly') && (
+                <div className="flex items-center gap-2 pl-6">
+                  <Label className="text-xs text-muted-foreground font-normal">n =</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={c.n ?? 1}
+                    onChange={(e) => handleUpdate(c.id, { n: Math.max(1, parseInt(e.target.value, 10) || 1) })}
+                    className="w-16 h-7 text-sm"
+                    title="n"
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {constraints.length === 0 && (
+        <Button id="declare-unary" size="sm" variant="outline" onClick={handleAdd} className="self-start">
+          <Plus className="h-3 w-3 mr-1" /> Add Constraint
+        </Button>
+      )}
+    </div>
   );
 }
 

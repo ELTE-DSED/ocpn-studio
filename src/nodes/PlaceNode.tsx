@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 export interface PlaceNodeData {
   label: string;
   isArcMode: boolean;
+  isDeclareMode?: boolean;
   type: string;
   colorSet: string;
   initialMarking: string;

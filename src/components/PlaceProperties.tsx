@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useStore from '@/stores/store';
 import { pauseUndo, resumeUndo } from '@/stores/store';
 
@@ -15,6 +15,7 @@ import { ColorSet } from '@/declarations';
 import type { PlaceNodeData } from '@/nodes/PlaceNode';
 import { Separator } from "@/components/ui/separator";
 import { v4 as uuidv4 } from 'uuid';
+import { useSimulationContext } from '@/context/useSimulationContextHook';
 
 // Define the type for the values within a parsed record (matches RecordMarkingDialog)
 type RecordValue = string | number | boolean | unknown[] | Record<string, unknown>;
@@ -30,6 +31,7 @@ interface SelectedPlaceData {
   isArcMode?: boolean;
   type?: string;
   initialMarking?: string;
+  marking?: unknown[];
   portType?: 'in' | 'out' | 'io';
   fusionSetId?: string;
   overrideColor?: string;
@@ -39,6 +41,10 @@ interface SelectedPlaceData {
 interface SelectedPlace {
   id: string;
   data: SelectedPlaceData;
+  // Which marking the open dialog is editing — the model's fixed starting state, or the
+  // live simulator state right now. Determines both what initialData the dialog is seeded
+  // with and where onSave writes the result back to.
+  target: 'initial' | 'current';
 }
 
 const PlaceProperties = ({ colorSets }: { colorSets: ColorSet[] }) => {
@@ -47,6 +53,9 @@ const PlaceProperties = ({ colorSets }: { colorSets: ColorSet[] }) => {
   // Use the specific type for the selectedPlace state
   const [selectedPlace, setSelectedPlace] = useState<SelectedPlace | null>(null);
   const [newFusionSetName, setNewFusionSetName] = useState('');
+  const [currentMarkingInput, setCurrentMarkingInput] = useState('');
+  const [isApplyingMarking, setIsApplyingMarking] = useState(false);
+  const simulationContext = useSimulationContext();
 
   // Access selectedElement from the store
   const activePetriNetId = useStore((state) => state.activePetriNetId);
@@ -59,6 +68,17 @@ const PlaceProperties = ({ colorSets }: { colorSets: ColorSet[] }) => {
   const addFusionSet = useStore((state) => state.addFusionSet);
   const deleteFusionSet = useStore((state) => state.deleteFusionSet);
   const isSubpage = useStore((state) => state.petriNetOrder[0] !== state.activePetriNetId);
+
+  // Pre-fill the quick-edit input with the place's live marking whenever the *selection*
+  // changes (not on every marking tick — that would clobber whatever the user is mid-typing
+  // every time a step fires). Lets you tweak a small part of the current value instead of
+  // retyping the whole thing from scratch, matching the ask that started this.
+  const selectedPlaceId = selectedElement?.type === 'node' ? selectedElement.element.id : null;
+  useEffect(() => {
+    const liveData = selectedElement?.type === 'node' ? (selectedElement.element.data as SelectedPlaceData) : undefined;
+    setCurrentMarkingInput(JSON.stringify(liveData?.marking ?? []));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPlaceId]);
 
   // Ensure selectedElement is a node and has the correct data type
   if (!selectedElement || selectedElement.type !== 'node' || !selectedElement.element) {
@@ -279,6 +299,20 @@ const PlaceProperties = ({ colorSets }: { colorSets: ColorSet[] }) => {
     }
   }
 
+  // Overwrite this place's *live* marking mid-simulation — distinct from Initial Marking
+  // above, which only takes effect on the next reset/run. Only meaningful once a
+  // simulation is actually initialized (there's no "current" marking before that).
+  const handleApplyCurrentMarking = async () => {
+    setIsApplyingMarking(true);
+    try {
+      await simulationContext.setPlaceMarking(id, currentMarkingInput);
+      // Leave the field showing what was just applied (on success) rather than clearing it —
+      // it should keep reflecting the live value, matching the pre-fill-on-select behavior.
+    } finally {
+      setIsApplyingMarking(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="grid w-full items-center gap-1.5">
@@ -404,7 +438,7 @@ const PlaceProperties = ({ colorSets }: { colorSets: ColorSet[] }) => {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setSelectedPlace({ id, data: { ...data } });
+                  setSelectedPlace({ id, data: { ...data }, target: 'initial' });
                   setIsTimedMarkingDialogOpen(true);
                 }}
               >
@@ -466,7 +500,7 @@ const PlaceProperties = ({ colorSets }: { colorSets: ColorSet[] }) => {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setSelectedPlace({ id, data: { ...data } });
+                    setSelectedPlace({ id, data: { ...data }, target: 'initial' });
                     setIsRecordMarkingDialogOpen(true);
                   }}
                 >
@@ -477,6 +511,91 @@ const PlaceProperties = ({ colorSets }: { colorSets: ColorSet[] }) => {
           );
         })()}
       </div>
+
+      {/* Current Marking — live token multiset, only meaningful once a simulation is
+          actually running. Separate from Initial Marking above: editing this changes what's
+          in the place *right now*, for testing/debugging, without touching the model's
+          fixed starting state or requiring a reset. */}
+      {simulationContext.isInitialized && (
+        <>
+          <Separator />
+          <div className="grid w-full items-center gap-1.5">
+            <Label htmlFor="currentMarking">Current Marking (live)</Label>
+            {isUnitType && !isTimed ? (
+              /* UNIT type (non-timed): same simple count input as Initial Marking, applied
+                 straight to the live simulator (no dialog needed — there are no attributes
+                 to edit on a unit token). */
+              <Input
+                id="currentMarking"
+                type="number"
+                min="0"
+                value={(data.marking ?? []).length}
+                onChange={(e) => {
+                  const count = parseInt(e.target.value, 10) || 0;
+                  simulationContext.setPlaceMarking(id, countToUnitMarking(count));
+                }}
+              />
+            ) : isTimed ? (
+              /* Timed colorset: same token-count-summary + Edit button as Initial Marking,
+                 opening the same structured dialog against the live marking. */
+              <div className="flex gap-2 items-center">
+                <div className="flex-1 text-sm text-muted-foreground border rounded-md px-3 py-2 bg-muted/30">
+                  {(data.marking ?? []).length} timed token(s)
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedPlace({ id, data: { ...data }, target: 'current' });
+                    setIsTimedMarkingDialogOpen(true);
+                  }}
+                >
+                  Edit
+                </Button>
+              </div>
+            ) : (
+              /* JSON/record marking: quick raw-text edit (pre-filled with the live value —
+                 tweak a small part instead of retyping it) plus an Edit button opening the
+                 same table-based dialog Initial Marking uses, so individual attributes can
+                 be changed without hand-editing JSON. */
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <Input
+                    id="currentMarking"
+                    value={currentMarkingInput}
+                    placeholder="e.g., [1, 2, 3]"
+                    onChange={(e) => setCurrentMarkingInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleApplyCurrentMarking();
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={handleApplyCurrentMarking}
+                    disabled={isApplyingMarking || currentMarkingInput.trim() === ''}
+                  >
+                    Apply
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedPlace({ id, data: { ...data }, target: 'current' });
+                      setIsRecordMarkingDialogOpen(true);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                </div>
+              </div>
+            )}
+            <p className="text-[10px] text-muted-foreground">
+              Overwrites this place&apos;s tokens right now (for testing/debugging) — doesn&apos;t change the initial marking above.
+            </p>
+          </div>
+        </>
+      )}
 
       {/* Port Type (available on subpage places) */}
       {isSubpage && (
@@ -610,11 +729,20 @@ const PlaceProperties = ({ colorSets }: { colorSets: ColorSet[] }) => {
               setIsRecordMarkingDialogOpen(open);
             }}
             colorSetName={selectedPlace.data?.colorSet || ""}
+            titleLabel={selectedPlace.target === 'current' ? 'Edit Current Marking' : undefined}
             attributes={getRecordAttributes(selectedPlace.data?.colorSet || "")}
-            initialData={parseInitialMarking(selectedPlace.data?.initialMarking || "")}
+            initialData={
+              selectedPlace.target === 'current'
+                ? (selectedPlace.data?.marking ?? []) as ParsedRecord[] | MultisetEntry[]
+                : parseInitialMarking(selectedPlace.data?.initialMarking || "")
+            }
             onSave={(records) => {
               const formattedMarking = formatRecordMarking(records);
-              if (activePetriNetId && selectedPlace) {
+              if (!selectedPlace) return;
+              if (selectedPlace.target === 'current') {
+                setCurrentMarkingInput(formattedMarking);
+                simulationContext.setPlaceMarking(selectedPlace.id, formattedMarking);
+              } else if (activePetriNetId) {
                 updateNodeData(activePetriNetId, selectedPlace.id, {
                   label: selectedPlace.data.label || "",
                   isArcMode: selectedPlace.data.isArcMode || false,
@@ -634,12 +762,21 @@ const PlaceProperties = ({ colorSets }: { colorSets: ColorSet[] }) => {
               setIsTimedMarkingDialogOpen(open);
             }}
             colorSetName={selectedPlace.data?.colorSet || ""}
+            titleLabel={selectedPlace.target === 'current' ? 'Edit Current Marking' : undefined}
             colorSetType={getColorSetBaseType()}
             recordAttributes={getRecordAttributes(selectedPlace.data?.colorSet || "")}
-            initialData={parseTimedMarking(selectedPlace.data?.initialMarking || "")}
+            initialData={
+              selectedPlace.target === 'current'
+                ? parseTimedMarking(JSON.stringify(selectedPlace.data?.marking ?? []))
+                : parseTimedMarking(selectedPlace.data?.initialMarking || "")
+            }
             onSave={(tokens) => {
               const formattedMarking = formatTimedMarking(tokens);
-              if (activePetriNetId && selectedPlace) {
+              if (!selectedPlace) return;
+              if (selectedPlace.target === 'current') {
+                setCurrentMarkingInput(formattedMarking);
+                simulationContext.setPlaceMarking(selectedPlace.id, formattedMarking);
+              } else if (activePetriNetId) {
                 updateNodeData(activePetriNetId, selectedPlace.id, {
                   label: selectedPlace.data.label || "",
                   isArcMode: selectedPlace.data.isArcMode || false,

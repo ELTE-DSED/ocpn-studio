@@ -8,11 +8,12 @@
 
 ## Features
 
-- **Visual OCPN editor** — Create and edit places, transitions, and arcs on an interactive canvas with drag-and-drop
+- **Visual OCPN editor** — Create and edit places, transitions, and arcs on an interactive canvas with drag-and-drop, including multi-select batch editing of shared properties across many places or transitions at once
 - **Hierarchical nets** — Model hierarchical object-centric Petri nets with substitution transitions, subpages, and fusion places
 - **Declarations** — Define color sets (including record types that directly map to OCEL 2.0 objects), variables, priorities, and functions
-- **Simulation** — Step through or auto-run simulations powered by [cpnsim](https://github.com/rwth-pads/cpnsim), our own CPN simulator written in Rust and cross-compiled to WebAssembly, running entirely in the browser
-- **Monitors** — Define marking-size, transition-count, breakpoint, and custom data-collector monitors to observe simulation behavior and collect statistics
+- **Declare constraints** — Author declarative, LTL-based behavioral rules (Response, Precedence, Succession, Not-Coexistence, and more) as color-coded arcs between transitions; violations are prevented by blocking non-compliant firings during simulation, matching CPN Tools' Declare plugin
+- **Simulation** — Step through or auto-run simulations powered by [cpnsim](https://github.com/rwth-pads/cpnsim), our own CPN simulator written in Rust and cross-compiled to WebAssembly, running entirely in the browser. Click any enabled transition directly on the canvas to fire it (Fire Mode), edit a place's live marking mid-run, or jump to any enabled transition from the sidebar
+- **Monitors** — Define marking-size, transition-count, breakpoint, duration, and custom data-collector monitors to observe simulation behavior and collect statistics
 - **State space analysis** — Compute the full state space with BFS exploration, SCC decomposition, dead/home markings, place bounds, and transition liveness — with deterministic overrides for models using stochastic distribution functions
 - **Reachability graph** — Visualize the state space as an interactive graph with clickable nodes showing full marking details
 - **OCEL 2.0 export** — Export simulated event logs in the OCEL 2.0 standard format for process mining
@@ -28,6 +29,7 @@ The easiest way to use OCPN Studio is the hosted version at **[elte-dsed.github.
 - Click the **?** (Help) button in the top-right corner for an interactive guide that explains the app's functionality in detail.
 - Click **Open** in the top-left corner and select the built-in **Airport Ground Handling** example to explore a complete OCPN model.
 - Use the **Feedback** button in the app to share your thoughts — feedback is very much welcome!
+- If OCPN Studio has been useful to you, the ☕ button next to Feedback links to [buymeacoffee.com/istvank](https://buymeacoffee.com/istvank) — it helps cover the cost of the AI tooling used to build this project faster.
 
 ## Local Development
 

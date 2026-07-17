@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { SimulationEvent } from '@/components/EventLog';
-import type { MonitorResult, StateSpaceResult } from '@/types';
+import type { MonitorResult, StateSpaceResult, DeclareResult, BlockedTransitionInfo, EnabledTransitionInfo } from '@/types';
 
 // Configuration for simulation controls
 export interface SimulationConfig {
@@ -23,8 +23,11 @@ export type SimulationContextType = {
   runMultipleStepsAnimated: (steps: number, delayMs?: number) => Promise<void>;
   runMultipleStepsFast: (steps: number) => Promise<void>;
   stop: () => void;
-  fireTransition: (transitionId: string) => Promise<void>;
-  getEnabledTransitions: () => Promise<Array<{ transitionId: string; transitionName: string }>>;
+  /** Fires the given transition. Resolves to whether it actually fired (false = wasn't enabled). */
+  fireTransition: (transitionId: string) => Promise<boolean>;
+  /** Overwrites a place's *current* marking mid-simulation. Resolves to whether it succeeded. */
+  setPlaceMarking: (placeId: string, markingExpr: string) => Promise<boolean>;
+  getEnabledTransitions: () => Promise<EnabledTransitionInfo[]>;
   reset: () => Promise<void>;
   events: SimulationEvent[];
   clearEvents: () => void;
@@ -37,6 +40,9 @@ export type SimulationContextType = {
   ensureInitialized: () => Promise<void>;
   _executeWasmStep: () => void;
   monitorResults: MonitorResult[];
+  declareResults: DeclareResult[];
+  blockedTransitions: BlockedTransitionInfo[];
+  enabledTransitions: EnabledTransitionInfo[];
   calculateStateSpace: (
     maxStates?: number,
     maxArcs?: number,

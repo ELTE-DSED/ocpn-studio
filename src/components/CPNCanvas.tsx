@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { BoomerDial, type Slice } from "@/components/BoomerDial";
 
 import { Save, FolderOpen, Undo2, Redo2, FilePlus2 } from "lucide-react";
+import { formatSimulationTime } from '@/utils/timeFormat';
 
 import CustomConnectionLine from '../edges/CustomConnectionLine';
 import { useDnD } from '../utils/DnDContext';
@@ -87,6 +88,7 @@ const selector = (state: StoreState) => ({
   petriNetsById: state.petriNetsById,
   activePetriNetId: state.activePetriNetId,
   activeMode: state.activeMode,
+  isFireMode: state.isFireMode,
   colorSets: state.colorSets,
   variables: state.variables,
   priorities: state.priorities,
@@ -157,6 +159,7 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
     petriNetsById,
     activePetriNetId,
     activeMode,
+    isFireMode,
     colorSets,
     variables,
     priorities,
@@ -190,6 +193,15 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
   const activeSpecialTab = useStore(state => state.activeSpecialTab);
   const setActiveSpecialTab = useStore(state => state.setActiveSpecialTab);
   const stateSpaceResult = useStore(state => state.stateSpaceResult);
+  const isChainMode = useStore(state => state.isChainMode);
+  const isArcMode = useStore(state => state.isArcMode);
+  const isDeclareMode = useStore(state => state.isDeclareMode);
+  const toggleDeclareMode = useStore(state => state.toggleDeclareMode);
+  // Chain Mode: the node the next click will connect from (null = start a fresh chain)
+  const [chainLastNodeId, setChainLastNodeId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isChainMode) setChainLastNodeId(null);
+  }, [isChainMode, activePetriNetId]);
   const petriNetHandlers = usePetriNetHandlers(activePetriNetId || '');
   const { onNodesChange, onEdgesChange, onConnect } = activePetriNetId
     ? petriNetHandlers
@@ -241,15 +253,42 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
     }
   }, [activePetriNetId, getViewport]);
 
-  // Restore viewport or fitView once nodes have been measured
+  // Restore viewport or fitView, but only right after actually switching to a net —
+  // never in response to the user adding nodes to the net that's already showing.
+  // `nodesInitialized` re-fires every time a node is added (it briefly goes false while
+  // the new node is unmeasured, then true again), including the very first node placed
+  // into a brand-new empty net (e.g. the first click in Chain Mode). Gating on this ref
+  // — which is only (re)armed when `activePetriNetId` itself changes — means that first
+  // node no longer gets auto-centered/zoomed out from under the user.
+  const pendingInitialViewNetIdRef = useRef<string | null>(activePetriNetId);
   useEffect(() => {
-    if (nodesInitialized && activePetriNetId) {
+    pendingInitialViewNetIdRef.current = activePetriNetId;
+    // A brand-new/empty net has no nodes to measure, so `nodesInitialized` never makes
+    // its false->true transition for it — it only fires the moment the user's first
+    // node appears. Left armed, that first node would still get treated as "the net's
+    // initial view" and get fitView'd/centered out from under the user. There's nothing
+    // to *fit* on an empty canvas, but the zoom/pan should still reset to a neutral
+    // default (rather than silently keeping whatever the previously active net was
+    // zoomed to) — do that synchronously here, so it can never race with a user action
+    // like a Chain Mode click landing before a deferred fitView would have run.
+    if (activePetriNetId) {
+      const net = useStore.getState().petriNetsById[activePetriNetId];
+      if (net && net.nodes.length === 0 && !viewportsRef.current[activePetriNetId]) {
+        setViewport({ x: 0, y: 0, zoom: 1 });
+        pendingInitialViewNetIdRef.current = null;
+      }
+    }
+  }, [activePetriNetId, setViewport]);
+
+  useEffect(() => {
+    if (nodesInitialized && activePetriNetId && pendingInitialViewNetIdRef.current === activePetriNetId) {
       const saved = viewportsRef.current[activePetriNetId];
       if (saved) {
         setViewport(saved);
       } else {
         fitView({ padding: 0.35, maxZoom: 4 });
       }
+      pendingInitialViewNetIdRef.current = null;
     }
   }, [nodesInitialized, activePetriNetId, fitView, setViewport]);
 
@@ -257,7 +296,7 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
   const focusRequest = useStore(state => state.focusRequest);
   useEffect(() => {
     if (!focusRequest) return;
-    const { netId, elementId, elementType } = focusRequest;
+    const { netId, elementId, elementType, keepMode } = focusRequest;
     const store = useStore.getState();
 
     // Clear the request immediately to avoid re-triggering
@@ -267,8 +306,11 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
     store.setActiveSpecialTab(null);
     store.setActivePetriNet(netId);
 
-    // Switch to "model" mode so the properties panel is visible
-    store.setActiveMode('model');
+    // Switch to "model" mode so the properties panel is visible — unless the caller
+    // asked to stay put (e.g. highlighting a transition from the Simulation pane).
+    if (!keepMode) {
+      store.setActiveMode('model');
+    }
 
     // Select the element
     const net = store.petriNetsById[netId];
@@ -334,6 +376,20 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
         return;
       }
 
+      // Escape: break the current Chain Mode chain (start fresh on the next click)
+      // without leaving Chain Mode itself.
+      if (event.code === 'Escape' && isChainMode) {
+        setChainLastNodeId(null);
+        return;
+      }
+
+      // Escape: exit Arc/Declare drawing mode, same as clicking empty canvas.
+      if (event.code === 'Escape' && (isArcMode || isDeclareMode)) {
+        if (isArcMode) toggleArcMode(false);
+        if (isDeclareMode) toggleDeclareMode(false);
+        return;
+      }
+
       // Check if simulation context is available
       if (!simulationContext) return;
 
@@ -389,7 +445,7 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [simulationContext, undo, redo]);
+  }, [simulationContext, undo, redo, isChainMode, isArcMode, isDeclareMode, toggleArcMode, toggleDeclareMode]);
 
   const slices = [
     { key: 'bottom', label: [''], angle: 90 },
@@ -534,10 +590,10 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
     // Clear undo history
     useStore.temporal.getState().clear();
 
-    // Fit view
-    window.requestAnimationFrame(() => {
-      fitView({ padding: 0.35, maxZoom: 4 });
-    });
+    // Viewport reset (to a neutral default, since the new net is empty) is handled by
+    // the activePetriNetId-driven effect above — no separate fitView needed here, and
+    // doing one here via requestAnimationFrame could race with the user's first action
+    // (e.g. a Chain Mode click) and end up centering on that instead.
   }
 
   /** Handle the "New" toolbar button: ask to confirm if dirty. */
@@ -656,19 +712,100 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
     [screenToFlowPosition, type, activePetriNetId]
   );
 
+  // Chain Mode: create a place/transition at `position` and, if there's a chain anchor,
+  // connect it from the anchor with a normal arc. Returns the new node's id.
+  const createChainNode = useCallback((nodeType: 'place' | 'transition', position: { x: number; y: number }) => {
+    if (!activePetriNetId) return null;
+    const newNode = {
+      id: uuidv4(),
+      type: nodeType,
+      position,
+      width: nodeType === 'transition' ? 60 : 35,
+      height: nodeType === 'transition' ? 30 : 35,
+      data: {
+        label: nodeType,
+        ...(nodeType === 'place' ? { colorSet: '' } : { guard: '' }),
+      },
+    };
+    const store = useStore.getState();
+    store.addNode(activePetriNetId, newNode);
+    if (chainLastNodeId) {
+      store.addEdge(activePetriNetId, {
+        id: uuidv4(),
+        source: chainLastNodeId,
+        target: newNode.id,
+        type: 'floating',
+        label: '',
+      });
+    }
+    return newNode.id;
+  }, [activePetriNetId, chainLastNodeId]);
+
   // Handle node selection
-  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+  // React Flow's OnNodeDrag callbacks fire with a native MouseEvent | TouchEvent (not React's
+  // synthetic event), so this needs to accept both — it's called directly from onNodeClick={onNodeClick}
+  // (a real React.MouseEvent) and from the onNodeDragStart wrapper below (a native drag event).
+  const onNodeClick = useCallback((_: React.MouseEvent | MouseEvent | TouchEvent, node: Node) => {
     setIsDialOpen(false);
+
+    // Fire Transition Mode: clicking an enabled transition fires it directly instead of
+    // just selecting it, mirroring CPN Tools' "execute a transition with a chosen
+    // binding" tool. Falls through to normal selection for anything that isn't a
+    // currently-enabled transition (e.g. places, or a transition that can't fire).
+    if (isFireMode && activeMode === 'simulation' && node.type === 'transition' && simulationContext) {
+      const enabledInfo = simulationContext.enabledTransitions.find((t) => t.transitionId === node.id);
+      if (enabledInfo) {
+        // Firing a future-enabled transition advances the simulation clock — flag that so
+        // the user isn't surprised by the "Time" display suddenly jumping forward.
+        const willAdvanceTime = enabledInfo.isFuture;
+        simulationContext.fireTransition(node.id).then((fired) => {
+          if (!fired) {
+            toast.warning('Transition is no longer enabled', { duration: 3000 });
+          } else if (willAdvanceTime) {
+            const epoch = simulationEpoch ? new Date(simulationEpoch) : null;
+            toast.info(`Simulation time advanced to ${formatSimulationTime(enabledInfo.atTime, epoch)}`, { duration: 3000 });
+          }
+        });
+      } else {
+        toast.warning('This transition is not currently enabled', { duration: 3000 });
+      }
+      return;
+    }
+
     if (activePetriNetId) {
       useStore.getState().setSelectedElement(activePetriNetId, { type: "node", element: node });
     } else {
       console.error("Cannot set selected element: activePetriNetId is null.");
     }
-  }, [activePetriNetId]);
+
+    if (isChainMode && activePetriNetId) {
+      // Continuing/branching an existing chain: if the clicked node is the type that would
+      // validly follow the current anchor (place<->transition) and isn't already connected
+      // to it, wire them up with a normal arc. Either way, the chain now continues from here.
+      if (chainLastNodeId && chainLastNodeId !== node.id) {
+        const petriNet = useStore.getState().petriNetsById[activePetriNetId];
+        const lastNode = petriNet?.nodes.find((n) => n.id === chainLastNodeId);
+        const alreadyConnected = petriNet?.edges.some((e) =>
+          (e.source === chainLastNodeId && e.target === node.id) ||
+          (e.source === node.id && e.target === chainLastNodeId)
+        );
+        if (lastNode && lastNode.type !== node.type && !alreadyConnected) {
+          useStore.getState().addEdge(activePetriNetId, {
+            id: uuidv4(),
+            source: chainLastNodeId,
+            target: node.id,
+            type: 'floating',
+            label: '',
+          });
+        }
+      }
+      setChainLastNodeId(node.id);
+    }
+  }, [activePetriNetId, isChainMode, chainLastNodeId, isFireMode, activeMode, simulationContext, simulationEpoch]);
 
   // Handle node drag start
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const onNodeDragStart = useCallback((_event: React.MouseEvent, _node: Node, _nodes: Node[]) => {
+  const onNodeDragStart = useCallback((_event: MouseEvent | TouchEvent, _node: Node, _nodes: Node[]) => {
     pauseUndo();
     nodeDragRef.current.isDragging = true;
     nodeDragRef.current.isSnapping = false;
@@ -677,7 +814,7 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
 
   // Handle node drag - apply shift-snap to align with connected edges
   // When snapping, we find the snap offset for ONE node and apply it to ALL nodes in the group
-  const onNodeDrag = useCallback((event: React.MouseEvent, _node: Node, nodes: Node[]) => {
+  const onNodeDrag = useCallback((event: MouseEvent | TouchEvent, _node: Node, nodes: Node[]) => {
     if (!activePetriNetId || nodes.length === 0) return;
     
     const petriNet = useStore.getState().petriNetsById[activePetriNetId];
@@ -789,7 +926,7 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
   
   // Handle node drag stop
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const onNodeDragStop = useCallback((_event: React.MouseEvent, _node: Node, _nodes: Node[]) => {
+  const onNodeDragStop = useCallback((_event: MouseEvent | TouchEvent, _node: Node, _nodes: Node[]) => {
     resumeUndo();
     // Keep snapped positions for one more cycle to override React Flow's final position
     // The onNodesChange handler will use these
@@ -835,14 +972,35 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
   }, [activePetriNetId])
 
   // Handle background click (deselect)
-  const onPaneClick = useCallback(() => {
+  const onPaneClick = useCallback((event: React.MouseEvent) => {
+    if (isChainMode && activePetriNetId) {
+      // First click of a chain defaults to a place; afterward, alternate off the anchor's type.
+      const lastType = chainLastNodeId
+        ? useStore.getState().petriNetsById[activePetriNetId]?.nodes.find((n) => n.id === chainLastNodeId)?.type
+        : null;
+      const nextType: 'place' | 'transition' = lastType === 'place' ? 'transition' : lastType === 'transition' ? 'place' : 'place';
+      const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      const newId = createChainNode(nextType, position);
+      if (newId) setChainLastNodeId(newId);
+      return;
+    }
+
+    // Clicking empty canvas exits Arc/Declare drawing mode, so the cursor and node
+    // dragging return to normal instead of staying armed for another connection.
+    if (isArcMode) {
+      toggleArcMode(false);
+    }
+    if (isDeclareMode) {
+      toggleDeclareMode(false);
+    }
+
     if (activePetriNetId) {
       useStore.getState().setSelectedElement(activePetriNetId, null);
     } else {
       console.error("Cannot set selected element: activePetriNetId is null.");
     }
     setIsDialOpen(false);
-  }, [activePetriNetId])
+  }, [activePetriNetId, isChainMode, chainLastNodeId, screenToFlowPosition, createChainNode, isArcMode, isDeclareMode, toggleArcMode, toggleDeclareMode])
 
   const onPaneContextMenu = useCallback((event: MouseEvent | React.MouseEvent) => {
     event.preventDefault();
@@ -1763,6 +1921,7 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
             selectionOnDrag
             selectionKeyCode="Shift"
             multiSelectionKeyCode={['Meta', 'Control']}
+            deleteKeyCode={['Backspace', 'Delete']}
           >
             <Background />
             <MiniMap />
@@ -1772,9 +1931,9 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
                 <div className="bg-background border rounded-lg p-2 shadow-sm">
                   <SimulationToolbar />
                 </div>
-              ) : (
+              ) : activeMode === 'model' ? (
                 <Toolbar toggleArcMode={toggleArcMode} onApplyLayout={(options) => petriNet && applyLayout(options, petriNet.nodes, petriNet.edges)}/>
-              )}
+              ) : null}
             </Panel>
             <BoomerDial
               slices={slices}

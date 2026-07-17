@@ -5,7 +5,8 @@ import { PetriNetData, convertToJSON } from '@/utils/FileOperations';
 import type { SimulationEvent } from '@/components/EventLog'; // Import SimulationEvent
 import { v4 as uuidv4 } from 'uuid'; // For generating unique event IDs
 import { type SimulationConfig, DEFAULT_SIMULATION_CONFIG } from '@/context/useSimulationContextHook';
-import type { PetriNet, FusionSet, MonitorResult, Monitor, StateSpaceResult } from '@/types';
+import type { PetriNet, FusionSet, MonitorResult, Monitor, StateSpaceResult, DeclareResult, DeclareTemplate, UnaryDeclareConstraint, BlockedTransitionInfo, EnabledTransitionInfo } from '@/types';
+import { NON_BLOCKING_DECLARE_TEMPLATES } from '@/types';
 import type { Node } from '@xyflow/react';
 import { toast } from 'sonner';
 
@@ -358,6 +359,59 @@ function monitorToWasmConfig(monitor: Monitor): Record<string, unknown> {
   };
 }
 
+/**
+ * Gather all Declare constraints defined across every page of the model — binary
+ * constraints drawn as 'declare-constraint' edges between two transitions, and unary
+ * constraints (Existence/Absence) attached directly to a transition's node data —
+ * into the flat WASM DeclareConstraintConfig shape: { id, name, enabled, template,
+ * activationTransitionId, targetTransitionId }.
+ * Constraints are global (like Monitors), not scoped to a single page.
+ */
+function gatherDeclareConstraintConfigs(petriNetsById: Record<string, PetriNet>): Record<string, unknown>[] {
+  const configs: Record<string, unknown>[] = [];
+  const labelOf = (transitionId: string): string => {
+    for (const net of Object.values(petriNetsById)) {
+      const node = net.nodes.find((n) => n.id === transitionId);
+      if (node) return (node.data as { label?: string })?.label || transitionId;
+    }
+    return transitionId;
+  };
+
+  for (const net of Object.values(petriNetsById)) {
+    for (const edge of net.edges) {
+      if (edge.type !== 'declare-constraint') continue;
+      const template = (edge.data as { template?: DeclareTemplate })?.template;
+      const enabled = (edge.data as { enabled?: boolean })?.enabled ?? true;
+      if (!template) continue;
+      configs.push({
+        id: edge.id,
+        name: `${template} (${labelOf(edge.source)} → ${labelOf(edge.target)})`,
+        enabled,
+        template,
+        activationTransitionId: edge.source,
+        targetTransitionId: edge.target,
+      });
+    }
+    for (const node of net.nodes) {
+      if (node.type !== 'transition') continue;
+      const unary = (node.data as { declareUnary?: UnaryDeclareConstraint[] })?.declareUnary;
+      if (!unary) continue;
+      for (const c of unary) {
+        configs.push({
+          id: c.id,
+          name: `${c.template} (${labelOf(node.id)})`,
+          enabled: c.enabled,
+          template: c.template,
+          activationTransitionId: node.id,
+          targetTransitionId: null,
+          n: c.n ?? null,
+        });
+      }
+    }
+  }
+  return configs;
+}
+
 export function useSimulationController() {
   const wasmRef = useRef<InitOutput | null>(null); // Initialize as null
   const wasmSimulatorRef = useRef<WasmSimulator | null>(null);
@@ -375,6 +429,14 @@ export function useSimulationController() {
 
   // Monitor results from WASM simulator
   const [monitorResults, setMonitorResults] = useState<MonitorResult[]>([]);
+  // Declare constraint results from WASM simulator
+  const [declareResults, setDeclareResults] = useState<DeclareResult[]>([]);
+  // Transitions currently withheld by a Declare constraint (live "this constraint is
+  // blocking right now" feedback), refreshed alongside declareResults.
+  const [blockedTransitions, setBlockedTransitions] = useState<BlockedTransitionInfo[]>([]);
+  // Transitions that ARE currently fireable — powers the "Enabled Transitions" list in
+  // SimulationPanel and click-to-fire mode on the canvas. Refreshed alongside the above.
+  const [enabledTransitions, setEnabledTransitions] = useState<EnabledTransitionInfo[]>([]);
 
   // Refs for auto-invalidation: track whether simulation updates (not user edits) are causing store changes
   const isInitializedRef = useRef(false);
@@ -823,6 +885,24 @@ export function useSimulationController() {
           }
         }
 
+        // Register Declare constraints (binary edges + unary transition badges) from all pages
+        const declareConfigs = gatherDeclareConstraintConfigs(useStore.getState().petriNetsById);
+        for (const config of declareConfigs) {
+          try {
+            wasmSimulatorRef.current.addDeclareConstraint(config);
+          } catch (e) {
+            console.warn(`Failed to register Declare constraint '${config.name}':`, e);
+          }
+        }
+
+        // Fetch the constraints' initial live/blocking state right away — some nets are
+        // already deadlocked (or have a constraint blocking a transition) before a single
+        // step is taken, and without this the canvas would show no feedback at all until
+        // the user tried stepping once.
+        _fetchDeclareResults();
+        _fetchBlockedTransitions();
+        _fetchEnabledTransitions();
+
         // Mark initialization as complete
         isInitializedRef.current = true;
         setIsInitialized(true);
@@ -866,6 +946,99 @@ export function useSimulationController() {
     }
   };
 
+  // Helper: fetch Declare constraint results from WASM after a step completes.
+  // Must be called OUTSIDE the run_step callback, same reason as _fetchMonitorResults.
+  // Returns the freshly fetched array (not just the state setter) so callers that need
+  // it immediately (e.g. the deadlock check below) aren't stuck reading a stale closure.
+  const _fetchDeclareResults = (): DeclareResult[] => {
+    if (wasmSimulatorRef.current) {
+      try {
+        const simulator = wasmSimulatorRef.current as unknown as {
+          getDeclareResults?: () => DeclareResult[];
+        };
+        if (typeof simulator.getDeclareResults === 'function') {
+          const results = simulator.getDeclareResults() ?? [];
+          setDeclareResults(results);
+          return results;
+        }
+      } catch (e) {
+        console.warn('Failed to get Declare constraint results:', e);
+      }
+    }
+    return [];
+  };
+
+  // Helper: fetch which transitions are currently withheld by a Declare constraint
+  // (live blocking feedback), same calling convention as _fetchDeclareResults.
+  const _fetchBlockedTransitions = (): BlockedTransitionInfo[] => {
+    if (wasmSimulatorRef.current) {
+      try {
+        const simulator = wasmSimulatorRef.current as unknown as {
+          getBlockedTransitions?: () => BlockedTransitionInfo[];
+        };
+        if (typeof simulator.getBlockedTransitions === 'function') {
+          const results = simulator.getBlockedTransitions() ?? [];
+          setBlockedTransitions(results);
+          return results;
+        }
+      } catch (e) {
+        console.warn('Failed to get blocked transitions:', e);
+      }
+    }
+    return [];
+  };
+
+  // Helper: fetch the list of currently fireable transitions, same calling convention as
+  // _fetchDeclareResults/_fetchBlockedTransitions.
+  const _fetchEnabledTransitions = (): EnabledTransitionInfo[] => {
+    if (wasmSimulatorRef.current) {
+      try {
+        const simulator = wasmSimulatorRef.current as unknown as {
+          getEnabledTransitions?: () => EnabledTransitionInfo[];
+        };
+        if (typeof simulator.getEnabledTransitions === 'function') {
+          const results = simulator.getEnabledTransitions() ?? [];
+          setEnabledTransitions(results);
+          return results;
+        }
+      } catch (e) {
+        console.warn('Failed to get enabled transitions:', e);
+      }
+    }
+    return [];
+  };
+
+  // If the simulator has reached a full deadlock (zero enabled transitions anywhere),
+  // check whether any Declare obligation that can only ever be judged at the *end* of a
+  // run (Existence, Response, Responded Existence, Co-Existence, Choice — none of these
+  // can be enforced by blocking, since they require something to happen, not prevent it)
+  // is still open. If so, it will never resolve now, so surface it — otherwise it would
+  // just sit there "pending" (the same amber as a constraint that's merely in progress),
+  // silently indistinguishable from one that's actually still on track.
+  const _checkDeadlockForUnresolvedConstraints = () => {
+    if (!wasmSimulatorRef.current) return;
+    try {
+      const simulator = wasmSimulatorRef.current as unknown as {
+        getEnabledTransitions?: () => EnabledTransitionInfo[];
+      };
+      if (typeof simulator.getEnabledTransitions !== 'function') return;
+      const stillEnabled = simulator.getEnabledTransitions();
+      if (!stillEnabled || stillEnabled.length > 0) return; // not deadlocked
+
+      const results = _fetchDeclareResults();
+      const nonBlocking: readonly string[] = NON_BLOCKING_DECLARE_TEMPLATES;
+      const unresolved = results.filter((r) => r.state === 'pending' && nonBlocking.includes(r.template));
+      if (unresolved.length > 0) {
+        toast.warning('Simulation deadlocked — Declare constraints unresolved', {
+          description: unresolved.map((r) => r.constraintName).join(', '),
+          duration: 12000,
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to check for deadlocked Declare constraints:', e);
+    }
+  };
+
   // Core logic to execute a single WASM step
   // Assumes WASM is already initialized
   const _executeWasmStep = (): unknown => {
@@ -879,13 +1052,20 @@ export function useSimulationController() {
             const result = wasmSimulatorRef.current.run_step();
             console.log(`Simulation step result:`, result);
             // Event handling (including state updates and step increment) happens in handleWasmEvent callback
-            // Fetch monitor results now that run_step() has released its borrow
+            // Fetch monitor and Declare constraint results now that run_step() has released its borrow
             _fetchMonitorResults();
+            _fetchDeclareResults();
+            _fetchBlockedTransitions();
+            _fetchEnabledTransitions();
             // Update simulation time to post-step model time (may differ from event's
             // firing time if the simulator eagerly advanced to the next enabled time)
             if (result !== null && result !== undefined) {
               const postStepTime = wasmSimulatorRef.current.getCurrentTime();
               setSimulationTime(Number(postStepTime));
+            } else {
+              // Nothing fired — check whether that's because the whole net just deadlocked
+              // with some Declare obligation still unresolved.
+              _checkDeadlockForUnresolvedConstraints();
             }
             return result;
         } catch (error) {
@@ -1007,13 +1187,19 @@ export function useSimulationController() {
           } finally {
             isSimulationUpdatingRef.current = false;
           }
-          // Fetch monitor results after batch execution
+          // Fetch monitor and Declare constraint results after batch execution
           _fetchMonitorResults();
+          _fetchDeclareResults();
+          _fetchBlockedTransitions();
+          _fetchEnabledTransitions();
           // Update simulation time to post-batch model time
           if (wasmSimulatorRef.current) {
             const postBatchTime = wasmSimulatorRef.current.getCurrentTime();
             setSimulationTime(Number(postBatchTime));
           }
+          // The batch may have run out of enabled transitions partway through — check
+          // whether it ended in a deadlock with some Declare obligation still unresolved.
+          _checkDeadlockForUnresolvedConstraints();
         } else {
           // Fallback: run steps one by one without delay
           for (let i = 0; i < steps; i++) {
@@ -1043,14 +1229,16 @@ export function useSimulationController() {
     stopRequestedRef.current = true;
   };
 
-  // Function to fire a specific transition by ID
-  const fireTransition = async (transitionId: string) => {
+  // Function to fire a specific transition by ID. Returns whether it actually fired
+  // (false if the transition wasn't enabled), so callers — click-to-fire on the canvas,
+  // the "Enabled Transitions" list — can give feedback on a no-op.
+  const fireTransition = async (transitionId: string): Promise<boolean> => {
     await ensureInitialized();
     if (wasmSimulatorRef.current) {
       const simulator = wasmSimulatorRef.current as unknown as {
         fireTransition?: (transitionId: string) => unknown;
       };
-      
+
       if (typeof simulator.fireTransition === 'function') {
         pauseUndo();
         try {
@@ -1059,10 +1247,19 @@ export function useSimulationController() {
           const result = simulator.fireTransition(transitionId);
           console.log(`Fire transition ${transitionId} result:`, result);
           // Event handling happens via the event listener callback
-          // Fetch monitor results after the transition fires
+          // Fetch monitor and Declare constraint results after the transition fires
           _fetchMonitorResults();
+          _fetchDeclareResults();
+          _fetchBlockedTransitions();
+          _fetchEnabledTransitions();
+          if (result === null || result === undefined) {
+            _checkDeadlockForUnresolvedConstraints();
+            return false;
+          }
+          return true;
         } catch (error) {
           console.error(`Error firing transition ${transitionId}:`, error);
+          return false;
         } finally {
           isSimulationUpdatingRef.current = false;
           resumeUndo();
@@ -1071,14 +1268,53 @@ export function useSimulationController() {
         console.warn("fireTransition method not available in WASM simulator");
       }
     }
+    return false;
+  };
+
+  // Overwrite a place's *current* marking mid-simulation (distinct from its fixed initial
+  // marking, editable in Model mode regardless of whether a simulation is running). Lets
+  // the user tweak live state for testing/debugging without restarting the run. Returns
+  // whether it succeeded; on failure the WASM error message is surfaced via toast and the
+  // place's marking is left untouched (the Rust side never partially applies a bad edit).
+  const setPlaceMarking = async (placeId: string, markingExpr: string): Promise<boolean> => {
+    await ensureInitialized();
+    if (!wasmSimulatorRef.current) return false;
+    const simulator = wasmSimulatorRef.current as unknown as {
+      setPlaceMarking?: (placeId: string, markingExpr: string) => unknown[];
+    };
+    if (typeof simulator.setPlaceMarking !== 'function') {
+      console.warn("setPlaceMarking method not available in WASM simulator");
+      return false;
+    }
+    pauseUndo();
+    try {
+      // Guard: mark as simulation update so the auto-invalidation subscriber doesn't see
+      // this as a model edit and reset the whole simulation out from under us (it otherwise
+      // can't distinguish "user edited the model" from "simulation state changed").
+      isSimulationUpdatingRef.current = true;
+      const tokens = simulator.setPlaceMarking(placeId, markingExpr);
+      updateNodeMarking(placeId, tokens ?? []);
+      // The new marking may enable/disable transitions or change Declare constraint state.
+      _fetchEnabledTransitions();
+      _fetchBlockedTransitions();
+      _fetchDeclareResults();
+      return true;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      toast.error('Failed to set marking', { description: errorMsg, duration: 6000 });
+      return false;
+    } finally {
+      isSimulationUpdatingRef.current = false;
+      resumeUndo();
+    }
   };
 
   // Function to get enabled transitions
-  const getEnabledTransitions = async (): Promise<Array<{ transitionId: string; transitionName: string }>> => {
+  const getEnabledTransitions = async (): Promise<EnabledTransitionInfo[]> => {
     await ensureInitialized();
     if (wasmSimulatorRef.current) {
       const simulator = wasmSimulatorRef.current as unknown as {
-        getEnabledTransitions?: () => Array<{ transitionId: string; transitionName: string }>;
+        getEnabledTransitions?: () => EnabledTransitionInfo[];
       };
       
       if (typeof simulator.getEnabledTransitions === 'function') {
@@ -1102,6 +1338,9 @@ export function useSimulationController() {
     setSimulationTime(0.0); // Reset simulation time state
     setEvents([]); // Reset events state
     setMonitorResults([]); // Clear monitor results state
+    setDeclareResults([]); // Clear Declare constraint results state
+    setBlockedTransitions([]); // Clear live blocking-feedback state
+    setEnabledTransitions([]); // Clear enabled-transitions list
     // Re-initializing effectively resets the simulation state in WASM
     await _initializeWasm();
   };
@@ -1281,8 +1520,9 @@ export function useSimulationController() {
     runMultipleStepsFast,
     stop,
     fireTransition,
+    setPlaceMarking,
     getEnabledTransitions,
-    reset, 
+    reset,
     events, 
     clearEvents, 
     isInitialized, 
@@ -1294,6 +1534,9 @@ export function useSimulationController() {
     ensureInitialized, 
     _executeWasmStep,
     monitorResults,
+    declareResults,
+    blockedTransitions,
+    enabledTransitions,
     calculateStateSpace,
   };
 }

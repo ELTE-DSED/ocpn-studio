@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Trash2, GripVertical, Edit, ChevronRight, ChevronDown, Clock, TriangleAlert } from "lucide-react"
+import { Trash2, GripVertical, Edit, ChevronDown, ChevronUp, Clock, TriangleAlert, Palette, Box, Tag, Layers, FunctionSquare, BookOpen, Shield, Plus } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { AdvancedColorSetEditor } from "@/components/AdvancedColorSetEditor";
 import { VariableEditor } from '@/components/VariableEditor';
@@ -19,6 +19,56 @@ import {
 } from "@/components/ui/collapsible"
 
 import { ColorSet, Variable, Priority, Function, Use, Value } from "@/declarations"
+import type { UnaryDeclareConstraint, BinaryDeclareTemplate } from "@/types";
+import type { TransitionNodeData } from "@/nodes/TransitionNode";
+
+// A flat, cross-page view of every Declare constraint in the model (binary edges + unary badges)
+interface DeclareConstraintOverviewItem {
+  id: string;
+  netId: string;
+  name: string;
+  enabled: boolean;
+  elementType: 'node' | 'edge';
+  /** For unary constraints only: the transition node the constraint is attached to */
+  parentNodeId?: string;
+}
+
+function gatherDeclareOverview(petriNetsById: Record<string, { id: string; name: string; nodes: { id: string; type?: string; data?: Record<string, unknown> }[]; edges: { id: string; type?: string; source: string; target: string; data?: Record<string, unknown> }[] }>): DeclareConstraintOverviewItem[] {
+  const items: DeclareConstraintOverviewItem[] = [];
+  const labelOf = (netId: string, nodeId: string) =>
+    (petriNetsById[netId]?.nodes.find((n) => n.id === nodeId)?.data?.label as string) || nodeId;
+
+  for (const net of Object.values(petriNetsById)) {
+    for (const edge of net.edges) {
+      if (edge.type !== 'declare-constraint') continue;
+      const template = (edge.data as { template?: BinaryDeclareTemplate })?.template ?? 'response';
+      const enabled = (edge.data as { enabled?: boolean })?.enabled ?? true;
+      items.push({
+        id: edge.id,
+        netId: net.id,
+        name: `${template} — ${labelOf(net.id, edge.source)} → ${labelOf(net.id, edge.target)}`,
+        enabled,
+        elementType: 'edge',
+      });
+    }
+    for (const node of net.nodes) {
+      if (node.type !== 'transition') continue;
+      const unary = (node.data as { declareUnary?: UnaryDeclareConstraint[] })?.declareUnary;
+      if (!unary) continue;
+      for (const c of unary) {
+        items.push({
+          id: c.id,
+          netId: net.id,
+          name: `${c.template} — ${labelOf(net.id, node.id)}`,
+          enabled: c.enabled,
+          elementType: 'node',
+          parentNodeId: node.id,
+        });
+      }
+    }
+  }
+  return items;
+}
 
 export function DeclarationManager() {
   const [isPrioritiesOpen, setIsPrioritiesOpen] = useState(false);
@@ -27,6 +77,27 @@ export function DeclarationManager() {
   const [isFunctionsOpen, setIsFunctionsOpen] = useState(false);
   const [isUsesOpen, setIsUsesOpen] = useState(false);
   const [isValuesOpen, setIsValuesOpen] = useState(false);
+  const [isConstraintsOpen, setIsConstraintsOpen] = useState(false);
+
+  const petriNetsById = useStore((state) => state.petriNetsById);
+  const requestFocus = useStore((state) => state.requestFocus);
+  const setEdgesAction = useStore((state) => state.setEdges);
+  const updateNodeDataAction = useStore((state) => state.updateNodeData);
+  const declareItems = gatherDeclareOverview(petriNetsById);
+
+  const handleDeleteDeclareItem = (item: DeclareConstraintOverviewItem) => {
+    const net = petriNetsById[item.netId];
+    if (!net) return;
+    if (item.elementType === 'edge') {
+      setEdgesAction(item.netId, net.edges.filter((e) => e.id !== item.id));
+    } else if (item.parentNodeId) {
+      const node = net.nodes.find((n) => n.id === item.parentNodeId);
+      if (!node) return;
+      const declareUnary = ((node.data as { declareUnary?: UnaryDeclareConstraint[] }).declareUnary || [])
+        .filter((c) => c.id !== item.id);
+      updateNodeDataAction(item.netId, item.parentNodeId, { ...node.data, declareUnary } as TransitionNodeData);
+    }
+  };
 
   const colorSets = useStore((state) => state.colorSets);
   const setColorSets = useStore((state) => state.setColorSets);
@@ -316,25 +387,26 @@ export function DeclarationManager() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
 
       {/* Color Sets Section */}
-      <div className="space-y-3">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <Collapsible open={isColorSetsOpen} onOpenChange={setIsColorSetsOpen}>
-          <CollapsibleTrigger asChild>
-            <div className="flex items-center -ml-3 mb-2 cursor-pointer">
-              <Button variant="ghost" size="sm">
-                {isColorSetsOpen ? (
-                  <ChevronDown className="h-4 w-4" strokeWidth={4} />
-                ) : (
-                  <ChevronRight className="h-4 w-4" strokeWidth={4} />
-                )}
-                <span className="sr-only">Toggle</span>
-              </Button>
-              <h2 className="font-bold flex-1">Color Sets</h2>
-            </div>
+          <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-accent/50 transition-colors">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
+              <Palette className="h-4 w-4" />
+            </span>
+            <span className="font-bold flex-1">Color Sets{colorSets.length > 0 ? ` (${colorSets.length})` : ''}</span>
+            {isColorSetsOpen ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+            )}
           </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-3">
+          <CollapsibleContent className="px-3 pb-3 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              The token types a place can hold, e.g. numbers, strings, or structured records.
+            </p>
             <div className="space-y-2">
               {colorSets.map((cs) => (
                 <div
@@ -381,14 +453,14 @@ export function DeclarationManager() {
             <Dialog open={advancedEditorOpen} onOpenChange={setAdvancedEditorOpen}>
               <DialogTrigger asChild>
                 <Button
-                  className="w-full"
+                  className="w-full border-dashed text-primary hover:text-primary"
                   variant="outline"
                   onClick={() => {
                     setSelectedColorSet(undefined)
                     setAdvancedEditorOpen(true)
                   }}
                 >
-                  Create New Color Set
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Create New Color Set
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[600px]">
@@ -409,22 +481,23 @@ export function DeclarationManager() {
       </div>
 
       {/* Variables Section */}
-      <div className="space-y-3">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <Collapsible open={isVariablesOpen} onOpenChange={setIsVariablesOpen}>
-          <CollapsibleTrigger asChild>
-            <div className="flex items-center -ml-3 mb-2 cursor-pointer">
-              <Button variant="ghost" size="sm">
-                {isVariablesOpen ? (
-                  <ChevronDown className="h-4 w-4" strokeWidth={4} />
-                ) : (
-                  <ChevronRight className="h-4 w-4" strokeWidth={4} />
-                )}
-                <span className="sr-only">Toggle</span>
-              </Button>
-              <h2 className="font-bold flex-1">Variables</h2>
-            </div>
+          <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-accent/50 transition-colors">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
+              <Box className="h-4 w-4" />
+            </span>
+            <span className="font-bold flex-1">Variables{variables.length > 0 ? ` (${variables.length})` : ''}</span>
+            {isVariablesOpen ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+            )}
           </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-3">
+          <CollapsibleContent className="px-3 pb-3 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Typed placeholders usable in guards, arc inscriptions, and code segments.
+            </p>
             <div className="space-y-2">
               {variables.map((v) => {
                 const varColorSet = colorSets.find((cs) => cs.name === v.colorSet);
@@ -490,7 +563,7 @@ export function DeclarationManager() {
             </div>
 
             <Button size="sm" variant="outline" onClick={handleAddVariable}>
-              Add Variable
+              <Plus className="h-3.5 w-3.5 mr-1" /> Add Variable
             </Button>
 
             <Dialog open={variableEditorOpen} onOpenChange={setVariableEditorOpen}>
@@ -512,22 +585,23 @@ export function DeclarationManager() {
       </div>
 
       {/* Values Section */}
-      <div className="space-y-3">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <Collapsible open={isValuesOpen} onOpenChange={setIsValuesOpen}>
-          <CollapsibleTrigger asChild>
-            <div className="flex items-center -ml-3 mb-2 cursor-pointer">
-              <Button variant="ghost" size="sm">
-                {isValuesOpen ? (
-                  <ChevronDown className="h-4 w-4" strokeWidth={4} />
-                ) : (
-                  <ChevronRight className="h-4 w-4" strokeWidth={4} />
-                )}
-                <span className="sr-only">Toggle</span>
-              </Button>
-              <h2 className="font-bold flex-1">Values</h2>
-            </div>
+          <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-accent/50 transition-colors">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
+              <Tag className="h-4 w-4" />
+            </span>
+            <span className="font-bold flex-1">Values{values.length > 0 ? ` (${values.length})` : ''}</span>
+            {isValuesOpen ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+            )}
           </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-3">
+          <CollapsibleContent className="px-3 pb-3 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Named constants usable in expressions throughout the model.
+            </p>
             <div className="space-y-2 max-h-[200px] overflow-y-auto">
               {values.map((v) => (
                 <div
@@ -592,29 +666,30 @@ export function DeclarationManager() {
             </div>
 
             <Button size="sm" variant="outline" onClick={handleAddValue}>
-              Add Value
+              <Plus className="h-3.5 w-3.5 mr-1" /> Add Value
             </Button>
           </CollapsibleContent>
         </Collapsible>
       </div>
 
       {/* Priorities Section */}
-      <div className="space-y-3">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <Collapsible open={isPrioritiesOpen} onOpenChange={setIsPrioritiesOpen}>
-          <CollapsibleTrigger asChild>
-            <div className="flex items-center -ml-3 mb-2 cursor-pointer">
-              <Button variant="ghost" size="sm">
-                {isPrioritiesOpen ? (
-                  <ChevronDown className="h-4 w-4" strokeWidth={4} />
-                ) : (
-                  <ChevronRight className="h-4 w-4" strokeWidth={4} />
-                )}
-                <span className="sr-only">Toggle</span>
-              </Button>
-              <h2 className="font-bold flex-1">Priorities</h2>
-            </div>
+          <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-accent/50 transition-colors">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
+              <Layers className="h-4 w-4" />
+            </span>
+            <span className="font-bold flex-1">Priorities{priorities.length > 0 ? ` (${priorities.length})` : ''}</span>
+            {isPrioritiesOpen ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+            )}
           </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-3 mb-8">
+          <CollapsibleContent className="px-3 pb-3 space-y-3 mb-8">
+            <p className="text-xs text-muted-foreground">
+              Named levels controlling which enabled transition fires first (lower = higher priority).
+            </p>
             <div className="space-y-2">
               {priorities
                 .slice()
@@ -660,7 +735,7 @@ export function DeclarationManager() {
             </div>
 
             <Button size="sm" variant="outline" onClick={handleAddPriority}>
-              Add Priority
+              <Plus className="h-3.5 w-3.5 mr-1" /> Add Priority
             </Button>
 
             <Dialog open={priorityEditorOpen} onOpenChange={setPriorityEditorOpen}>
@@ -681,32 +756,33 @@ export function DeclarationManager() {
       </div>
 
       {/* Functions Section */}
-      <div className="space-y-3">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <Collapsible open={isFunctionsOpen} onOpenChange={setIsFunctionsOpen}>
-          <CollapsibleTrigger asChild>
-            <div className="flex items-center -ml-3 mb-2 cursor-pointer">
-              <Button variant="ghost" size="sm">
-                {isFunctionsOpen ? (
-                  <ChevronDown className="h-4 w-4" strokeWidth={4} />
-                ) : (
-                  <ChevronRight className="h-4 w-4" strokeWidth={4} />
-                )}
-                <span className="sr-only">Toggle</span>
-              </Button>
-              <h2 className="font-bold flex-1">Functions</h2>
-              {functions.some((f) => f.code.startsWith('// SML (needs manual translation):')) && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <TriangleAlert className="h-4 w-4 text-amber-500 mr-1" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <p>Some functions could not be auto-translated from SML and need manual translation to Rhai.</p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </div>
+          <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-accent/50 transition-colors">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
+              <FunctionSquare className="h-4 w-4" />
+            </span>
+            <span className="font-bold flex-1">Functions{functions.length > 0 ? ` (${functions.length})` : ''}</span>
+            {functions.some((f) => f.code.startsWith('// SML (needs manual translation):')) && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TriangleAlert className="h-4 w-4 text-amber-500" />
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  <p>Some functions could not be auto-translated from SML and need manual translation to Rhai.</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {isFunctionsOpen ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+            )}
           </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-3">
+          <CollapsibleContent className="px-3 pb-3 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Reusable Rhai functions callable from guards, arc inscriptions, and code segments.
+            </p>
             <div className="space-y-2">
               {functions.map((f) => (
                 <div
@@ -754,11 +830,11 @@ export function DeclarationManager() {
             <Dialog open={functionEditorOpen} onOpenChange={setFunctionEditorOpen}>
               <DialogTrigger asChild>
                 <Button
-                  className="w-full"
+                  className="w-full border-dashed text-primary hover:text-primary"
                   variant="outline"
                   onClick={() => setSelectedFunction(undefined)}
                 >
-                  Create New Function
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Create New Function
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[600px]">
@@ -778,22 +854,23 @@ export function DeclarationManager() {
       </div>
 
       {/* Use Section */}
-      <div className="space-y-3">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <Collapsible open={isUsesOpen} onOpenChange={setIsUsesOpen}>
-          <CollapsibleTrigger asChild>
-            <div className="flex items-center -ml-3 mb-2 cursor-pointer">
-              <Button variant="ghost" size="sm">
-                {isUsesOpen ? (
-                  <ChevronDown className="h-4 w-4" strokeWidth={4} />
-                ) : (
-                  <ChevronRight className="h-4 w-4" strokeWidth={4} />
-                )}
-                <span className="sr-only">Toggle</span>
-              </Button>
-              <h2 className="font-bold flex-1">Libraries</h2>
-            </div>
+          <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-accent/50 transition-colors">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
+              <BookOpen className="h-4 w-4" />
+            </span>
+            <span className="font-bold flex-1">Libraries{uses.length > 0 ? ` (${uses.length})` : ''}</span>
+            {isUsesOpen ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+            )}
           </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-3">
+          <CollapsibleContent className="px-3 pb-3 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              External Rhai script files imported into this model.
+            </p>
             <div className="space-y-2 max-h-[200px] overflow-y-auto">
               {uses.map((use) => (
                 <div
@@ -828,8 +905,8 @@ export function DeclarationManager() {
 
             <Dialog open={useEditorOpen} onOpenChange={setUseEditorOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full" variant="outline" onClick={() => setSelectedUse(undefined)}>
-                  Add External Library
+                <Button className="w-full border-dashed text-primary hover:text-primary" variant="outline" onClick={() => setSelectedUse(undefined)}>
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Add External Library
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[600px]">
@@ -841,6 +918,62 @@ export function DeclarationManager() {
                   onSave={handleSaveUse} />
               </DialogContent>
             </Dialog>
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
+
+      {/* Constraints Section (Declare) */}
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <Collapsible open={isConstraintsOpen} onOpenChange={setIsConstraintsOpen}>
+          <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-accent/50 transition-colors">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
+              <Shield className="h-4 w-4" />
+            </span>
+            <span className="font-bold flex-1">Constraints{declareItems.length > 0 ? ` (${declareItems.length})` : ''}</span>
+            {isConstraintsOpen ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+            )}
+          </CollapsibleTrigger>
+          <CollapsibleContent className="px-3 pb-3 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Behavioral rules — e.g. &quot;B must eventually follow A&quot; — enforced during simulation.
+            </p>
+            {declareItems.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                No Declare constraints yet. Draw one from the constraint tool in the canvas toolbar.
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {declareItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="border rounded-md p-2 bg-muted/20 transition-colors flex items-center justify-between gap-2"
+                  >
+                    <button
+                      className="flex items-center gap-2 min-w-0 flex-1 text-left"
+                      onClick={() => requestFocus({
+                        netId: item.netId,
+                        elementId: item.elementType === 'edge' ? item.id : (item.parentNodeId || item.id),
+                        elementType: item.elementType,
+                        field: item.elementType === 'node' ? 'declareUnary' : undefined,
+                      })}
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{ backgroundColor: item.enabled ? '#15803d' : '#9ca3af' }}
+                        title={item.enabled ? 'Enabled' : 'Disabled'}
+                      />
+                      <span className="font-mono text-xs truncate" title={item.name}>{item.name}</span>
+                    </button>
+                    <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0" onClick={() => handleDeleteDeclareItem(item)}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CollapsibleContent>
         </Collapsible>
       </div>

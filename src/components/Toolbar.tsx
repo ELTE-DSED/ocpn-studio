@@ -1,7 +1,16 @@
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Circle, Square, LetterText, ArrowRight, SquareStack } from "lucide-react"
+import { Circle, Square, LetterText, ArrowRight, SquareStack, Milestone, ChevronDown, Workflow } from "lucide-react"
 
 import { Toggle } from '@/components/ui/toggle';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 import {
   Tooltip,
@@ -17,7 +26,49 @@ import { LayoutPopover, LayoutOptions } from "@/components/LayoutPopover";
 import { useDnD } from '@/utils/DnDContext';
 import useStore from '@/stores/store';
 import { useShallow } from 'zustand/react/shallow';
-import type { ArcType } from '@/types';
+import type { ArcType, BinaryDeclareTemplate } from '@/types';
+
+const ARC_TYPES: { value: ArcType; label: string; description: string }[] = [
+  { value: 'normal', label: 'Normal Arc', description: 'Moves tokens between a place and a transition' },
+  { value: 'inhibitor', label: 'Inhibitor Arc', description: 'Enabled only when the place is empty' },
+  { value: 'reset', label: 'Reset Arc', description: 'Removes all tokens from the place when firing' },
+];
+
+const DECLARE_TEMPLATE_GROUPS: { label: string; items: { value: BinaryDeclareTemplate; label: string; description: string; color: string }[] }[] = [
+  {
+    label: 'Ordering',
+    items: [
+      { value: 'response', label: 'Response', description: 'a fires ⇒ b eventually fires', color: '#15803d' },
+      { value: 'precedence', label: 'Precedence', description: 'b may only fire after a', color: '#15803d' },
+      { value: 'succession', label: 'Succession', description: 'Response + Precedence', color: '#15803d' },
+      { value: 'alternate-response', label: 'Alternate Response', description: 'Like Response, but a can’t refire before b', color: '#15803d' },
+      { value: 'alternate-precedence', label: 'Alternate Precedence', description: 'Like Precedence, needs a fresh a before each b', color: '#15803d' },
+      { value: 'alternate-succession', label: 'Alternate Succession', description: 'Alternate Response + Alternate Precedence', color: '#15803d' },
+      { value: 'chain-response', label: 'Chain Response', description: 'b must be the very next event after a', color: '#15803d' },
+      { value: 'chain-precedence', label: 'Chain Precedence', description: 'a must be the event immediately before b', color: '#15803d' },
+      { value: 'chain-succession', label: 'Chain Succession', description: 'Chain Response + Chain Precedence', color: '#15803d' },
+    ],
+  },
+  {
+    label: 'Existence',
+    items: [
+      { value: 'responded-existence', label: 'Responded Existence', description: 'a fires ⇒ b fires (any order)', color: '#7e22ce' },
+      { value: 'co-existence', label: 'Co-Existence', description: 'a fires ⇔ b fires', color: '#7e22ce' },
+      { value: 'choice', label: 'Choice', description: 'a or b must fire', color: '#7e22ce' },
+      { value: 'exclusive-choice', label: 'Exclusive Choice', description: 'exactly one of a, b must fire', color: '#7e22ce' },
+    ],
+  },
+  {
+    label: 'Negation',
+    items: [
+      { value: 'not-succession', label: 'Not Succession', description: 'a fires ⇒ b never fires after', color: '#b91c1c' },
+      { value: 'not-coexistence', label: 'Not Coexistence', description: 'a and b never both fire', color: '#b91c1c' },
+      { value: 'not-chain-succession', label: 'Not Chain Succession', description: 'b may never fire immediately after a', color: '#b91c1c' },
+    ],
+  },
+];
+
+const DECLARE_TEMPLATES = DECLARE_TEMPLATE_GROUPS.flatMap((g) => g.items);
 
 interface ToolbarProps {
   toggleArcMode: (pressed: boolean, arcType?: ArcType) => void;
@@ -50,6 +101,15 @@ export function Toolbar({ toggleArcMode, onApplyLayout }: ToolbarProps) {
   const setShowMarkingDisplay = useStore((state) => state.setShowMarkingDisplay);
   const activeArcType = useStore((state) => state.activeArcType);
   const isArcMode = useStore((state) => state.isArcMode);
+  const isDeclareMode = useStore((state) => state.isDeclareMode);
+  const activeDeclareTemplate = useStore((state) => state.activeDeclareTemplate);
+  const toggleDeclareMode = useStore((state) => state.toggleDeclareMode);
+  const showDeclareLayer = useStore((state) => state.showDeclareLayer);
+  const setShowDeclareLayer = useStore((state) => state.setShowDeclareLayer);
+  const isChainMode = useStore((state) => state.isChainMode);
+  const toggleChainMode = useStore((state) => state.toggleChainMode);
+  const [isArcMenuOpen, setIsArcMenuOpen] = useState(false);
+  const [isDeclareMenuOpen, setIsDeclareMenuOpen] = useState(false);
 
   // Hierarchy: get selected element info
   const activePetriNetId = useStore((state) => state.activePetriNetId);
@@ -95,16 +155,6 @@ export function Toolbar({ toggleArcMode, onApplyLayout }: ToolbarProps) {
   const handleFlattenSubpage = () => {
     if (activePetriNetId && selectedTransitionId && isSubstitutionTransition) {
       flattenSubstitutionTransition(activePetriNetId, selectedTransitionId);
-    }
-  };
-
-  const handleArcToggle = (arcType: ArcType) => {
-    if (isArcMode && activeArcType === arcType) {
-      // Same type already active → turn off
-      toggleArcMode(false);
-    } else {
-      // Activate this arc type
-      toggleArcMode(true, arcType);
     }
   };
 
@@ -171,66 +221,133 @@ export function Toolbar({ toggleArcMode, onApplyLayout }: ToolbarProps) {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Toggle
-                    aria-label="Toggle Arc Mode"
-                    pressed={isArcMode && activeArcType === 'normal'}
-                    onPressedChange={() => handleArcToggle('normal')}
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                    <span className="sr-only">Toggle Arc Mode</span>
-                  </Toggle>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Arc</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
 
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
                   <Toggle
-                    aria-label="Toggle Inhibitor Arc Mode"
-                    pressed={isArcMode && activeArcType === 'inhibitor'}
-                    onPressedChange={() => handleArcToggle('inhibitor')}
+                    aria-label="Toggle Chain Mode"
+                    pressed={isChainMode}
+                    onPressedChange={toggleChainMode}
                   >
-                    <ArcTypeIcon type="inhibitor" className="h-4 w-4" />
-                    <span className="sr-only">Toggle Inhibitor Arc Mode</span>
+                    <Workflow className="h-4 w-4" style={{ color: isChainMode ? '#0891b2' : undefined }} />
+                    <span className="sr-only">Toggle Chain Mode</span>
                   </Toggle>
                 </span>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Inhibitor Arc</p>
+                <p>Chain Mode — click to place alternating places/transitions, auto-connected</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Toggle
-                    aria-label="Toggle Reset Arc Mode"
-                    pressed={isArcMode && activeArcType === 'reset'}
-                    onPressedChange={() => handleArcToggle('reset')}
-                  >
-                    <ArcTypeIcon type="reset" className="h-4 w-4" />
-                    <span className="sr-only">Toggle Reset Arc Mode</span>
-                  </Toggle>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Reset Arc</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <DropdownMenu open={isArcMenuOpen} onOpenChange={setIsArcMenuOpen}>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center">
+                    <DropdownMenuTrigger asChild>
+                      <Toggle
+                        aria-label="Toggle Arc Mode"
+                        pressed={isArcMode}
+                        onPressedChange={(pressed) => {
+                          if (pressed) {
+                            setIsArcMenuOpen(true);
+                          } else {
+                            toggleArcMode(false);
+                          }
+                        }}
+                        className="gap-0.5 px-2"
+                      >
+                        <ArcTypeIcon type={activeArcType} className="h-4 w-4" />
+                        <ChevronDown className="h-3 w-3 opacity-60" />
+                        <span className="sr-only">Toggle Arc Mode</span>
+                      </Toggle>
+                    </DropdownMenuTrigger>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Arc {isArcMode && `— ${ARC_TYPES.find(t => t.value === activeArcType)?.label}`}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <DropdownMenuContent align="start" className="w-64">
+              {ARC_TYPES.map((t) => (
+                <DropdownMenuItem
+                  key={t.value}
+                  className="flex-col items-start gap-0"
+                  onClick={() => {
+                    toggleArcMode(true, t.value);
+                    setIsArcMenuOpen(false);
+                  }}
+                >
+                  <span className="flex items-center gap-2 text-sm font-medium">
+                    <ArcTypeIcon type={t.value} className="h-3.5 w-3.5" />
+                    {t.label}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{t.description}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu open={isDeclareMenuOpen} onOpenChange={setIsDeclareMenuOpen}>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center">
+                    <DropdownMenuTrigger asChild>
+                      <Toggle
+                        aria-label="Toggle Declare Constraint Mode"
+                        pressed={isDeclareMode}
+                        onPressedChange={(pressed) => {
+                          if (pressed) {
+                            setIsDeclareMenuOpen(true);
+                          } else {
+                            toggleDeclareMode(false);
+                          }
+                        }}
+                        className="gap-0.5 px-2"
+                      >
+                        <Milestone className="h-4 w-4" style={{ color: isDeclareMode ? DECLARE_TEMPLATES.find(t => t.value === activeDeclareTemplate)?.color : undefined }} />
+                        <ChevronDown className="h-3 w-3 opacity-60" />
+                        <span className="sr-only">Toggle Declare Constraint Mode</span>
+                      </Toggle>
+                    </DropdownMenuTrigger>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Declare Constraint {isDeclareMode && `— ${DECLARE_TEMPLATES.find(t => t.value === activeDeclareTemplate)?.label}`}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <DropdownMenuContent align="start" className="w-72 max-h-[70vh] overflow-y-auto">
+              <p className="text-xs text-muted-foreground px-2 pb-1 pt-1">Pick a template, then drag between two transitions</p>
+              {DECLARE_TEMPLATE_GROUPS.map((group, gi) => (
+                <div key={group.label}>
+                  {gi > 0 && <DropdownMenuSeparator />}
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wide text-muted-foreground">{group.label}</DropdownMenuLabel>
+                  {group.items.map((t) => (
+                    <DropdownMenuItem
+                      key={t.value}
+                      className="flex-col items-start gap-0"
+                      onClick={() => {
+                        toggleDeclareMode(true, t.value);
+                        setIsDeclareMenuOpen(false);
+                      }}
+                    >
+                      <span className="flex items-center gap-2 text-sm font-medium">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
+                        {t.label}
+                      </span>
+                      <span className="text-xs text-muted-foreground pl-4">{t.description}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </div>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <TooltipProvider>
             <Tooltip>
@@ -350,6 +467,27 @@ export function Toolbar({ toggleArcMode, onApplyLayout }: ToolbarProps) {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Toggle
+                    aria-label="Toggle Declare Constraint Layer"
+                    pressed={showDeclareLayer}
+                    onPressedChange={setShowDeclareLayer}
+                  >
+                    <Milestone className="h-4 w-4" style={{ color: showDeclareLayer ? '#4f46e5' : undefined }} />
+                    <span className="sr-only">Toggle Declare Constraint Layer</span>
+                  </Toggle>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Show/Hide Declare Constraints</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           <LayoutPopover onApplyLayout={onApplyLayout} />
         {/* <Popover>
           <PopoverTrigger>

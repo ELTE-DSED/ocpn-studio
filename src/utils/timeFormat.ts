@@ -74,3 +74,16 @@ export function formatDateTimeCompact(date: Date): string {
     second: '2-digit',
   });
 }
+
+/**
+ * Format a simulation time value (milliseconds since epoch/start) for display:
+ * an absolute datetime if a simulation epoch is set, otherwise the plain
+ * integer model time. Shared so every place that surfaces simulation time
+ * (status panel, toasts, etc.) renders it the same way.
+ */
+export function formatSimulationTime(timeMs: number, epoch: Date | null): string {
+  if (epoch) {
+    return formatDateTimeFull(new Date(epoch.getTime() + timeMs));
+  }
+  return String(timeMs);
+}

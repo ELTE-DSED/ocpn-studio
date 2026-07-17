@@ -30,6 +30,85 @@ export function isTimedToken(token: unknown): token is TimedToken {
 
 export type ArcType = 'normal' | 'reset' | 'inhibitor';
 
+// Declare constraints (LTL-style behavioral rules over transition occurrences, see cpntools.org)
+export type BinaryDeclareTemplate =
+  | 'response'
+  | 'precedence'
+  | 'succession'
+  | 'alternate-response'
+  | 'alternate-precedence'
+  | 'alternate-succession'
+  | 'chain-response'
+  | 'chain-precedence'
+  | 'chain-succession'
+  | 'responded-existence'
+  | 'co-existence'
+  | 'choice'
+  | 'exclusive-choice'
+  | 'not-coexistence'
+  | 'not-succession'
+  | 'not-chain-succession';
+
+export type UnaryDeclareTemplate = 'existence' | 'absence' | 'exactly' | 'init' | 'last';
+
+export type DeclareTemplate = BinaryDeclareTemplate | UnaryDeclareTemplate;
+
+// A unary constraint lives directly on the transition it constrains (dropped onto it, like a "roof" tag)
+export interface UnaryDeclareConstraint {
+  id: string;
+  template: UnaryDeclareTemplate;
+  enabled: boolean;
+  /** Occurrence count parameter, used by Existence/Absence/Exactly (defaults to 1 if omitted) */
+  n?: number;
+}
+
+// A binary constraint is drawn as an edge between two transitions; this is the edge's `data`
+export interface DeclareConstraintEdgeData {
+  template: BinaryDeclareTemplate;
+  enabled: boolean;
+}
+
+// Live acceptance state of one constraint, reported by the simulator after each step.
+// There is no "violated" state: the simulator proactively blocks transitions that would
+// break a constraint, so violations are prevented rather than flagged after the fact.
+export interface DeclareResult {
+  constraintId: string;
+  constraintName: string;
+  template: DeclareTemplate;
+  state: 'pending' | 'satisfied';
+  activationCount: number;
+}
+
+// A transition that currently has a binding the guard/tokens would allow, but that is
+// being proactively withheld by one or more Declare constraints — reported live so the
+// canvas can show *why* the transition isn't firing.
+export interface BlockedTransitionInfo {
+  transitionId: string;
+  blockingConstraintIds: string[];
+}
+
+// A transition that would be enabled if the user pressed "step" right now — including ones
+// only reachable after the clock eagerly advances to a future token timestamp. `atTime` is
+// when it would actually fire; `isFuture` is whether that's later than the simulator's
+// current displayed time (firing it will advance the clock to `atTime`).
+export interface EnabledTransitionInfo {
+  transitionId: string;
+  transitionName: string;
+  atTime: number;
+  isFuture: boolean;
+}
+
+// Templates whose obligation cannot be enforced by blocking a future firing — they can
+// only ever be judged "resolved" or "still open" while the run continues, and are never
+// definitively violated until the run itself ends without the obligation being met.
+export const NON_BLOCKING_DECLARE_TEMPLATES: readonly DeclareTemplate[] = [
+  'existence',
+  'response',
+  'responded-existence',
+  'co-existence',
+  'choice',
+];
+
 export type PortType = 'in' | 'out' | 'io';
 
 export type SocketAssignment = {
@@ -182,6 +261,9 @@ export type FocusRequest = {
   elementType: 'node' | 'edge';
   /** Which property field to auto-focus (e.g. 'guard', 'time', 'codeSegment', 'label', 'delay') */
   field?: string;
+  /** Skip the usual switch to Model mode — e.g. the Simulation pane's enabled-transitions
+   * list wants to highlight a transition without leaving Simulation mode. */
+  keepMode?: boolean;
 } | null;
 
 export type AppState = {
@@ -200,6 +282,11 @@ export type AppState = {
   showMarkingDisplay: boolean; // Toggle for showing/hiding marking rectangles
   isArcMode: boolean; // Whether arc connection mode is active
   activeArcType: ArcType; // The type of arc to create when connecting nodes
+  isDeclareMode: boolean; // Whether Declare-constraint drawing mode is active
+  activeDeclareTemplate: BinaryDeclareTemplate; // The template to use when connecting two transitions
+  showDeclareLayer: boolean; // Toggle for showing/hiding Declare constraint edges and badges
+  isChainMode: boolean; // Whether Chain mode (click-to-place alternating place/transition) is active
+  isFireMode: boolean; // Whether "click a transition to fire it" mode is active during simulation
   fusionSets: FusionSet[]; // Named fusion sets for fusion places
   monitors: Monitor[]; // Defined monitors for analysis
   stateSpaceResult: StateSpaceResult | null; // Cached state space analysis result
@@ -255,6 +342,10 @@ export type AppActions = {
 
   toggleArcMode: (state: boolean, arcType?: ArcType) => void;
   setActiveArcType: (arcType: ArcType) => void;
+  toggleDeclareMode: (state: boolean, template?: BinaryDeclareTemplate) => void;
+  setShowDeclareLayer: (show: boolean) => void;
+  toggleChainMode: (state: boolean) => void;
+  toggleFireMode: (state: boolean) => void;
   setActiveMode: (mode: ActiveMode) => void;
   setOcpnName: (name: string) => void;
   setSimulationEpoch: (epoch: string | null) => void;

@@ -29,6 +29,10 @@ interface TimedMarkingDialogProps {
   recordAttributes?: RecordAttribute[];
   initialData: TimedToken[];
   onSave: (tokens: TimedToken[]) => void;
+  /** Dialog title prefix — defaults to "Edit Timed Marking" (the original, model-editing
+   * use of this dialog); pass e.g. "Edit Current Marking" when reusing it to edit a place's
+   * live marking mid-simulation instead. */
+  titleLabel?: string;
 }
 
 interface TokenEditorRowProps {
@@ -394,6 +398,7 @@ export function TimedMarkingDialog({
   recordAttributes,
   initialData,
   onSave,
+  titleLabel = "Edit Timed Marking",
 }: TimedMarkingDialogProps) {
   const [tokens, setTokens] = useState<TimedToken[]>(initialData);
   const [currentPage, setCurrentPage] = useState(1);
@@ -689,7 +694,7 @@ export function TimedMarkingDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={isRecordType ? 'max-w-[90vw] sm:max-w-[90vw] xl:max-w-6xl' : 'max-w-3xl sm:max-w-3xl'}>
         <DialogHeader>
-          <DialogTitle>Edit Timed Marking for {colorSetName}</DialogTitle>
+          <DialogTitle>{titleLabel} for {colorSetName}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-2">

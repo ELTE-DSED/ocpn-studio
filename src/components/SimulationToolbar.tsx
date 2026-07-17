@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { RotateCcw, Square, SkipForward, Play, FastForward, Loader2 } from "lucide-react";
+import { RotateCcw, Power, Square, SkipForward, Play, FastForward, Loader2, MousePointerClick } from "lucide-react";
 import { useContext, useEffect, useState } from 'react';
 
 import {
@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/tooltip';
 
 import { SimulationContext } from '@/context/useSimulationContextHook';
+import useStore from '@/stores/store';
 
 type RunMode = 'animated' | 'fast' | null;
 
@@ -18,18 +19,27 @@ export function SimulationToolbar() {
   if (!context) {
     throw new Error('SimulationToolbar must be used within a SimulationProvider');
   }
-  const { 
-    reset, 
-    runStep, 
-    runMultipleStepsAnimated, 
+  const {
+    reset,
+    runStep,
+    runMultipleStepsAnimated,
     runMultipleStepsFast,
     stop,
     isRunning,
+    isInitialized,
     simulationConfig
   } = context;
 
+  // Before the simulator has ever been initialized, "Reset Simulation" reads as a strange
+  // no-op ("reset to what?") — the same button doubles as the very first initialization, so
+  // label/icon it as "Start" until that's happened at least once.
+  const isFirstRun = !isInitialized;
+
   // Track which button started the current run
   const [runMode, setRunMode] = useState<RunMode>(null);
+
+  const isFireMode = useStore((state) => state.isFireMode);
+  const toggleFireMode = useStore((state) => state.toggleFireMode);
 
   // Show wait cursor globally while the simulation is running
   useEffect(() => {
@@ -71,23 +81,23 @@ export function SimulationToolbar() {
   return (
     <div className="flex items-center gap-1">
       <TooltipProvider>
-        {/* Rewind/Reset Button */}
+        {/* Rewind/Reset Button — reads as "Initialize Simulation" before the first run */}
         <Tooltip>
           <TooltipTrigger asChild>
             <span>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={handleReset}
                 disabled={isRunning}
               >
-                <RotateCcw className="h-5 w-5" />
-                <span className="sr-only">Reset Simulation</span>
+                {isFirstRun ? <Power className="h-5 w-5" /> : <RotateCcw className="h-5 w-5" />}
+                <span className="sr-only">{isFirstRun ? 'Initialize Simulation' : 'Reset Simulation'}</span>
               </Button>
             </span>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Reset Simulation</p>
+            <p>{isFirstRun ? 'Initialize Simulation' : 'Reset Simulation'}</p>
           </TooltipContent>
         </Tooltip>
 
@@ -111,13 +121,36 @@ export function SimulationToolbar() {
           </TooltipContent>
         </Tooltip>
 
+        {/* Fire Transition Mode Toggle — click a specific enabled transition on the
+            canvas to fire it directly, instead of letting the engine pick one. */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span>
+              <Button
+                variant={isFireMode ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={() => toggleFireMode(!isFireMode)}
+                disabled={isRunning}
+                aria-pressed={isFireMode}
+                aria-label="Toggle Fire Transition Mode"
+              >
+                <MousePointerClick className={`h-5 w-5 ${isFireMode ? 'text-primary' : ''}`} />
+                <span className="sr-only">Toggle Fire Transition Mode</span>
+              </Button>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Click an enabled transition on the canvas to fire it</p>
+          </TooltipContent>
+        </Tooltip>
+
         {/* Single Step Button */}
         <Tooltip>
           <TooltipTrigger asChild>
             <span>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={handleRunStep}
                 disabled={isRunning}
               >
@@ -147,7 +180,7 @@ export function SimulationToolbar() {
                 ) : (
                   <Play className="h-5 w-5" />
                 )}
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground font-medium">
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-0.75 text-[10px] text-primary-foreground font-medium leading-none">
                   {simulationConfig.stepsPerRun}
                 </span>
                 <span className="sr-only">Run {simulationConfig.stepsPerRun} Steps (Animated)</span>
@@ -175,7 +208,7 @@ export function SimulationToolbar() {
                 ) : (
                   <FastForward className="h-5 w-5" />
                 )}
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground font-medium">
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-0.75 text-[10px] text-primary-foreground font-medium leading-none">
                   {simulationConfig.stepsPerRun}
                 </span>
                 <span className="sr-only">Run {simulationConfig.stepsPerRun} Steps (Fast)</span>

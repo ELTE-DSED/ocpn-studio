@@ -42,6 +42,10 @@ For legacy reasons, we also support the Standard ML notation used in CPN Tools:
 ✅ 2`x --> consume the same token twice
 ```
 
+### Batch Editing
+
+Select multiple places or multiple transitions at once (click-drag a selection box, or `Shift`/`Ctrl`/`Cmd`-click individual nodes) to edit properties shared across all of them in a single step. The sidebar shows a "Places Selected" / "Transitions Selected" panel where changing a field (e.g. color set, priority, or override color) applies it to every selected node at once. A field only shows a value when all selected nodes currently share it; otherwise it appears blank until you set one explicitly.
+
 ## Declarations
 
 ### Color Sets
@@ -75,6 +79,55 @@ ft : FuelTruck
 
 ### Functions
 Define Rhai functions that can be used in your Petri Net.
+
+## Declare Constraints
+
+Declare constraints let you express declarative, LTL-based behavioral rules ("if A happens, B must eventually happen too") without redesigning the net's control flow — the same idea as CPN Tools' Declare plugin. Unlike a [Monitor](#monitors) breakpoint, which stops the simulation *after* a violation, Declare constraints are enforced **proactively**: a transition firing that would break a constraint is simply excluded from the enabled set, so the constraint can never actually be violated during a run.
+
+### Binary Constraints (between two transitions)
+
+1. Click the **Declare Constraint** tool in the canvas toolbar (next to Arc Mode) and pick a template from the dropdown — the template determines the constraint arc's color family.
+2. Drag from the source transition to the target transition, just like drawing a normal arc.
+3. Select the arc to open **Declare Constraint Properties**, where you can change the template, enable/disable the constraint, and see its live acceptance state once a simulation is running.
+
+| Family | Template | Meaning |
+|--------|----------|---------|
+| Ordering (green) | Response | If A fires, B must eventually fire afterward |
+| | Precedence | B may only fire if A has fired at least once before |
+| | Succession | Response + Precedence combined |
+| | Alternate Response | Like Response, but A cannot fire again until B does |
+| | Alternate Precedence | Like Precedence, but each B needs a fresh A since the last B |
+| | Alternate Succession | Alternate Response + Alternate Precedence combined |
+| | Chain Response | B must be the very next transition to fire after A, system-wide |
+| | Chain Precedence | A must be the transition that fired immediately before B, system-wide |
+| | Chain Succession | Chain Response + Chain Precedence combined |
+| Existence (purple) | Responded Existence | If A fires, B must fire too — in either order |
+| | Co-Existence | A fires if and only if B fires |
+| | Choice | At least one of A or B must fire |
+| | Exclusive Choice | Exactly one of A or B must fire, never both |
+| Negation (red) | Not Succession | Once A fires, B may never fire afterward |
+| | Not Coexistence | A and B must never both fire in the same run |
+| | Not Chain Succession | B may never fire as the immediate next event after A (but may fire later) |
+
+Constraint arcs are colored live according to their acceptance state while simulating: grey/neutral before any relevant activity, amber once activated but not yet resolved (e.g. Response after A has fired, before B), green once satisfied, and red (with a pulsing animation) on the transition that is currently blocked from firing because of that constraint.
+
+### Unary Constraints (on a single transition)
+
+Some rules only concern one transition's firing count or position in the run, not a relationship between two transitions. Select a transition and use the **Declare Constraint** section in its Properties panel to add one:
+
+| Template | Meaning |
+|----------|---------|
+| Existence(n) | Must fire at least `n` times |
+| Absence(n) | Must fire at most `n − 1` times |
+| Exactly(n) | Must fire exactly `n` times |
+| Init | Must be the first transition to fire, system-wide |
+| Last | Must be the last transition to fire, system-wide |
+
+A transition can carry only one unary constraint at a time (shown as a small "roof" tag above the node on the canvas), matching CPN Tools' convention.
+
+### Managing Constraints
+
+The **Constraints** section in the Model sidebar lists every Declare constraint (unary and binary) across the whole net. Click one to jump to its location on the canvas. Toggle the **Declare Constraint Layer** button in the toolbar to show or hide all constraint arcs and roof tags without deleting them.
 
 ## Rhai Scripting Language
 
@@ -230,12 +283,39 @@ Control simulation with keyboard shortcuts (similar to media players):
 | `Ctrl/Cmd + ←` | Reset simulation |
 | `Escape` | Stop running simulation |
 
+### Enabled Transitions
+
+The **Enabled Transitions** panel in the Simulation sidebar lists every transition that could fire right now — or, marked with a clock icon, the next transition(s) that would become enabled if simulated time were advanced. Click a transition's name to select and zoom to it on the canvas without leaving Simulation mode; click the ▶ button next to it to fire that specific transition immediately.
+
+### Fire Mode
+
+Toggle **Fire Mode** (the cursor icon next to the Enabled Transitions heading) to click transitions directly on the canvas instead of using the panel list. Clicking an enabled transition fires it right away; if the transition is only enabled at a future point in time, firing it eagerly advances the simulation clock to that time and shows a toast confirming how far time moved.
+
+### Live Marking Editing
+
+While a simulation is running, a selected place's Properties panel shows both its **Initial Marking** (fixed, only takes effect on the next reset) and its **Current Marking (live)** — the place's actual token content right now. Use the **Edit** button next to Current Marking to open the same structured table editor used for initial markings, add or remove individual tokens, and apply the change immediately without restarting the run. This is useful for testing edge cases or nudging a stuck simulation without losing your progress.
+
 ### Event Log
 
 The simulation records all transition firings in the Event Log:
 - Each event shows consumed and produced tokens
 - UNIT tokens are displayed as bullets (•)
 - Expand an event to see full token details
+
+## Monitors
+
+Monitors observe a running simulation and collect statistics without affecting how the net fires — useful for performance analysis and debugging. Add one from the **Analysis** tab.
+
+| Type | What it does |
+|------|--------------|
+| Marking Size | Tracks the token count on selected places over the course of the run |
+| Transition Count | Counts firings of selected transitions |
+| Place Breakpoint | Stops the simulation when a chosen place meets a condition (e.g. becomes empty) |
+| Transition Breakpoint | Stops the simulation when a chosen transition fires |
+| Duration | Measures the time between a start transition and a matching end transition, correlated by a shared token attribute (e.g. an object `id`) — useful for cycle-time or lead-time metrics |
+| Data Collector | Runs a custom Rhai script after every step to observe and record arbitrary values |
+
+Each monitor computes running statistics (count, sum, average, min, max, standard deviation) that you can inspect in the **Performance Report**, and Breakpoint monitors additionally pause the simulation the moment their condition is met so you can inspect the exact marking that triggered it.
 
 ## OCEL 2.0 Export
 

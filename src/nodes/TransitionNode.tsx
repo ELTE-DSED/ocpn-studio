@@ -3,11 +3,14 @@ import { Handle, Position, NodeResizer, useConnection, useReactFlow } from '@xyf
 import useStore from '@/stores/store';
 import type { Node } from '@xyflow/react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import type { UnaryDeclareConstraint, DeclareResult } from '@/types';
+import { useSimulationContext } from '@/context/useSimulationContextHook';
 
 // Export the interface so it can be imported elsewhere
 export interface TransitionNodeData {
   label: string;
   isArcMode: boolean;
+  isDeclareMode?: boolean;
   type: string;
   guard: string;
   time: string;
@@ -20,6 +23,8 @@ export interface TransitionNodeData {
   // Offset positions for draggable inscriptions
   guardOffset?: { x: number; y: number };
   timeOffset?: { x: number; y: number };
+  // Unary Declare constraints (Existence/Absence) dropped directly onto this transition
+  declareUnary?: UnaryDeclareConstraint[];
 }
 
 export interface TransitionNodeProps {
@@ -139,11 +144,48 @@ export const TransitionNode: React.FC<TransitionNodeProps> = ({ id, data, select
 
   // Check if simulation is active and this substitution transition's subpage marking changed
   const activeMode = useStore((state) => state.activeMode);
+  const isFireMode = useStore((state) => state.isFireMode);
 
   // Check if any enabled monitor watches this transition
   const hasMonitor = useStore((state) =>
     state.monitors.some((m) => m.enabled && m.transitionIds.includes(id)),
   );
+
+  // Unary Declare constraints (Existence/Absence/Exactly/Init/Last) dropped directly onto
+  // this transition, rendered as CPN-Tools-style "roof" tags sitting on top of the node.
+  const showDeclareLayer = useStore((state) => state.showDeclareLayer);
+  const unaryConstraints = data.declareUnary ?? [];
+  const { declareResults, blockedTransitions, enabledTransitions } = useSimulationContext();
+  // Which constraints (of any kind) are, right now, the reason THIS transition can't fire.
+  const blockingConstraintIdsForThisTransition = blockedTransitions.find((bt) => bt.transitionId === id)?.blockingConstraintIds ?? [];
+  // Fire Transition Mode: highlight this transition as clickable when it's currently enabled
+  // (or would become enabled by letting simulation time advance — see EnabledTransitionInfo).
+  const fireableInfo = isFireMode && activeMode === 'simulation'
+    ? enabledTransitions.find((t) => t.transitionId === id)
+    : undefined;
+  const isFireable = !!fireableInfo;
+  const isFireableInFuture = !!fireableInfo?.isFuture;
+  const roofTags = unaryConstraints.map((c) => {
+    // Labels match CPN Tools' own Declare notation exactly (e.g. "1..*", "0..1", "3").
+    const n = c.n ?? 1;
+    const label =
+      c.template === 'existence' ? `${n}..*`
+      : c.template === 'absence' ? (n <= 1 ? '0' : `0..${n - 1}`)
+      : c.template === 'exactly' ? `${n}`
+      : c.template === 'init' ? 'init'
+      : 'last';
+    const result = declareResults.find((r: DeclareResult) => r.constraintId === c.id);
+    const isLive = activeMode !== 'model' && !!result;
+    const isBlockingNow = activeMode !== 'model' && blockingConstraintIdsForThisTransition.includes(c.id);
+    const color = !c.enabled ? '#9ca3af'
+      : isBlockingNow ? '#dc2626'
+      : isLive ? (result!.state === 'satisfied' ? '#16a34a' : '#d97706')
+      : '#4f46e5';
+    const tooltip = isBlockingNow
+      ? `${c.template} — blocking: "${data.label}" cannot fire right now`
+      : `${c.template}${n !== 1 && (c.template === 'existence' || c.template === 'absence' || c.template === 'exactly') ? ` (${n})` : ''}${isLive ? ` — ${result!.state}` : ''}${c.enabled ? '' : ' (disabled)'}`;
+    return { id: c.id, label, color, tooltip, isBlockingNow };
+  });
 
   // Get validation errors for this transition
   const validationErrors = useStore((state) => state.validationErrors[id]);
@@ -219,6 +261,9 @@ export const TransitionNode: React.FC<TransitionNodeProps> = ({ id, data, select
   }, [activePetriNetId, id, getNode, setNodes]);
 
   const isTarget = connection.inProgress && connection.fromNode.id !== id && connection.fromNode.type === 'place';
+  // Declare constraints connect two transitions, so the target handle only opens
+  // to another transition (and only while Declare-connect mode is active).
+  const isDeclareTarget = data.isDeclareMode && connection.inProgress && connection.fromNode.id !== id && connection.fromNode.type === 'transition';
 
   // Default offsets for inscriptions (relative to node center)
   // Disabled for now - will be made configurable later
@@ -230,7 +275,10 @@ export const TransitionNode: React.FC<TransitionNodeProps> = ({ id, data, select
   // }, [activePetriNetId, id, data, updateNodeData]);
 
   return (
-    <div className="relative cpn-node transition-node" style={data.overrideColor ? { borderColor: data.overrideColor } : undefined}>
+    <div
+      className={`relative cpn-node transition-node${isFireable ? ' cursor-pointer' : ''}`}
+      style={data.overrideColor ? { borderColor: data.overrideColor } : undefined}
+    >
 
       <NodeResizer
         isVisible={selected}
@@ -364,6 +412,40 @@ export const TransitionNode: React.FC<TransitionNodeProps> = ({ id, data, select
         </div>
       )}
 
+      {/* Unary Declare constraint (Existence/Absence/Exactly/Init/Last) - a single CPN-Tools-
+          style "roof" tag sitting on top of the node (CPN Tools only ever allows one — some
+          templates are mutually exclusive). Kept low-profile and only lightly overlapping the
+          node's top edge so it doesn't swallow arrowheads of arcs arriving from above. */}
+      {showDeclareLayer && roofTags.length > 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '100%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            gap: 2,
+            marginBottom: -3,
+            zIndex: 5,
+          }}
+          className="nodrag"
+        >
+          {roofTags.map((tag) => (
+            <div
+              key={tag.id}
+              className={`cursor-pointer${tag.isBlockingNow ? ' animate-pulse' : ''}`}
+              title={tag.tooltip}
+              onClick={(e) => { e.stopPropagation(); handleBadgeClick('declare-unary'); }}
+            >
+              <svg width="28" height="15" viewBox="0 0 28 15" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1,14 L1,6.5 L14,1 L27,6.5 L27,14 Z" fill="white" stroke={tag.color} strokeWidth={tag.isBlockingNow ? 1.6 : 1} strokeLinejoin="round" />
+                <text x="14" y="11.5" textAnchor="middle" fontSize="7.5" fontWeight="600" fontFamily="sans-serif" fill={tag.color}>{tag.label}</text>
+              </svg>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Hierarchy tag - subpage name at bottom center */}
       {data.subPageId && subPageName && (
         <div
@@ -397,6 +479,25 @@ export const TransitionNode: React.FC<TransitionNodeProps> = ({ id, data, select
             inset: -3,
             borderRadius: 3,
             border: '2px solid #7ED321',
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+
+      {/* Fire Transition Mode: pulsing highlight on transitions the user can click to fire.
+          Amber instead of green when it's only reachable by letting simulation time advance
+          (firing it will jump the clock forward to fireableInfo.atTime). */}
+      {isFireable && (
+        <div
+          className="animate-pulse"
+          style={{
+            position: 'absolute',
+            inset: -3,
+            borderRadius: 3,
+            border: `2px solid ${isFireableInFuture ? '#d97706' : '#16a34a'}`,
+            boxShadow: isFireableInFuture
+              ? '0 0 6px 1px rgba(217, 119, 6, 0.5)'
+              : '0 0 6px 1px rgba(22, 163, 74, 0.5)',
             pointerEvents: 'none',
           }}
         />
@@ -447,14 +548,14 @@ export const TransitionNode: React.FC<TransitionNodeProps> = ({ id, data, select
         className="custom-handle"
         type="source"
         position={Position.Right}
-        style={{ visibility: (data.isArcMode && !connection.inProgress) ? 'visible' : 'hidden' }}
+        style={{ visibility: ((data.isArcMode || data.isDeclareMode) && !connection.inProgress) ? 'visible' : 'hidden' }}
       />
       <Handle
         className="custom-handle"
         type="target"
         position={Position.Left}
-        style={{ visibility: (data.isArcMode && isTarget) ? 'visible' : 'hidden' }}
-        isConnectable={isTarget}
+        style={{ visibility: ((data.isArcMode && isTarget) || isDeclareTarget) ? 'visible' : 'hidden' }}
+        isConnectable={isTarget || isDeclareTarget}
       />
     </div>
   );

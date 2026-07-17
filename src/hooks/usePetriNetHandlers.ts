@@ -30,6 +30,31 @@ export function usePetriNetHandlers(petriNetId: string) {
 
   const onConnect: OnConnect = useCallback((connection: Connection) => {
     const state = useStore.getState();
+    const currentEdges = state.petriNetsById[petriNetId]?.edges || [];
+
+    if (state.isDeclareMode) {
+      // Declare constraints only connect two distinct transitions.
+      const nodes = state.petriNetsById[petriNetId]?.nodes || [];
+      const sourceNode = nodes.find((n) => n.id === connection.source);
+      const targetNode = nodes.find((n) => n.id === connection.target);
+      if (
+        connection.source === connection.target ||
+        sourceNode?.type !== 'transition' ||
+        targetNode?.type !== 'transition'
+      ) {
+        return;
+      }
+      const newEdge = {
+        ...connection,
+        id: uuidv4(),
+        type: 'declare-constraint',
+        label: '',
+        data: { template: state.activeDeclareTemplate, enabled: true },
+      };
+      setEdges(petriNetId, [...currentEdges, newEdge]);
+      return;
+    }
+
     const arcType = state.activeArcType;
     const newEdge = {
       ...connection,
@@ -39,7 +64,6 @@ export function usePetriNetHandlers(petriNetId: string) {
       animated: false,
       data: arcType !== 'normal' ? { arcType } : undefined,
     };
-    const currentEdges = state.petriNetsById[petriNetId]?.edges || [];
     setEdges(petriNetId, [...currentEdges, newEdge]);
   }, [petriNetId, setEdges]);
 

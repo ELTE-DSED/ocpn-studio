@@ -63,7 +63,6 @@ export function DeleteElementButton({ elementType, elementId, elementLabel }: De
             <DialogDescription>
               Are you sure you want to delete {typeName === 'arc' ? 'the arc' : `"${displayName}"`}?
               {elementType === 'node' && ' All connected arcs will also be removed.'}
-              {' '}This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

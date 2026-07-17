@@ -30,6 +30,10 @@ interface RecordMarkingDialogProps {
   attributes: RecordAttribute[]
   initialData: RecordData[] | MultisetEntry[]
   onSave: (data: RecordData[] | MultisetEntry[]) => void
+  /** Dialog title prefix — defaults to "Edit Initial Marking" (the original, model-editing
+   * use of this dialog); pass e.g. "Edit Current Marking" when reusing it to edit a place's
+   * live marking mid-simulation instead. */
+  titleLabel?: string
 }
 
 export function RecordMarkingDialog({
@@ -39,6 +43,7 @@ export function RecordMarkingDialog({
   attributes,
   initialData,
   onSave,
+  titleLabel = "Edit Initial Marking",
 }: RecordMarkingDialogProps) {
   const [activeTab, setActiveTab] = useState("visual")
   const [records, setRecords] = useState<RecordData[]>([])
@@ -353,7 +358,7 @@ export function RecordMarkingDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Edit Initial Marking for {colorSetName}</DialogTitle>
+          <DialogTitle>{titleLabel} for {colorSetName}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">

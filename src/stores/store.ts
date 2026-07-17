@@ -17,7 +17,7 @@ import { initialFunctions } from '@/declarations';
 import type { PlaceNodeData } from '@/nodes/PlaceNode';
 import { TransitionNodeData } from '@/nodes/TransitionNode';
 import { AuxTextNodeData } from '@/nodes/AuxTextNode';
-import type { ArcType } from '@/types';
+import type { ArcType, BinaryDeclareTemplate } from '@/types';
 import { validateModel, type ValidationErrors } from '@/utils/validation';
 import type { ColorSet } from '@/declarations';
 
@@ -78,6 +78,11 @@ const emptyState: AppState = {
   showMarkingDisplay: true,
   isArcMode: false,
   activeArcType: 'normal' as ArcType,
+  isDeclareMode: false,
+  activeDeclareTemplate: 'response' as BinaryDeclareTemplate,
+  showDeclareLayer: true,
+  isChainMode: false,
+  isFireMode: false,
   fusionSets: [],
   monitors: [],
   stateSpaceResult: null,
@@ -151,6 +156,11 @@ const useStore = create<StoreState>()(temporal((set) => ({
   showMarkingDisplay: true,
   isArcMode: false,
   activeArcType: 'normal' as ArcType,
+  isDeclareMode: false,
+  activeDeclareTemplate: 'response' as BinaryDeclareTemplate,
+  showDeclareLayer: true,
+  isChainMode: false,
+  isFireMode: false,
   activeMode: 'model',
   fusionSets: [],
   monitors: [],
@@ -381,11 +391,21 @@ const useStore = create<StoreState>()(temporal((set) => ({
       for (const [netId, net] of Object.entries(updatedNetsById)) {
         const nodeIndex = net.nodes.findIndex((n) => n.id === id);
         if (nodeIndex !== -1) {
+          // Keep selectedElement's own copy of this node in sync too — it's a separate
+          // snapshot captured at selection time, not derived live from `nodes` on render,
+          // so without this the Properties panel would keep showing a stale marking after
+          // any simulation-driven update (a step firing, or a manual "Current Marking" edit)
+          // while this same place stayed selected.
+          const updatedSelectedElement =
+            net.selectedElement?.type === 'node' && net.selectedElement.element.id === id
+              ? { ...net.selectedElement, element: { ...net.selectedElement.element, data: { ...net.selectedElement.element.data, marking: newMarking } } }
+              : net.selectedElement;
           updatedNetsById[netId] = {
             ...net,
             nodes: net.nodes.map((node) =>
               node.id === id ? { ...node, data: { ...node.data, marking: newMarking } } : node
             ),
+            selectedElement: updatedSelectedElement,
           };
           found = true;
           break;
@@ -751,6 +771,8 @@ const useStore = create<StoreState>()(temporal((set) => ({
   toggleArcMode: (state: boolean, arcType?: ArcType) =>
   set((store) => ({
     isArcMode: state,
+    isDeclareMode: state ? false : store.isDeclareMode,
+    isChainMode: state ? false : store.isChainMode,
     activeArcType: arcType || store.activeArcType,
     petriNetsById: Object.fromEntries(
       Object.entries(store.petriNetsById).map(([petriNetId, petriNet]) => [
@@ -759,7 +781,7 @@ const useStore = create<StoreState>()(temporal((set) => ({
           ...petriNet,
           nodes: petriNet.nodes.map((node) => ({
             ...node,
-            data: { ...node.data, isArcMode: state },
+            data: { ...node.data, isArcMode: state, isDeclareMode: state ? false : node.data.isDeclareMode },
           })),
         },
       ])
@@ -771,9 +793,61 @@ const useStore = create<StoreState>()(temporal((set) => ({
     activeArcType: arcType,
   })),
 
+  toggleDeclareMode: (state: boolean, template?: BinaryDeclareTemplate) =>
+  set((store) => ({
+    isDeclareMode: state,
+    isArcMode: state ? false : store.isArcMode,
+    isChainMode: state ? false : store.isChainMode,
+    activeDeclareTemplate: template || store.activeDeclareTemplate,
+    petriNetsById: Object.fromEntries(
+      Object.entries(store.petriNetsById).map(([petriNetId, petriNet]) => [
+        petriNetId,
+        {
+          ...petriNet,
+          nodes: petriNet.nodes.map((node) => ({
+            ...node,
+            data: { ...node.data, isDeclareMode: state, isArcMode: state ? false : node.data.isArcMode },
+          })),
+        },
+      ])
+    ),
+  })),
+
+  setShowDeclareLayer: (show: boolean) =>
+  set(() => ({
+    showDeclareLayer: show,
+  })),
+
+  toggleChainMode: (state: boolean) =>
+  set((store) => ({
+    isChainMode: state,
+    isArcMode: state ? false : store.isArcMode,
+    isDeclareMode: state ? false : store.isDeclareMode,
+    petriNetsById: state ? Object.fromEntries(
+      Object.entries(store.petriNetsById).map(([petriNetId, petriNet]) => [
+        petriNetId,
+        {
+          ...petriNet,
+          nodes: petriNet.nodes.map((node) => ({
+            ...node,
+            data: { ...node.data, isArcMode: false, isDeclareMode: false },
+          })),
+        },
+      ])
+    ) : store.petriNetsById,
+  })),
+
+  toggleFireMode: (state: boolean) =>
+  set(() => ({
+    isFireMode: state,
+  })),
+
   setActiveMode: (mode) =>
-    set(() => ({
+    set((store) => ({
       activeMode: mode,
+      // Fire mode only makes sense while looking at the Simulation tab — clear it when
+      // navigating away so the toolbar button doesn't come back stuck "on".
+      isFireMode: mode === 'simulation' ? store.isFireMode : false,
     })),
 
   setOcpnName: (name: string) =>
