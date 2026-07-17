@@ -659,7 +659,7 @@ ${evt.relationships.map(r => `      <relationship objectId="${r.objectId}" quali
                   {t.isFuture && (
                     <span
                       className="inline-flex items-center gap-0.5 text-[10px] text-amber-600 font-mono"
-                      title={`Not enabled yet at the current time — firing this will advance simulation time to ${t.atTime}`}
+                      title={`Not enabled yet at the current time — firing this will advance simulation time to ${formatTime(t.atTime)}`}
                     >
                       <Clock className="h-3 w-3" />
                       {formatRelativeDelay(t.atTime - simulationTime)}

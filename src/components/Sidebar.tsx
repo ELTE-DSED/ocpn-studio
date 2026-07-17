@@ -149,7 +149,7 @@ const Sidebar = () => {
   return (
     <div className="relative flex flex-col h-full overflow-hidden shrink-0 border-r bg-sidebar shadow-[inset_-8px_0_12px_-10px_rgba(0,0,0,0.35)]" style={{ width }}>
       <div className="px-4 py-2 flex-shrink-0 flex items-center gap-2">
-        <img src="/favicon-32x32.png" alt="" className="h-5 w-5 shrink-0" />
+        <img src={`${import.meta.env.BASE_URL}favicon-32x32.png`} alt="" className="h-5 w-5 shrink-0" />
         <h3 className="text-xl font-bold">OCPN Studio</h3>
       </div>
       <div className="px-4 py-2 flex-1 flex flex-col overflow-hidden">

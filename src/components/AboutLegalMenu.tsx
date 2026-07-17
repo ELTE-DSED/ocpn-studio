@@ -240,15 +240,15 @@ export function AboutLegalMenu() {
             <div>
               <p className="text-sm font-semibold">OCPN Studio (this web app)</p>
               <p className="text-xs text-muted-foreground">
-                MIT License. Copyright (c) 2025-2026 RWTH Aachen University, Chair of Process and
-                Data Science, István Koren.
+                MIT License. Copyright (c) 2025-2026 ELTE University Budapest - Department of Data
+                Science and Engineering, István Koren.
               </p>
             </div>
             <div>
               <p className="text-sm font-semibold">cpnsim (simulation engine)</p>
               <p className="text-xs text-muted-foreground">
-                MIT License. Copyright (c) 2025-2026 RWTH Aachen University, Chair of Process and
-                Data Science, István Koren.
+                MIT License. Copyright (c) 2025-2026 ELTE University Budapest - Department of Data
+                Science and Engineering, István Koren.
               </p>
             </div>
           </div>

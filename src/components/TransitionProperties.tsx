@@ -274,8 +274,8 @@ const TransitionProperties = ({ priorities }: { priorities: Priority[] }) => {
           <TabsContent value="relative" className="mt-2">
             <div className="grid grid-cols-3 gap-2">
               {RELATIVE_TIME_FIELDS.map((field) => (
-                <div key={field.key} className="rounded-lg border bg-muted/20 p-3">
-                  <label htmlFor={`time-${field.key}`} className="text-xs text-muted-foreground">
+                <div key={field.key} className="rounded-lg border bg-muted/20 px-3 pt-1.5 pb-2">
+                  <label htmlFor={`time-${field.key}`} className="block text-xs text-muted-foreground leading-none">
                     {field.label}
                   </label>
                   <Input
@@ -304,7 +304,7 @@ const TransitionProperties = ({ priorities }: { priorities: Priority[] }) => {
                         });
                       }
                     }}
-                    className="w-full border-0 bg-transparent p-0 h-auto text-2xl font-bold shadow-none focus-visible:ring-0"
+                    className="w-full border-0 bg-transparent p-0 h-auto text-lg md:text-lg font-bold shadow-none focus-visible:ring-0"
                   />
                 </div>
               ))}

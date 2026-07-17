@@ -58,7 +58,7 @@ export function WelcomeSplashDialog({ open, onOpenChange }: WelcomeSplashDialogP
       <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden gap-0">
         <div
           className="aspect-2172/724 bg-cover bg-center"
-          style={{ backgroundImage: "url(/images/splashscreen_bg.png)" }}
+          style={{ backgroundImage: `url(${import.meta.env.BASE_URL}images/splashscreen_bg.png)` }}
         />
         <div className="px-6 pb-6 -mt-10 space-y-4">
           <div className="text-center space-y-2">
