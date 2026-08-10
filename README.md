@@ -13,10 +13,11 @@
 - **Declarations** — Define color sets (including record types that directly map to OCEL 2.0 objects), variables, priorities, and functions
 - **Declare constraints** — Author declarative, LTL-based behavioral rules (Response, Precedence, Succession, Not-Coexistence, and more) as color-coded arcs between transitions; violations are prevented by blocking non-compliant firings during simulation, matching CPN Tools' Declare plugin
 - **Simulation** — Step through or auto-run simulations powered by [cpnsim](https://github.com/rwth-pads/cpnsim), our own CPN simulator written in Rust and cross-compiled to WebAssembly, running entirely in the browser. Click any enabled transition directly on the canvas to fire it (Fire Mode), edit a place's live marking mid-run, or jump to any enabled transition from the sidebar
+- **Run to a point in simulated time** — Besides running a fixed number of steps, run until the model clock reaches a chosen date/time, or leave the end open and run until the net deadlocks. No transition fires past the end time, and the screen is kept awake so the display timeout can't cut a long run short
 - **Monitors** — Define marking-size, transition-count, breakpoint, duration, and custom data-collector monitors to observe simulation behavior and collect statistics
 - **State space analysis** — Compute the full state space with BFS exploration, SCC decomposition, dead/home markings, place bounds, and transition liveness — with deterministic overrides for models using stochastic distribution functions
 - **Reachability graph** — Visualize the state space as an interactive graph with clickable nodes showing full marking details
-- **OCEL 2.0 export** — Export simulated event logs in the OCEL 2.0 standard format for process mining
+- **OCEL 2.0 export** — Export simulated event logs in the OCEL 2.0 standard format for process mining. Mark individual transitions as scaffolding rather than business events and they stay out of the log; by default a transition is included when it is connected to an object place
 - **File format support** — Open and save `.ocpn` (native JSON), `.cpn` (CPN Tools XML), `.pnml` (PNML, partial support), and `.json` (CPNPy) files
 - **Auto-layout** — Arrange nets automatically using Dagre, ELK, or our own Sugiyama-based layouting algorithm developed in our research
 - **Built-in examples** — Get started instantly with the Airport Ground Handling process example via the **Open** button
@@ -55,6 +56,31 @@ pnpm install
 | `pnpm lint` | Run ESLint (zero-warning policy) |
 | `pnpm preview` | Preview the production build locally |
 | `pnpm deploy` | Build and deploy to GitHub Pages |
+| `pnpm cpnsim:local` | Build the local cpnsim crate and use it instead of the published package |
+| `pnpm cpnsim:restore` | Switch back to the published cpnsim package |
+| `pnpm cpnsim:status` | Show which cpnsim build is currently in use |
+
+### Working against a local cpnsim
+
+The simulator lives in a separate Rust crate published as `@rwth-pads/cpnsim`. To test
+simulator changes before they are released, point the app at a local checkout:
+
+```bash
+pnpm cpnsim:local      # builds the crate to wasm, then links it
+pnpm cpnsim:restore    # back to the published package
+```
+
+Requires [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/) (`cargo install wasm-pack`).
+The crate is looked for next to this repo (`../cpnsim`, `../../rust/cpnsim`); set
+`CPNSIM_DIR` if it lives elsewhere:
+
+```bash
+CPNSIM_DIR=~/src/cpnsim pnpm cpnsim:local
+```
+
+The switch is local to your `node_modules` — no lockfile or `package.json` change, so
+there is nothing to accidentally commit. Rust edits need a rerun of `pnpm cpnsim:local`
+to be rebuilt, and the dev server needs a restart afterwards.
 
 ## Tech Stack
 

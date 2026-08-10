@@ -1575,9 +1575,13 @@ export default useStore;
         pn.nodes.map(n => {
           const d = n.data as Record<string, unknown>;
           // Only include fields relevant to validation
-          return `${n.id}:${n.type}:${d.colorSet || ''}:${d.guard || ''}:${d.priority || ''}:${d.portType || ''}:${d.subPageId || ''}`;
+          return `${n.id}:${n.type}:${d.colorSet || ''}:${d.guard || ''}:${d.priority || ''}:${d.portType || ''}:${d.subPageId || ''}:${d.codeSegment || ''}`;
         }).join(',') + '|' +
-        pn.edges.map(e => `${e.id}:${e.label}`).join(',')
+        // source/target/arcType/isBidirectional matter for the output-arc binding check
+        pn.edges.map(e => {
+          const ed = e.data as Record<string, unknown> | undefined;
+          return `${e.id}:${e.label}:${e.source}>${e.target}:${ed?.arcType || 'normal'}:${ed?.isBidirectional ? 'bi' : ''}`;
+        }).join(',')
       ).join(';') +
       `:cs${state.colorSets.length}:${state.colorSets.map(cs => `${cs.name}:${cs.definition}`).join(',')}` +
       `:v${state.variables.length}:${state.variables.map(v => `${v.name}:${v.colorSet}`).join(',')}` +

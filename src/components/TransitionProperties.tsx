@@ -7,7 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CodeSegmentEditor } from "@/components/CodeSegmentEditor";
+import { objectPlaceIds, resolveIncludeInOcel, touchesAnyPlace } from '@/utils/ocelInclusion';
 
 import type { Priority } from "@/declarations";
 import type { TransitionNodeData } from '@/nodes/TransitionNode';
@@ -123,7 +125,7 @@ const TransitionProperties = ({ priorities }: { priorities: Priority[] }) => {
   // Extract node data safely (for use in useEffect before early returns)
   const isValidNode = selectedElement && selectedElement.type === 'node' && selectedElement.element;
   const nodeId = isValidNode ? selectedElement.element.id : null;
-  const nodeData = isValidNode ? selectedElement.element.data as { label?: string; colorSet?: string; isArcMode?: boolean; type?: string; initialMarking?: string; guard?: string; time?: string; priority?: string; codeSegment?: string; subPageId?: string; socketAssignments?: { portPlaceId: string; socketPlaceId: string }[]; overrideColor?: string; declareUnary?: UnaryDeclareConstraint[] } : null;
+  const nodeData = isValidNode ? selectedElement.element.data as { label?: string; colorSet?: string; isArcMode?: boolean; type?: string; initialMarking?: string; guard?: string; time?: string; priority?: string; codeSegment?: string; subPageId?: string; socketAssignments?: { portPlaceId: string; socketPlaceId: string }[]; overrideColor?: string; declareUnary?: UnaryDeclareConstraint[]; includeInOcel?: boolean } : null;
 
   // Initialize time state when node changes - must be called before any early returns
   /* eslint-disable react-hooks/set-state-in-effect -- Form init on selection change */
@@ -433,6 +435,15 @@ const TransitionProperties = ({ priorities }: { priorities: Priority[] }) => {
 
       <Separator />
 
+      <OcelExportSection
+        activePetriNetId={activePetriNetId}
+        transitionId={id}
+        data={data}
+        updateNodeData={updateNodeData}
+      />
+
+      <Separator />
+
       <DeclareUnarySection
         activePetriNetId={activePetriNetId}
         transitionId={id}
@@ -645,6 +656,87 @@ function SubpageSection({
         </Button>
       )}
     </>
+  );
+}
+
+/**
+ * Whether firings of this transition become events in an OCEL 2.0 export.
+ *
+ * The checkbox always shows what will actually happen, which for an untouched transition
+ * is the structural default (see `utils/ocelInclusion.ts`) rather than a stored value.
+ * Ticking or unticking it writes an explicit setting that is saved with the model, so the
+ * automatic rule no longer applies to that transition — the helper text says which of the
+ * two is in force.
+ */
+function OcelExportSection({
+  activePetriNetId,
+  transitionId,
+  data,
+  updateNodeData,
+}: {
+  activePetriNetId: string | null;
+  transitionId: string;
+  data: {
+    label?: string; isArcMode?: boolean; type?: string; guard?: string; time?: string;
+    priority?: string; codeSegment?: string; includeInOcel?: boolean;
+  };
+  updateNodeData: (petriNetId: string, id: string, newData: TransitionNodeData) => void;
+}) {
+  const colorSets = useStore((state) => state.colorSets);
+  const net = useStore((state) => (activePetriNetId ? state.petriNetsById[activePetriNetId] : null));
+
+  const involvesObjectPlace = net
+    ? touchesAnyPlace(net, transitionId, objectPlaceIds(net, colorSets))
+    : false;
+  const included = resolveIncludeInOcel(data.includeInOcel, involvesObjectPlace);
+  const isExplicit = typeof data.includeInOcel === 'boolean';
+
+  const commit = (includeInOcel: boolean | undefined) => {
+    if (!activePetriNetId) return;
+    updateNodeData(activePetriNetId, transitionId, {
+      ...data,
+      label: data.label || "",
+      isArcMode: data.isArcMode || false,
+      type: data.type || "defaultType",
+      guard: data.guard || "",
+      time: data.time || "",
+      priority: data.priority,
+      codeSegment: data.codeSegment || "",
+      includeInOcel,
+    } as TransitionNodeData);
+  };
+
+  return (
+    <div className="grid w-full items-center gap-1.5">
+      <Label>OCEL Export</Label>
+      <div className="flex items-start gap-2">
+        <Checkbox
+          id="include-in-ocel"
+          checked={included}
+          onCheckedChange={(checked) => commit(checked === true)}
+          className="mt-0.5"
+        />
+        <div className="grid gap-1">
+          <Label htmlFor="include-in-ocel" className="font-normal">Include in OCEL export</Label>
+          <p className="text-xs text-muted-foreground">
+            {isExplicit
+              ? 'Set on this transition, and saved with the model.'
+              : involvesObjectPlace
+                ? 'Automatic: included because this transition is connected to an object place.'
+                : 'Automatic: excluded because this transition touches no object place — it reads as scaffolding rather than a business event.'}
+          </p>
+          {isExplicit && (
+            <button
+              type="button"
+              className="justify-self-start text-xs text-muted-foreground underline hover:text-foreground"
+              onClick={() => commit(undefined)}
+            >
+              Use the automatic default
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

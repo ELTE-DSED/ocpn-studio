@@ -216,3 +216,81 @@
   z-index: 1000;
 }
 
+
+/* ── Simulation toolbar: running shimmer ──────────────────────────────────────
+   A light travelling around the toolbar's outline while a run is in flight — the
+   ambient counterpart to the progress readout inside it: visible from across the
+   canvas, without another spinner competing for attention.
+
+   The ring is a conic gradient clipped to the border with a two-layer mask: one
+   layer covers the padding box, the other the border box, and compositing them
+   with `exclude` leaves only the difference — a stroke of exactly `padding`
+   width that follows `border-radius` around the corners. Rotating the gradient's
+   angle (rather than moving the element) keeps the light on the outline the whole
+   way round. */
+@property --sim-shimmer-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.sim-shimmer {
+  position: relative;
+}
+
+.sim-shimmer::after {
+  content: "";
+  position: absolute;
+  /* Sits over the element's own 1px border rather than inside it, so the stroke
+     replaces the border while running instead of doubling it. */
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1.5px; /* = stroke width, via the mask below */
+  background: conic-gradient(
+    from var(--sim-shimmer-angle),
+    transparent 0deg,
+    transparent 200deg,
+    color-mix(in oklch, var(--primary) 35%, transparent) 280deg,
+    var(--primary) 330deg,
+    color-mix(in oklch, var(--primary) 35%, transparent) 350deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: sim-shimmer-sweep 1.8s linear infinite;
+}
+
+@keyframes sim-shimmer-sweep {
+  to {
+    --sim-shimmer-angle: 360deg;
+  }
+}
+
+/* Without @property the angle can't be interpolated, so the sweep would jump from
+   0 to 360 once per cycle. A steady glow reads as "busy" just as well. */
+@supports not (background: conic-gradient(from var(--sim-shimmer-angle), red, blue)) {
+  .sim-shimmer::after {
+    background: var(--primary);
+    opacity: 0.5;
+    animation: sim-shimmer-pulse 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes sim-shimmer-pulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.7; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sim-shimmer::after {
+    animation: none;
+    background: color-mix(in oklch, var(--primary) 60%, transparent);
+  }
+}

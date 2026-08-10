@@ -30,6 +30,14 @@ export interface PlaceNodeProps {
   selected: boolean;
 }
 
+// Default inscription offsets, for places whose inscriptions have never been dragged.
+// Frozen module constants rather than literals built during render: they are passed as
+// props into DraggableInscription, where they key an effect that sets state — a fresh
+// object each render makes that effect fire on every render of the place.
+const DEFAULT_COLOR_SET_OFFSET = Object.freeze({ x: 0, y: 35 }); // Below the place
+const DEFAULT_TOKEN_COUNT_OFFSET = Object.freeze({ x: 25, y: -5 }); // Top-right of place
+const DEFAULT_MARKING_OFFSET = Object.freeze({ x: 40, y: 0 }); // Right of token count
+
 // Draggable inscription component
 function DraggableInscription({
   children,
@@ -55,9 +63,16 @@ function DraggableInscription({
     currentOffsetRef.current = dragOffset;
   });
 
+  // Mirror the prop into state when it actually changes. Keyed on the coordinates rather
+  // than the object, and a no-op when they already match: as a passive effect that sets
+  // state, an identity-keyed version fires on every render of the place — and during a
+  // simulation run, where markings change continuously, those updates cascade into
+  // React's "Maximum update depth exceeded".
   React.useEffect(() => {
-    setDragOffset(offset);
-  }, [offset]);
+    setDragOffset((prev) =>
+      prev.x === offset.x && prev.y === offset.y ? prev : { x: offset.x, y: offset.y }
+    );
+  }, [offset.x, offset.y]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -237,9 +252,9 @@ export const PlaceNode: React.FC<PlaceNodeProps> = ({ id, data, selected }) => {
   const hasMoreRows = markingTableData.length > MAX_VISIBLE_ROWS;
 
   // Default offsets for inscriptions
-  const colorSetOffset = data.colorSetOffset ?? { x: 0, y: 35 }; // Below the place
-  const tokenCountOffset = data.tokenCountOffset ?? { x: 25, y: -5 }; // Top-right of place
-  const markingOffset = data.markingOffset ?? { x: 40, y: 0 }; // Right of token count
+  const colorSetOffset = data.colorSetOffset ?? DEFAULT_COLOR_SET_OFFSET;
+  const tokenCountOffset = data.tokenCountOffset ?? DEFAULT_TOKEN_COUNT_OFFSET;
+  const markingOffset = data.markingOffset ?? DEFAULT_MARKING_OFFSET;
 
   const handleColorSetDragEnd = useCallback((newOffset: { x: number; y: number }) => {
     if (activePetriNetId) {

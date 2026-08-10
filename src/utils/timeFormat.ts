@@ -87,3 +87,27 @@ export function formatSimulationTime(timeMs: number, epoch: Date | null): string
   }
   return String(timeMs);
 }
+
+/**
+ * Format a span of model time as a short duration ("3d 4h", "2h 15m", "45s", "120ms").
+ *
+ * Two units at most: this reads at a glance in a progress readout, where the point is
+ * roughly how far a run has got, not the exact millisecond. Rounds down, so a span never
+ * reads as already finished.
+ */
+export function formatDuration(ms: number): string {
+  if (!Number.isFinite(ms)) return '∞';
+  const abs = Math.max(0, Math.floor(ms));
+  if (abs < 1000) return `${abs}ms`;
+
+  const totalSeconds = Math.floor(abs / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (days > 0) return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+  if (hours > 0) return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  if (minutes > 0) return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+  return `${seconds}s`;
+}

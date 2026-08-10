@@ -496,13 +496,20 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
         if (data.simulationSettings.simulationEpoch !== undefined) {
           setSimulationEpoch(data.simulationSettings.simulationEpoch);
         }
-        // Restore simulation config (stepsPerRun, animationDelayMs)
+        // Restore simulation config (stepsPerRun, animationDelayMs, run end time)
         if (simulationContext?.setSimulationConfig) {
           const currentConfig = simulationContext.simulationConfig;
           simulationContext.setSimulationConfig({
             ...currentConfig,
             stepsPerRun: data.simulationSettings.stepsPerRun ?? currentConfig.stepsPerRun,
             animationDelayMs: data.simulationSettings.animationDelayMs ?? currentConfig.animationDelayMs,
+            // `null` is a meaningful saved value here (an open-ended run), so only an
+            // absent field falls back to what is currently configured.
+            endTimeMs: data.simulationSettings.endTimeMs !== undefined
+              ? data.simulationSettings.endTimeMs
+              : currentConfig.endTimeMs,
+            keepAwakeWhileRunning: data.simulationSettings.keepAwakeWhileRunning
+              ?? currentConfig.keepAwakeWhileRunning,
           });
         }
       }
@@ -626,6 +633,8 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
         stepsPerRun: simulationContext?.simulationConfig?.stepsPerRun,
         animationDelayMs: simulationContext?.simulationConfig?.animationDelayMs,
         simulationEpoch: simulationEpoch,
+        endTimeMs: simulationContext?.simulationConfig?.endTimeMs,
+        keepAwakeWhileRunning: simulationContext?.simulationConfig?.keepAwakeWhileRunning,
       },
     }
 
@@ -753,6 +762,13 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
     // binding" tool. Falls through to normal selection for anything that isn't a
     // currently-enabled transition (e.g. places, or a transition that can't fire).
     if (isFireMode && activeMode === 'simulation' && node.type === 'transition' && simulationContext) {
+      // Fire mode may already have been on when an automated run started (its toggle is
+      // only disabled from then on). Firing here would interleave with the run's chunks,
+      // so refuse — and say why, rather than letting it read as "not enabled".
+      if (simulationContext.isRunning) {
+        toast.warning('Wait for the run to finish before firing a transition', { duration: 3000 });
+        return;
+      }
       const enabledInfo = simulationContext.enabledTransitions.find((t) => t.transitionId === node.id);
       if (enabledInfo) {
         // Firing a future-enabled transition advances the simulation clock — flag that so
@@ -1928,7 +1944,14 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
             <Controls />
             <Panel position="top-center">
               {activeMode === 'simulation' ? (
-                <div className="bg-background border rounded-lg p-2 shadow-sm">
+                // The shimmer lives on this wrapper rather than inside the toolbar: the
+                // stroke has to follow the panel's own border radius, and both are
+                // defined here. See `.sim-shimmer` in editor.css.
+                <div
+                  className={`bg-background border rounded-lg p-2 shadow-sm ${
+                    simulationContext?.isRunning ? 'sim-shimmer' : ''
+                  }`}
+                >
                   <SimulationToolbar />
                 </div>
               ) : activeMode === 'model' ? (

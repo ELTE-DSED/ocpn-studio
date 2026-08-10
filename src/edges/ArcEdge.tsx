@@ -5,6 +5,10 @@ import useStore from '@/stores/store'; // Import Zustand store
 import type { ArcType } from '@/types';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
+/** Label offset used by arcs whose label has never been dragged. Frozen and shared so
+ *  every render of every such arc yields the same reference — see its use site. */
+const DEFAULT_LABEL_OFFSET = Object.freeze({ x: 0, y: 0 });
+
 /**
  * Calculate the distance from a point to a line segment
  */
@@ -624,7 +628,10 @@ function ArcEdge({ id, source, target, style, label, data }: FloatingEdgeProps) 
   }
 
   const bendpoints = data?.bendpoints;
-  const labelOffset = data?.labelOffset ?? { x: 0, y: 0 };
+  // Shared constant, not a fresh literal: this value is an effect dependency down in
+  // DraggableArcLabel, and a new object on every render made that effect re-run (and
+  // re-set state) on every render of this edge.
+  const labelOffset = data?.labelOffset ?? DEFAULT_LABEL_OFFSET;
   const isBidirectional = data?.isBidirectional ?? false;
   const arcType: ArcType = data?.arcType ?? 'normal';
   
@@ -1089,10 +1096,17 @@ function DraggableArcLabel({
     }
   }, [id, edges, activePetriNetId, setSelectedElement]);
 
-  // Update dragOffset when labelOffset prop changes (e.g., after save)
+  // Update dragOffset when labelOffset prop changes (e.g., after save).
+  // Keyed on the coordinates rather than the object, and a no-op when they match what
+  // state already holds: as a passive effect that sets state, an identity-keyed version
+  // fires on every parent render, and during a simulation run — where the canvas
+  // re-renders continuously — those queued updates cascade into React's "Maximum update
+  // depth exceeded".
   React.useEffect(() => {
-    setDragOffset(labelOffset);
-  }, [labelOffset]);
+    setDragOffset((prev) =>
+      prev.x === labelOffset.x && prev.y === labelOffset.y ? prev : { x: labelOffset.x, y: labelOffset.y }
+    );
+  }, [labelOffset.x, labelOffset.y]);
 
   const finalX = baseLabelX + dragOffset.x;
   const finalY = baseLabelY + dragOffset.y;

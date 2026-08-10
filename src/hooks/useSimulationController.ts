@@ -5,6 +5,10 @@ import { PetriNetData, convertToJSON } from '@/utils/FileOperations';
 import type { SimulationEvent } from '@/components/EventLog'; // Import SimulationEvent
 import { v4 as uuidv4 } from 'uuid'; // For generating unique event IDs
 import { type SimulationConfig, DEFAULT_SIMULATION_CONFIG } from '@/context/useSimulationContextHook';
+import { setRunProgress, patchRunProgress, type RunProgress } from '@/hooks/useRunProgress';
+import { applyDebugLoggingToWasm, isDebugLoggingEnabled } from '@/utils/debugLogging';
+import { formatDuration, formatSimulationTime } from '@/utils/timeFormat';
+import { requestWakeLock, type WakeLockHandle } from '@/utils/wakeLock';
 import type { PetriNet, FusionSet, MonitorResult, Monitor, StateSpaceResult, DeclareResult, DeclareTemplate, UnaryDeclareConstraint, BlockedTransitionInfo, EnabledTransitionInfo } from '@/types';
 import { NON_BLOCKING_DECLARE_TEMPLATES } from '@/types';
 import type { Node } from '@xyflow/react';
@@ -79,6 +83,101 @@ function formatTokensForDisplay(tokens: unknown[], isUnitType: boolean): string 
   }
   // Mixed or non-unit tokens - display as JSON
   return JSON.stringify(tokens);
+}
+
+// ─── Chunked execution of long runs ──────────────────────────────────────────
+// The WASM simulator is synchronous, so a whole run executed in one call pins the main
+// thread for as long as it takes — on a large net that is seconds, long enough for the
+// browser's "page is unresponsive" dialog. Instead the run is sliced into chunks small
+// enough to fit a frame, with a yield in between so the browser can paint and handle
+// input (notably the Stop button). Binding search dominates the cost and grows with the
+// marking, so the chunk size is not fixed: each chunk is timed and the next one is sized
+// to land on the budget below.
+
+/** Target wall-clock duration of one chunk. Roughly a frame — short enough to stay
+ *  responsive, long enough that per-chunk overhead stays in the noise. */
+const CHUNK_BUDGET_MS = 40;
+/** Never run fewer than this per chunk: on a very slow net one step may exceed the
+ *  budget on its own, and yielding after every step would cost more than it buys. */
+const MIN_CHUNK_STEPS = 1;
+/** Never run more than this per chunk regardless of how fast steps look, so a net that
+ *  suddenly slows down (markings grow, guards get expensive) can't stall a frame. */
+const MAX_CHUNK_STEPS = 250;
+/** How often the event log is refreshed during a run. Events are buffered in between:
+ *  appending each one separately re-renders the (unvirtualized) log on every chunk. */
+const EVENT_FLUSH_INTERVAL_MS = 400;
+
+// Fallback yield channel. `setTimeout(0)` is clamped to ~4ms once timers nest, which at
+// one yield per chunk would tax a long run by several percent for nothing; a MessageChannel
+// round-trip is an unclamped macrotask, so the browser still gets its rendering opportunity
+// without the enforced wait.
+const yieldResolvers: (() => void)[] = [];
+let yieldChannel: MessageChannel | undefined;
+
+/**
+ * Yields to the browser so it can render and process input before the next chunk.
+ * Prefers `scheduler.yield()` where available: it resumes at a higher priority than a
+ * freshly-posted task, so the run isn't starved by unrelated work queued in the meantime.
+ */
+function yieldToBrowser(): Promise<void> {
+  const scheduler = (globalThis as { scheduler?: { yield?: () => Promise<void> } }).scheduler;
+  if (typeof scheduler?.yield === 'function') {
+    return scheduler.yield();
+  }
+  if (typeof MessageChannel !== 'undefined') {
+    return new Promise((resolve) => {
+      if (!yieldChannel) {
+        yieldChannel = new MessageChannel();
+        yieldChannel.port1.onmessage = () => yieldResolvers.shift()?.();
+      }
+      yieldResolvers.push(resolve);
+      yieldChannel.port2.postMessage(null);
+    });
+  }
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/** How often the run waits for an actual painted frame rather than just yielding. */
+const PAINT_INTERVAL_MS = 200;
+/** Cap on that wait, so a run can never hang waiting for a frame that isn't coming. */
+const PAINT_TIMEOUT_MS = 250;
+
+/**
+ * Yields until the browser has actually painted a frame.
+ *
+ * A plain task yield only offers the browser a *chance* to render; it doesn't wait for
+ * one. That is enough while the page is being painted steadily, but not after the tab
+ * has been in the background: on return the page needs a full repaint, and a run that
+ * keeps the main thread saturated with back-to-back chunks can leave it unpainted (blank)
+ * until the run ends. Waiting for a frame every so often makes the repaint happen.
+ *
+ * The rAF callback runs just before the frame, so the `setTimeout` continuation posted
+ * from inside it resumes just after it. Frames stop entirely in a hidden tab, hence the
+ * timeout: without it, a tab hidden during this wait would stall the run indefinitely.
+ */
+function yieldForPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+    requestAnimationFrame(() => setTimeout(finish, 0));
+    setTimeout(finish, PAINT_TIMEOUT_MS);
+  });
+}
+
+/**
+ * Picks the next chunk size from how long the previous chunk of `lastChunkSteps` took.
+ * Scales toward the budget but never more than doubles, so one unusually fast chunk
+ * (e.g. an early one on a small marking) can't overshoot into a frame-long stall.
+ */
+function nextChunkSize(lastChunkSteps: number, elapsedMs: number): number {
+  const perStepMs = Math.max(elapsedMs, 0.01) / Math.max(lastChunkSteps, 1);
+  const target = Math.floor(CHUNK_BUDGET_MS / perStepMs);
+  const capped = Math.min(target, lastChunkSteps * 2, MAX_CHUNK_STEPS);
+  return Math.max(capped, MIN_CHUNK_STEPS);
 }
 
 /**
@@ -417,6 +516,14 @@ export function useSimulationController() {
   const wasmSimulatorRef = useRef<WasmSimulator | null>(null);
   const [isInitialized, setIsInitialized] = useState(false); // Track initialization
   const [isRunning, setIsRunning] = useState(false); // Track if simulation is running
+  // Synchronous mirror of isRunning. `fireTransition` is called from event handlers that
+  // may hold a stale render's closure, and it has to refuse *now* rather than a render
+  // later, so it consults this instead of the state.
+  const isRunningRef = useRef(false);
+  const setRunning = useCallback((running: boolean) => {
+    isRunningRef.current = running;
+    setIsRunning(running);
+  }, []);
   const stopRequestedRef = useRef(false); // Flag to request stop
   const [events, setEvents] = useState<SimulationEvent[]>([]); // State for simulation events
   const [stepCounter, setStepCounter] = useState(0); // State for step counter
@@ -441,6 +548,21 @@ export function useSimulationController() {
   // Refs for auto-invalidation: track whether simulation updates (not user edits) are causing store changes
   const isInitializedRef = useRef(false);
   const isSimulationUpdatingRef = useRef(false);
+
+  // During a chunked run, events land here instead of going straight into React state:
+  // the event log renders every event it holds, so appending one at a time re-renders a
+  // growing list on every chunk. Non-null means buffering is active; flushed on a timer
+  // during the run (so the log still visibly fills up) and once more when it ends.
+  const eventBufferRef = useRef<SimulationEvent[] | null>(null);
+  // Name of the most recently fired transition, kept as a ref so the progress readout can
+  // show it without the event handler touching React state on every step.
+  const lastFiredTransitionNameRef = useRef<string | undefined>(undefined);
+  const flushEventBuffer = useCallback(() => {
+    const buffered = eventBufferRef.current;
+    if (!buffered || buffered.length === 0) return;
+    eventBufferRef.current = [];
+    setEvents((prevEvents) => [...prevEvents, ...buffered]);
+  }, []);
 
   // Get necessary actions/state selectors from Zustand store
   const updateNodeMarking = useStore((state) => state.updateNodeMarking);
@@ -575,6 +697,7 @@ export function useSimulationController() {
     const transitionNode = findNodeById(eventData.transitionId); // Use helper
     // Ensure transitionName is a string (using label), fallback to transitionId
     const transitionName = (transitionNode?.data?.label && typeof transitionNode.data.label === 'string') ? transitionNode.data.label : eventData.transitionId;
+    lastFiredTransitionNameRef.current = transitionName;
 
     // Get colorSets from store to check for UNIT types
     const colorSets = useStore.getState().colorSets;
@@ -626,8 +749,13 @@ export function useSimulationController() {
       timestamp: new Date(), // Record when the event was processed by the UI
     };
 
-    // Update the local events state for the EventLog component
-    setEvents(prevEvents => [...prevEvents, newEvent]);
+    // Hand the event to the EventLog — buffered during a long run (see eventBufferRef),
+    // straight into state otherwise.
+    if (eventBufferRef.current) {
+      eventBufferRef.current.push(newEvent);
+    } else {
+      setEvents(prevEvents => [...prevEvents, newEvent]);
+    }
     // Update the simulation time state
     setSimulationTime(simTime);
 
@@ -654,6 +782,9 @@ export function useSimulationController() {
 
     try {
         wasmRef.current = await init(); // Initialize the WASM module
+        // The engine's trace logging is a module-level flag that resets with the module,
+        // so re-apply the user's setting on every (re)initialization.
+        applyDebugLoggingToWasm();
         //console.log("WASM module loaded.");
 
         // Apply initial markings based on the current store state
@@ -1045,12 +1176,15 @@ export function useSimulationController() {
     if (wasmSimulatorRef.current) { // Check the ref directly
         try {
             // Step counter is now incremented reactively in handleWasmEvent
-            console.log(`Requesting simulation step...`);
+            // Per-step traces: same deal as the engine's own logging, so they follow the
+            // same setting rather than filling the console on every animated run.
+            const traceSteps = isDebugLoggingEnabled();
+            if (traceSteps) console.log(`Requesting simulation step...`);
             // Guard: mark as simulation update so the auto-invalidation subscriber ignores marking changes
             isSimulationUpdatingRef.current = true;
             // Execute the step in WASM
             const result = wasmSimulatorRef.current.run_step();
-            console.log(`Simulation step result:`, result);
+            if (traceSteps) console.log(`Simulation step result:`, result);
             // Event handling (including state updates and step increment) happens in handleWasmEvent callback
             // Fetch monitor and Declare constraint results now that run_step() has released its borrow
             _fetchMonitorResults();
@@ -1102,12 +1236,14 @@ export function useSimulationController() {
   const runMultipleStepsAnimated = async (steps: number, delayMs: number = 50) => {
     if (isRunning) return; // Prevent concurrent runs
     
-    setIsRunning(true);
+    setRunning(true);
     stopRequestedRef.current = false;
     pauseUndo();
-    
+    setRunProgress({ phase: 'firing', current: 0, total: steps, stepsPerSecond: 0 });
+
     try {
       await ensureInitialized();
+      const startedAt = performance.now();
       for (let i = 0; i < steps; i++) {
         if (stopRequestedRef.current) {
           console.log("Simulation stopped by user");
@@ -1118,6 +1254,18 @@ export function useSimulationController() {
           console.log("No transitions enabled, stopping animation.");
           break;
         }
+        // A single step is already interleaved with the animation delay below, so the only
+        // thing progress adds here is the readout itself — the run stays responsive either
+        // way. Rate excludes the delay's contribution being interesting; it's steps/s as
+        // observed, which is what the user is watching.
+        const elapsedSec = (performance.now() - startedAt) / 1000;
+        setRunProgress({
+          phase: 'firing',
+          current: i + 1,
+          total: steps,
+          stepsPerSecond: elapsedSec > 0 ? (i + 1) / elapsedSec : 0,
+          lastTransitionName: lastFiredTransitionNameRef.current,
+        });
         // Check for breakpoint hits from WASM monitors
         if (wasmSimulatorRef.current?.hasBreakpointHit()) {
           console.log("Breakpoint hit — stopping simulation.");
@@ -1126,23 +1274,34 @@ export function useSimulationController() {
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     } finally {
-      setIsRunning(false);
+      setRunProgress(null);
+      setRunning(false);
       resumeUndo();
     }
   };
 
-  // Function to run multiple steps without intermediate markings (fast)
+  // Function to run multiple steps without intermediate markings (fast).
+  //
+  // The run is sliced into time-budgeted chunks (see CHUNK_BUDGET_MS) with a yield in
+  // between rather than executed as one long synchronous WASM call: on a large net the
+  // single-call version pinned the main thread for seconds — no repaint, no way to press
+  // Stop, and long enough for the browser to offer to kill the page. Chunking costs one
+  // yield per ~40ms of work, which is well under a percent of the run's time, and it buys
+  // a live progress readout, a Stop button that responds within a frame, and markings that
+  // visibly advance as the run proceeds.
   const runMultipleStepsFast = async (steps: number) => {
     if (isRunning) return; // Prevent concurrent runs
-    
-    setIsRunning(true);
+
+    setRunning(true);
     stopRequestedRef.current = false;
     pauseUndo();
-    
-    // Yield to the browser so React can repaint (show busy cursor / disabled buttons)
-    // before the synchronous WASM call blocks the JS thread
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    
+    setRunProgress({ phase: 'firing', current: 0, total: steps, stepsPerSecond: 0 });
+
+    // Wait for a painted frame so the disabled buttons and progress readout are on screen
+    // before the first chunk of synchronous WASM work starts. Timeout-guarded, so starting
+    // a run in a tab that is already hidden can't leave it stuck before its first step.
+    await yieldForPaint();
+
     try {
       await ensureInitialized();
       if (wasmSimulatorRef.current) {
@@ -1150,31 +1309,88 @@ export function useSimulationController() {
         const simulator = wasmSimulatorRef.current as unknown as {
           runMultipleSteps?: (steps: number) => unknown[];
         };
-        
+
         if (typeof simulator.runMultipleSteps === 'function') {
-          // Use batch execution - events are returned as an array
-          // Guard: mark as simulation update so the auto-invalidation subscriber ignores marking changes
-          isSimulationUpdatingRef.current = true;
+          eventBufferRef.current = [];
+          const runStartedAt = performance.now();
+          let lastFlushAt = runStartedAt;
+          let lastPaintAt = runStartedAt;
+          let executed = 0;
+          let chunkSteps = 4; // Deliberately small: the first chunk is also the measurement
+          let stoppedEarly = false;
+
           try {
-            const results = simulator.runMultipleSteps(steps);
-            
-            // Process all results to update the UI state
-            if (Array.isArray(results)) {
-              for (const eventData of results) {
-                if (eventData && typeof eventData === 'object') {
-                  // Process each event through the event handler
-                  handleWasmEvent(eventData as {
-                    transitionId: string;
-                    time: number;
-                    consumed?: Map<string, number[]>;
-                    produced?: Map<string, number[]>;
-                  });
+            while (executed < steps && !stopRequestedRef.current) {
+              const requested = Math.min(chunkSteps, steps - executed);
+              const chunkStartedAt = performance.now();
+
+              // Guard: mark as simulation update so the auto-invalidation subscriber
+              // ignores the marking changes this chunk produces.
+              isSimulationUpdatingRef.current = true;
+              try {
+                // --- Fire: the synchronous WASM slice ---
+                const results = simulator.runMultipleSteps(requested);
+
+                // --- Apply: fold the chunk's events into markings and the event log ---
+                if (Array.isArray(results)) {
+                  for (const eventData of results) {
+                    if (eventData && typeof eventData === 'object') {
+                      handleWasmEvent(eventData as {
+                        transitionId: string;
+                        time: number;
+                        consumed?: Map<string, number[]>;
+                        produced?: Map<string, number[]>;
+                      });
+                    }
+                    executed++;
+                    // Check for breakpoint hits after each event
+                    if (wasmSimulatorRef.current?.hasBreakpointHit()) {
+                      console.log("Breakpoint hit during batch — stopping.");
+                      stoppedEarly = true;
+                      break;
+                    }
+                  }
+                  // Fewer events than requested means the net ran dry mid-chunk.
+                  if (!stoppedEarly && results.length < requested) {
+                    console.log("No transitions enabled, stopping fast run.");
+                    stoppedEarly = true;
+                  }
                 }
-                // Check for breakpoint hits after each event
-                if (wasmSimulatorRef.current?.hasBreakpointHit()) {
-                  console.log("Breakpoint hit during batch — stopping.");
-                  break;
-                }
+              } finally {
+                isSimulationUpdatingRef.current = false;
+              }
+
+              const chunkElapsed = performance.now() - chunkStartedAt;
+              chunkSteps = nextChunkSize(requested, chunkElapsed);
+
+              const runElapsedSec = (performance.now() - runStartedAt) / 1000;
+              setRunProgress({
+                phase: 'firing',
+                current: executed,
+                total: steps,
+                stepsPerSecond: runElapsedSec > 0 ? executed / runElapsedSec : 0,
+                lastTransitionName: lastFiredTransitionNameRef.current,
+              });
+
+              if (stoppedEarly) break;
+
+              // Let the event log catch up now and then — not every chunk, since it
+              // re-renders every event it holds.
+              if (performance.now() - lastFlushAt >= EVENT_FLUSH_INTERVAL_MS) {
+                flushEventBuffer();
+                lastFlushAt = performance.now();
+              }
+
+              // Between chunks, yield cheaply — except a few times a second, where the
+              // run waits for a real painted frame. A hidden tab produces no frames, so
+              // the wait is skipped while hidden; `lastPaintAt` then stays stale and the
+              // first chunk after the tab comes back forces a repaint immediately,
+              // instead of leaving the page blank until the run ends.
+              if (!document.hidden && performance.now() - lastPaintAt >= PAINT_INTERVAL_MS) {
+                await yieldForPaint();
+                lastPaintAt = performance.now();
+              } else {
+                await yieldToBrowser();
               }
             }
           } catch (error) {
@@ -1184,9 +1400,15 @@ export function useSimulationController() {
               description: errorMsg,
               duration: 8000,
             });
-          } finally {
-            isSimulationUpdatingRef.current = false;
           }
+
+          // --- Analyze: post-run bookkeeping over the final state ---
+          // Yield once more so the phase label is painted before this work starts: on a
+          // big net recomputing the enabled transitions is itself a binding search.
+          patchRunProgress({ phase: 'analyzing' });
+          await yieldToBrowser();
+          flushEventBuffer();
+          eventBufferRef.current = null;
           // Fetch monitor and Declare constraint results after batch execution
           _fetchMonitorResults();
           _fetchDeclareResults();
@@ -1201,7 +1423,8 @@ export function useSimulationController() {
           // whether it ended in a deadlock with some Declare obligation still unresolved.
           _checkDeadlockForUnresolvedConstraints();
         } else {
-          // Fallback: run steps one by one without delay
+          // Fallback: run steps one by one, yielding on the same budget as above.
+          let chunkDeadline = performance.now() + CHUNK_BUDGET_MS;
           for (let i = 0; i < steps; i++) {
             if (stopRequestedRef.current) break;
             const result = _executeWasmStep();
@@ -1214,12 +1437,225 @@ export function useSimulationController() {
               console.log("Breakpoint hit — stopping simulation.");
               break;
             }
+            if (performance.now() >= chunkDeadline) {
+              patchRunProgress({ current: i + 1 });
+              await yieldToBrowser();
+              chunkDeadline = performance.now() + CHUNK_BUDGET_MS;
+            }
           }
         }
       }
     } finally {
-      setIsRunning(false);
+      // Never strand buffered events: if anything above threw past the inner handler,
+      // the log would otherwise silently lose the steps that did run.
+      flushEventBuffer();
+      eventBufferRef.current = null;
+      setRunProgress(null);
+      setRunning(false);
       resumeUndo();
+    }
+  };
+
+  // Run until the model clock reaches `endTimeMs`, or open-endedly when it is null.
+  //
+  // Same chunked shape as runMultipleStepsFast — see the comment there for why a long run
+  // has to be sliced — with three differences that come from being bounded by simulation
+  // time rather than by a step count:
+  //
+  //  * The engine, not this loop, enforces the bound (`runUntilTime`). Watching the clock
+  //    from here would mean noticing the overshoot only after a chunk of events had
+  //    already fired past the end time, and a fired step cannot be taken back.
+  //  * Progress is measured in model time, since the number of steps needed to cross a
+  //    week of simulated time isn't known in advance. An open-ended run has no total at
+  //    all and reports itself as indeterminate.
+  //  * It optionally holds a screen wake lock: this is the mode meant to run for an hour,
+  //    which is long enough for the display timeout to end it early.
+  const runUntilSimulationTime = async (endTimeMs: number | null) => {
+    if (isRunning) return; // Prevent concurrent runs
+
+    setRunning(true);
+    stopRequestedRef.current = false;
+    pauseUndo();
+
+    // Initialize before reading the clock: `simulationTime` is React state that can still
+    // hold the last run's value when the simulator behind it has been thrown away (a model
+    // reload), and comparing an end time against that would refuse a run that has not
+    // actually happened yet.
+    await ensureInitialized();
+    const startTime = wasmSimulatorRef.current
+      ? Number(wasmSimulatorRef.current.getCurrentTime())
+      : simulationTime;
+    // A target already behind the clock would otherwise read as a run that instantly
+    // finished; say so and leave the model alone.
+    if (endTimeMs !== null && endTimeMs <= startTime) {
+      setRunning(false);
+      resumeUndo();
+      const epoch = useStore.getState().simulationEpoch;
+      toast.info('Nothing to run', {
+        description: `The simulation is already at ${formatSimulationTime(startTime, epoch ? new Date(epoch) : null)} — its end time is not in the future.`,
+        duration: 6000,
+      });
+      return;
+    }
+
+    const timeSpan = endTimeMs !== null ? endTimeMs - startTime : 0;
+    const progressFor = (current: number, stepsPerSecond: number, steps: number): RunProgress =>
+      endTimeMs !== null
+        ? {
+            phase: 'firing',
+            current: Math.min(current - startTime, timeSpan),
+            total: timeSpan,
+            stepsPerSecond,
+            lastTransitionName: lastFiredTransitionNameRef.current,
+            countsLabel: `${formatDuration(current - startTime)} / ${formatDuration(timeSpan)}`,
+          }
+        : {
+            phase: 'firing',
+            current: steps,
+            total: 0,
+            stepsPerSecond,
+            lastTransitionName: lastFiredTransitionNameRef.current,
+            countsLabel: `${steps.toLocaleString()} steps · ${formatDuration(current - startTime)}`,
+            indeterminate: true,
+          };
+
+    setRunProgress(progressFor(startTime, 0, 0));
+
+    let wakeLock: WakeLockHandle | null = null;
+    if (simulationConfig.keepAwakeWhileRunning) {
+      const result = await requestWakeLock();
+      if (typeof result === 'string') {
+        // Not being able to keep the screen on is never a reason not to run; it only
+        // means the machine may sleep partway through, which is worth saying once.
+        console.log(`Wake lock not held (${result}) — the machine may sleep during a long run.`);
+      } else {
+        wakeLock = result;
+      }
+    }
+
+    // Wait for a painted frame so the disabled buttons and progress readout are on screen
+    // before the first chunk of synchronous WASM work starts.
+    await yieldForPaint();
+
+    try {
+      const simulator = wasmSimulatorRef.current as unknown as {
+        runUntilTime?: (endTimeMs: number | null, maxSteps: number) => {
+          events: unknown[];
+          stopReason: 'endTime' | 'halted' | 'stepLimit';
+          currentTime: number;
+        };
+      } | null;
+
+      if (!simulator?.runUntilTime) {
+        toast.error('Run to end time is unavailable', {
+          description: 'This build of the simulation engine does not support time-bounded runs.',
+          duration: 8000,
+        });
+        return;
+      }
+
+      eventBufferRef.current = [];
+      const runStartedAt = performance.now();
+      let lastFlushAt = runStartedAt;
+      let lastPaintAt = runStartedAt;
+      let executed = 0;
+      let currentTime = startTime;
+      let chunkSteps = 4; // Deliberately small: the first chunk is also the measurement
+      let finished = false;
+
+      try {
+        while (!finished && !stopRequestedRef.current) {
+          const chunkStartedAt = performance.now();
+
+          // Guard: mark as simulation update so the auto-invalidation subscriber
+          // ignores the marking changes this chunk produces.
+          isSimulationUpdatingRef.current = true;
+          try {
+            const chunk = simulator.runUntilTime(endTimeMs, chunkSteps);
+            currentTime = chunk.currentTime;
+
+            for (const eventData of chunk.events) {
+              if (eventData && typeof eventData === 'object') {
+                handleWasmEvent(eventData as {
+                  transitionId: string;
+                  time: number;
+                  consumed?: Map<string, number[]>;
+                  produced?: Map<string, number[]>;
+                });
+              }
+              executed++;
+              if (wasmSimulatorRef.current?.hasBreakpointHit()) {
+                console.log("Breakpoint hit during batch — stopping.");
+                finished = true;
+                break;
+              }
+            }
+
+            // Anything other than a spent step budget means the run is over: either the
+            // end time was reached or the net can fire nothing more.
+            if (!finished && chunk.stopReason !== 'stepLimit') {
+              console.log(`Run to end time stopped: ${chunk.stopReason}`);
+              finished = true;
+            }
+          } finally {
+            isSimulationUpdatingRef.current = false;
+          }
+
+          const chunkElapsed = performance.now() - chunkStartedAt;
+          chunkSteps = nextChunkSize(chunkSteps, chunkElapsed);
+
+          const runElapsedSec = (performance.now() - runStartedAt) / 1000;
+          setRunProgress(progressFor(
+            currentTime,
+            runElapsedSec > 0 ? executed / runElapsedSec : 0,
+            executed,
+          ));
+
+          if (finished) break;
+
+          if (performance.now() - lastFlushAt >= EVENT_FLUSH_INTERVAL_MS) {
+            flushEventBuffer();
+            lastFlushAt = performance.now();
+          }
+
+          if (!document.hidden && performance.now() - lastPaintAt >= PAINT_INTERVAL_MS) {
+            await yieldForPaint();
+            lastPaintAt = performance.now();
+          } else {
+            await yieldToBrowser();
+          }
+        }
+      } catch (error) {
+        console.error("Error running to end time:", error);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        toast.error('Simulation failed', {
+          description: errorMsg,
+          duration: 8000,
+        });
+      }
+
+      // --- Analyze: post-run bookkeeping over the final state ---
+      patchRunProgress({ phase: 'analyzing' });
+      await yieldToBrowser();
+      flushEventBuffer();
+      eventBufferRef.current = null;
+      _fetchMonitorResults();
+      _fetchDeclareResults();
+      _fetchBlockedTransitions();
+      _fetchEnabledTransitions();
+      if (wasmSimulatorRef.current) {
+        setSimulationTime(Number(wasmSimulatorRef.current.getCurrentTime()));
+      }
+      _checkDeadlockForUnresolvedConstraints();
+    } finally {
+      // Never strand buffered events: if anything above threw past the inner handler,
+      // the log would otherwise silently lose the steps that did run.
+      flushEventBuffer();
+      eventBufferRef.current = null;
+      setRunProgress(null);
+      setRunning(false);
+      resumeUndo();
+      await wakeLock?.release();
     }
   };
 
@@ -1233,6 +1669,12 @@ export function useSimulationController() {
   // (false if the transition wasn't enabled), so callers — click-to-fire on the canvas,
   // the "Enabled Transitions" list — can give feedback on a no-op.
   const fireTransition = async (transitionId: string): Promise<boolean> => {
+    // Refuse while an automated run is in flight. The run's chunks and this call would
+    // interleave on the same simulator between yields, firing a transition the run never
+    // accounted for — and the enabled-transition list this was chosen from is a snapshot
+    // from before the run started. Both entry points (the panel list and click-to-fire on
+    // the canvas) come through here, so this is the one place that has to say no.
+    if (isRunningRef.current) return false;
     await ensureInitialized();
     if (wasmSimulatorRef.current) {
       const simulator = wasmSimulatorRef.current as unknown as {
@@ -1332,7 +1774,7 @@ export function useSimulationController() {
   const reset = async () => {
     //console.log("Resetting simulation...");
     stopRequestedRef.current = true; // Stop any ongoing simulation
-    setIsRunning(false);
+    setRunning(false);
     setStepCounter(0); // Reset step counter state
     stepCounterRef.current = 0; // Reset ref
     setSimulationTime(0.0); // Reset simulation time state
@@ -1461,7 +1903,7 @@ export function useSimulationController() {
         console.log('Model changed while simulation was active — resetting simulation.');
         // Tear down the simulation
         stopRequestedRef.current = true;
-        setIsRunning(false);
+        setRunning(false);
         isInitializedRef.current = false;
         setIsInitialized(false);
         wasmSimulatorRef.current = null;
@@ -1476,7 +1918,7 @@ export function useSimulationController() {
     });
 
     return unsub;
-  }, []);
+  }, [setRunning]);
 
   const calculateStateSpace = useCallback(
     async (
@@ -1518,6 +1960,7 @@ export function useSimulationController() {
     runStep, 
     runMultipleStepsAnimated,
     runMultipleStepsFast,
+    runUntilSimulationTime,
     stop,
     fireTransition,
     setPlaceMarking,

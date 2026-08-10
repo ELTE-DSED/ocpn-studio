@@ -8,12 +8,28 @@ export interface SimulationConfig {
   stepsPerRun: number;
   /** Delay between steps in milliseconds for animated execution */
   animationDelayMs: number;
+  /**
+   * Where the "run to end time" mode stops, as model time in milliseconds.
+   *
+   * `null` leaves the run open-ended: it goes until the net deadlocks or the user presses
+   * Stop. That is a deliberate choice rather than a missing value — a generator-driven
+   * model has no natural step count, and "run it out" is the useful thing to ask for.
+   */
+  endTimeMs: number | null;
+  /**
+   * Hold a screen wake lock while a run-to-end-time run is in flight, so the display
+   * timeout doesn't put the machine to sleep partway through a long one. See
+   * `utils/wakeLock.ts` for what this can and cannot prevent.
+   */
+  keepAwakeWhileRunning: boolean;
 }
 
 // Default simulation configuration
 export const DEFAULT_SIMULATION_CONFIG: SimulationConfig = {
   stepsPerRun: 50,
   animationDelayMs: 500,
+  endTimeMs: null,
+  keepAwakeWhileRunning: true,
 };
 
 // Define the type for the context value based on the hook's return type
@@ -22,6 +38,11 @@ export type SimulationContextType = {
   runStep: () => Promise<void>;
   runMultipleStepsAnimated: (steps: number, delayMs?: number) => Promise<void>;
   runMultipleStepsFast: (steps: number) => Promise<void>;
+  /**
+   * Runs until model time reaches `endTimeMs`, or open-endedly when that is null. Either
+   * way the run also stops on a deadlock, a breakpoint or Stop.
+   */
+  runUntilSimulationTime: (endTimeMs: number | null) => Promise<void>;
   stop: () => void;
   /** Fires the given transition. Resolves to whether it actually fired (false = wasn't enabled). */
   fireTransition: (transitionId: string) => Promise<boolean>;

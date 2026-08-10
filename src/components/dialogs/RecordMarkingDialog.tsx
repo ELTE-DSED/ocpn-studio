@@ -52,6 +52,11 @@ export function RecordMarkingDialog({
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  // Raw text of the cell currently being edited. Numeric cells display their parsed value,
+  // so without this an in-progress "3." or "-" would be collapsed by parseValue (to 3 / 0)
+  // and re-rendered without the character just typed — making decimals and negatives
+  // impossible to enter. Only the focused cell uses the draft; blur re-normalizes it.
+  const [draft, setDraft] = useState<{ key: string; text: string } | null>(null)
 
   // Determine if we're in record mode (named attributes) or multiset mode (generic entries)
   const isRecordMode = attributes.length > 0
@@ -72,6 +77,7 @@ export function RecordMarkingDialog({
       setJsonText("[]")
     }
     setCurrentPage(1)
+    setDraft(null)
   }, [initialData, isRecordMode])
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -113,6 +119,7 @@ export function RecordMarkingDialog({
     const newEntries = [...multisetEntries]
     newEntries.splice(index, 1)
     setMultisetEntries(newEntries)
+    setDraft(null) // indices shift, so an index-keyed draft would land on the wrong row
     const newTotal = Math.max(1, Math.ceil(newEntries.length / pageSize))
     if (currentPage > newTotal) setCurrentPage(newTotal)
   }
@@ -193,6 +200,7 @@ export function RecordMarkingDialog({
     const newRecords = [...records]
     newRecords.splice(index, 1)
     setRecords(newRecords)
+    setDraft(null) // indices shift, so an index-keyed draft would land on the wrong row
     const newTotal = Math.max(1, Math.ceil(newRecords.length / pageSize))
     if (currentPage > newTotal) setCurrentPage(newTotal)
   }
@@ -241,6 +249,7 @@ export function RecordMarkingDialog({
 
   // Handle tab change
   const handleTabChange = (value: string) => {
+    setDraft(null)
     if (value === "json" && activeTab === "visual") {
       const data = isRecordMode ? records : multisetEntries
       setJsonText(JSON.stringify(data, null, 2))
@@ -423,14 +432,21 @@ export function RecordMarkingDialog({
                         const idx = globalIndex(pageIdx)
                         return (
                           <TableRow key={idx}>
-                            {attributes.map((attr) => (
-                              <TableCell key={`${idx}-${attr.name}`}>
-                                <Input
-                                  value={record[attr.name]?.toString() ?? ""}
-                                  onChange={(e) => updateRecord(idx, attr.name, parseValue(e.target.value, attr.type))}
-                                />
-                              </TableCell>
-                            ))}
+                            {attributes.map((attr) => {
+                              const cellKey = `${idx}-${attr.name}`
+                              return (
+                                <TableCell key={cellKey}>
+                                  <Input
+                                    value={draft?.key === cellKey ? draft.text : record[attr.name]?.toString() ?? ""}
+                                    onChange={(e) => {
+                                      setDraft({ key: cellKey, text: e.target.value })
+                                      updateRecord(idx, attr.name, parseValue(e.target.value, attr.type))
+                                    }}
+                                    onBlur={() => setDraft(null)}
+                                  />
+                                </TableCell>
+                              )
+                            })}
                             <TableCell>
                               <Button variant="ghost" size="icon" onClick={() => deleteRecord(idx)} className="h-8 w-8">
                                 <Trash2 className="h-4 w-4" />
@@ -452,13 +468,18 @@ export function RecordMarkingDialog({
                   ) : (
                     paginatedMultisetEntries.map((entry, pageIdx) => {
                       const idx = globalIndex(pageIdx)
+                      const entryKey = `entry-${idx}`
                       return (
                         <div key={idx} className="flex items-center gap-2">
                           <span className="text-sm text-muted-foreground w-8 text-right">{idx + 1}.</span>
                           <Input
                             className="flex-1 font-mono"
-                            value={formatMultisetEntry(entry)}
-                            onChange={(e) => updateMultisetEntry(idx, e.target.value)}
+                            value={draft?.key === entryKey ? draft.text : formatMultisetEntry(entry)}
+                            onChange={(e) => {
+                              setDraft({ key: entryKey, text: e.target.value })
+                              updateMultisetEntry(idx, e.target.value)
+                            }}
+                            onBlur={() => setDraft(null)}
                             placeholder="e.g., [1, &quot;Modellin&quot;] or 42 or &quot;text&quot;"
                           />
                           <Button variant="ghost" size="icon" onClick={() => deleteMultisetEntry(idx)} className="h-8 w-8">

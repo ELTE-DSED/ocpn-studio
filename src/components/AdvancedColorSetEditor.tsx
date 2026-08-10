@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PlusCircle, Trash2, GripVertical } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
-import type { ColorSet } from "@/declarations";
+import type { ColorSet, ColorSetFieldRef } from "@/declarations";
 import { HexColorPicker } from "react-colorful";
 
 interface AdvancedColorSetEditorProps {
@@ -115,6 +115,8 @@ export function AdvancedColorSetEditor({ colorSet, existingColorSets, onSave }: 
 
   // For record color sets
   const [recordFields, setRecordFields] = useState<ColorSetField[]>([{ id: uuidv4(), name: "field1", type: "INT" }])
+  // Object references carried by record fields (keyed by field id), for OCEL o2o export
+  const [fieldRefs, setFieldRefs] = useState<Record<string, { target: string; qualifier: string; eventQualifier: string; reverse: boolean }>>({})
 
   // For subset color sets
   const [subsetOf, setSubsetOf] = useState("INT")
@@ -172,6 +174,20 @@ export function AdvancedColorSetEditor({ colorSet, existingColorSets, onSave }: 
               return { id: uuidv4(), name, type };
             });
           setRecordFields(fields);
+          // Rehydrate reference annotations, matching stored refs to fields by name
+          const refs: Record<string, { target: string; qualifier: string; eventQualifier: string; reverse: boolean }> = {};
+          for (const ref of colorSet.refs ?? []) {
+            const field = fields.find((f) => f.name === ref.field);
+            if (field) {
+              refs[field.id] = {
+                target: ref.target,
+                qualifier: ref.qualifier ?? "",
+                eventQualifier: ref.eventQualifier ?? "",
+                reverse: ref.reverse ?? false,
+              };
+            }
+          }
+          setFieldRefs(refs);
         }
       } else if (colorSet.type === "enum") {
         const enumMatch = colorSet.definition.match(/with\s+(.+?)(?:\s+timed)?\s*;?\s*$/);
@@ -250,12 +266,32 @@ export function AdvancedColorSetEditor({ colorSet, existingColorSets, onSave }: 
     setRecordFields([...recordFields, { id: uuidv4(), name: `field${recordFields.length + 1}`, type: "INT" }])
   }
 
+  const removeFieldRef = (fieldId: string) => {
+    setFieldRefs((prev) => {
+      const rest = { ...prev }
+      delete rest[fieldId]
+      return rest
+    })
+  }
+
   const handleRemoveRecordField = (id: string) => {
     setRecordFields(recordFields.filter((f) => f.id !== id))
+    removeFieldRef(id)
   }
 
   const handleUpdateRecordField = (id: string, field: "name" | "type", value: string) => {
     setRecordFields(recordFields.map((f) => (f.id === id ? { ...f, [field]: value } : f)))
+  }
+
+  const handleUpdateFieldRef = (fieldId: string, target: string) => {
+    if (target === "__none__") {
+      removeFieldRef(fieldId)
+    } else {
+      setFieldRefs((prev) => ({
+        ...prev,
+        [fieldId]: { target, qualifier: prev[fieldId]?.qualifier ?? "", eventQualifier: prev[fieldId]?.eventQualifier ?? "", reverse: prev[fieldId]?.reverse ?? false },
+      }))
+    }
   }
 
   const generateDefinition = (): string => {
@@ -307,12 +343,30 @@ export function AdvancedColorSetEditor({ colorSet, existingColorSets, onSave }: 
     // In text mode, use the raw definition text the user typed
     const finalDefinition = activeTab === "text" ? definition : generateDefinition()
 
+    // Collect reference annotations for record fields (drives OCEL o2o export)
+    const refs: ColorSetFieldRef[] =
+      type === "record"
+        ? recordFields
+            .filter((f) => fieldRefs[f.id]?.target)
+            .map((f) => {
+              const ref = fieldRefs[f.id]
+              return {
+                field: f.name,
+                target: ref.target,
+                ...(ref.qualifier.trim() ? { qualifier: ref.qualifier.trim() } : {}),
+                ...(ref.eventQualifier.trim() ? { eventQualifier: ref.eventQualifier.trim() } : {}),
+                ...(ref.reverse ? { reverse: true } : {}),
+              }
+            })
+        : []
+
     onSave({
       name,
       type,
       definition: finalDefinition,
       color, // Include the color
       timed, // Include the timed flag
+      refs, // Field-level object references (empty array clears previous annotations)
     })
   }
 
@@ -525,31 +579,98 @@ export function AdvancedColorSetEditor({ colorSet, existingColorSets, onSave }: 
               <Label>Record Fields</Label>
 
               {recordFields.map((field) => (
-                <div key={field.id} className="flex items-center space-x-2">
-                  <Input
-                    placeholder="Field name"
-                    value={field.name}
-                    onChange={(e) => handleUpdateRecordField(field.id, "name", e.target.value)}
-                    className="flex-1"
-                  />
-                  <Select
-                    value={field.type}
-                    onValueChange={(value) => handleUpdateRecordField(field.id, "type", value)}
-                  >
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {existingColorSets.map((cs) => (
-                        <SelectItem key={cs.id} value={cs.name}>
-                          {cs.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button variant="ghost" size="icon" onClick={() => handleRemoveRecordField(field.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                <div key={field.id} className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      placeholder="Field name"
+                      value={field.name}
+                      onChange={(e) => handleUpdateRecordField(field.id, "name", e.target.value)}
+                      className="flex-1"
+                    />
+                    <Select
+                      value={field.type}
+                      onValueChange={(value) => handleUpdateRecordField(field.id, "type", value)}
+                    >
+                      <SelectTrigger className="w-35">
+                        <SelectValue placeholder="Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {existingColorSets.map((cs) => (
+                          <SelectItem key={cs.id} value={cs.name}>
+                            {cs.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={fieldRefs[field.id]?.target ?? "__none__"}
+                      onValueChange={(value) => handleUpdateFieldRef(field.id, value)}
+                    >
+                      <SelectTrigger className="w-37.5" title="Object type this field references (exported as an OCEL object-to-object relationship)">
+                        <SelectValue placeholder="References" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">No reference</SelectItem>
+                        {existingColorSets
+                          .filter((cs) => cs.type === "record")
+                          .map((cs) => (
+                            <SelectItem key={cs.id} value={cs.name}>
+                              → {cs.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <Button variant="ghost" size="icon" onClick={() => handleRemoveRecordField(field.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {fieldRefs[field.id] && (
+                    <div className="flex items-center space-x-2 pl-4">
+                      <Input
+                        placeholder={`o2o qualifier (default: "${field.name}")`}
+                        title="Qualifier for the object-to-object relationship derived from this field"
+                        value={fieldRefs[field.id].qualifier}
+                        onChange={(e) =>
+                          setFieldRefs((prev) => ({
+                            ...prev,
+                            [field.id]: { ...prev[field.id], qualifier: e.target.value },
+                          }))
+                        }
+                        className="flex-1 h-8 text-sm"
+                      />
+                      <Input
+                        placeholder="e2o qualifier (same)"
+                        title="Role objects reached through this field play in events touching this token; defaults to the o2o qualifier"
+                        value={fieldRefs[field.id].eventQualifier}
+                        onChange={(e) =>
+                          setFieldRefs((prev) => ({
+                            ...prev,
+                            [field.id]: { ...prev[field.id], eventQualifier: e.target.value },
+                          }))
+                        }
+                        className="flex-1 h-8 text-sm"
+                      />
+                      <div className="flex items-center gap-1.5">
+                        <Checkbox
+                          id={`ref-reverse-${field.id}`}
+                          checked={fieldRefs[field.id].reverse}
+                          onCheckedChange={(checked) =>
+                            setFieldRefs((prev) => ({
+                              ...prev,
+                              [field.id]: { ...prev[field.id], reverse: checked === true },
+                            }))
+                          }
+                        />
+                        <Label
+                          htmlFor={`ref-reverse-${field.id}`}
+                          className="text-xs text-muted-foreground"
+                          title={`Emit the relationship as ${fieldRefs[field.id].target} → ${name || "this"} instead of ${name || "this"} → ${fieldRefs[field.id].target} (e.g. customer "places" order)`}
+                        >
+                          reverse direction
+                        </Label>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
 

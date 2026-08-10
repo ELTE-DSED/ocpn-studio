@@ -79,6 +79,8 @@ const ArcProperties = () => {
   const updateEdgeLabel = useStore((state) => state.updateEdgeLabel);
   const updateEdgeData = useStore((state) => state.updateEdgeData);
   const swapEdgeDirection = useStore((state) => state.swapEdgeDirection);
+  const colorSets = useStore((state) => state.colorSets);
+  const variables = useStore((state) => state.variables);
 
   // State for arc delay input mode
   const [delayMode, setDelayMode] = useState<'relative' | 'expression'>('relative');
@@ -225,6 +227,28 @@ const ArcProperties = () => {
     }
   };
 
+  // --- OCEL role qualifier ---------------------------------------------------
+  // The role an object plays in an event is determined by how the transition touches
+  // it, i.e. by this arc (place, transition, direction). Only meaningful when the
+  // connected place carries objects, so the field is hidden otherwise.
+  const placeId = sourceType === 'place' ? source : target;
+  const placeColorSetName = (() => {
+    if (!activePetriNetId) return undefined;
+    const node = petriNetsById[activePetriNetId]?.nodes.find(n => n.id === placeId);
+    return (node?.data as { colorSet?: string } | undefined)?.colorSet;
+  })();
+  const placeColorSet = colorSets.find(cs => cs.name === placeColorSetName);
+  const carriesObjects = placeColorSet?.type === 'record' || placeColorSet?.type === 'product';
+  // Left blank, the export falls back to the object's type name.
+  const defaultQualifier = placeColorSet?.type === 'record'
+    ? (placeColorSetName ?? '').toLowerCase()
+    : 'object type name';
+  // A bare variable inscription names the role in most models (`packer`, `shipper`),
+  // so offer it as a one-click alternative to that fallback.
+  const inscription = typeof label === 'string' ? label.trim() : '';
+  const variableSuggestion = variables.some(v => v.name === inscription) ? inscription : null;
+  const qualifier = (data as { qualifier?: string })?.qualifier ?? '';
+
   return (
     <div className="space-y-4">
       <div className="grid w-full items-center gap-1.5">
@@ -290,6 +314,39 @@ const ArcProperties = () => {
               }
             }}
           />
+        </div>
+      )}
+
+      {arcType === 'normal' && carriesObjects && (
+        <div className="grid w-full items-center gap-1.5">
+          <Label htmlFor="qualifier">OCEL Role Qualifier</Label>
+          <Input
+            id="qualifier"
+            value={qualifier}
+            placeholder={defaultQualifier}
+            onChange={(e) => {
+              if (activePetriNetId) {
+                updateEdgeData(activePetriNetId, id, { qualifier: e.target.value || undefined });
+              }
+            }}
+          />
+          <p className="text-xs text-muted-foreground">
+            Role the objects on this arc play in the event, exported as the OCEL
+            event-to-object qualifier. Defaults to the object type name.
+          </p>
+          {variableSuggestion && qualifier !== variableSuggestion && (
+            <button
+              type="button"
+              className="text-xs text-left text-primary hover:underline w-fit"
+              onClick={() => {
+                if (activePetriNetId) {
+                  updateEdgeData(activePetriNetId, id, { qualifier: variableSuggestion });
+                }
+              }}
+            >
+              Use &quot;{variableSuggestion}&quot; (the bound variable)
+            </button>
+          )}
         </div>
       )}
 

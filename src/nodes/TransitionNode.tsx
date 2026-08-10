@@ -25,6 +25,16 @@ export interface TransitionNodeData {
   timeOffset?: { x: number; y: number };
   // Unary Declare constraints (Existence/Absence) dropped directly onto this transition
   declareUnary?: UnaryDeclareConstraint[];
+  /**
+   * Whether firings of this transition become events in an OCEL 2.0 export.
+   *
+   * Undefined means "decide automatically", which is what an untouched model gets: a
+   * transition counts as a business event when it is connected to an object place (a
+   * record- or product-typed colour set) and as modelling scaffolding otherwise. Set
+   * explicitly to keep a transition out of the log — or to force one in — no matter what
+   * its arcs look like. See `resolveIncludeInOcel`.
+   */
+  includeInOcel?: boolean;
 }
 
 export interface TransitionNodeProps {

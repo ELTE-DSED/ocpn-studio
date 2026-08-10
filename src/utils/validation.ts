@@ -75,6 +75,57 @@ function parseSimpleInscription(inscription: string): string | null {
   return null;
 }
 
+/**
+ * Extracts the names of declared variables referenced by an inscription.
+ * Ignores string literals, record field accesses (`p.price` → not "price"),
+ * and function call names.
+ */
+function extractReferencedVariables(
+  inscription: string,
+  variableByName: Map<string, Variable>,
+): string[] {
+  const withoutStrings = inscription.replace(/"[^"]*"/g, '').replace(/'[^']*'/g, '');
+  const identifiers = withoutStrings.match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
+  const found = new Set<string>();
+  for (const ident of identifiers) {
+    if (!variableByName.has(ident)) continue;
+    if (new RegExp(`\\.\\s*${ident}\\b`).test(withoutStrings)) continue;
+    if (new RegExp(`\\b${ident}\\s*\\(`).test(withoutStrings)) continue;
+    found.add(ident);
+  }
+  return [...found];
+}
+
+/**
+ * True for color sets the simulator binds automatically when a variable is otherwise
+ * unbound: integer ranges, enums and unit. Variables of these types may legitimately
+ * appear on an output arc without being bound by any input arc — the simulator picks
+ * a random value. Mirrors the IntRange/Enum/Unit cases in cpnsim's firing logic.
+ */
+function isAutoBoundColorSet(cs: ColorSet | undefined): boolean {
+  if (!cs) return false;
+  const def = cs.definition.toLowerCase();
+  if (/=\s*unit\s*;?/.test(def)) return true;
+  if (/=\s*with\s+/.test(def)) return true;
+  if (/\bwith\b/.test(def) && def.includes('..')) return true;
+  return false;
+}
+
+/**
+ * Extracts variable names assigned by a transition's code segment (`let out = ...`).
+ * These are pushed into the firing scope before output arcs are evaluated, so an
+ * output arc may reference them even though no input arc binds them.
+ */
+function extractCodeSegmentAssignments(codeSegment: string): Set<string> {
+  const assigned = new Set<string>();
+  const pattern = /\blet\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=/g;
+  let match;
+  while ((match = pattern.exec(codeSegment)) !== null) {
+    assigned.add(match[1]);
+  }
+  return assigned;
+}
+
 // ─── Main validation ──────────────────────────────────────────────────────
 
 /**
@@ -144,9 +195,129 @@ function validatePetriNet(
 
     if (!placeColorSet) continue; // Place already has its own error
 
-    validateArcInscription(
-      inscription, placeColorSet, variableByName, colorSetByName, edge.id, addError
+    // Names the attached transition's code segment puts into the firing scope. They
+    // are legitimate references in an inscription without being declared variables —
+    // the conditional output arc pattern (`if ok { [tok] } else { [] }`) depends on it.
+    const transitionNode = sourceNode?.type === 'transition' ? sourceNode :
+                           targetNode?.type === 'transition' ? targetNode : null;
+    const localVars = extractCodeSegmentAssignments(
+      (transitionNode?.data as unknown as TransitionNodeData | undefined)?.codeSegment || ''
     );
+
+    validateArcInscription(
+      inscription, placeColorSet, variableByName, colorSetByName, edge.id, addError, localVars
+    );
+  }
+
+  // ── Check for delays on input arcs ───────────────────────────────
+  // In timed CPNs, delays belong on output arcs and transitions: they state when a
+  // produced token becomes available. cpnsim evaluates arc delays only when producing
+  // tokens, so a delay on a place→transition arc is silently ignored. (Bidirectional
+  // arcs are exempt: their delay applies to the producing direction.)
+  for (const edge of petriNet.edges) {
+    const edgeData = edge.data as { delay?: string; isBidirectional?: boolean } | undefined;
+    if (!edgeData?.delay?.trim()) continue;
+    if (edgeData.isBidirectional) continue;
+    const sourceNode = petriNet.nodes.find(n => n.id === edge.source);
+    const targetNode = petriNet.nodes.find(n => n.id === edge.target);
+    if (sourceNode?.type === 'place' && targetNode?.type === 'transition') {
+      addError(edge.id, 'warning',
+        `Time delay on an input arc has no effect and is ignored by the simulator. ` +
+        `To delay this firing, delay the availability of the tokens it consumes — ` +
+        `put the delay on the arc or transition that produces them.`);
+    }
+  }
+
+  // ── Validate output-arc variable binding ─────────────────────────
+  // Every variable an output arc uses must be bound somewhere: by an input arc of the
+  // same transition, by the transition's code segment, or by the simulator's automatic
+  // binding for int-range/enum/unit types. An unbound one is not a type error (the
+  // variable can be perfectly well declared), so the checks above miss it — but at
+  // runtime the output inscription fails to evaluate, and cpnsim has already removed
+  // the input tokens by then, so firing silently destroys them.
+  for (const node of petriNet.nodes) {
+    if (node.type !== 'transition') continue;
+    const transitionData = node.data as unknown as TransitionNodeData;
+
+    // Substitution transitions never fire, so their arcs are never evaluated: before
+    // simulating, the hierarchy is flattened — the substitution transition and its arcs
+    // are dropped and each port place is merged into its assigned socket place, so the
+    // real binding happens on the subpage. Checking those arcs here would flag every
+    // socket arc, since a substitution transition has no input arcs to bind anything.
+    if (transitionData.subPageId) continue;
+
+    const edgeArcType = (edge: (typeof petriNet.edges)[number]) =>
+      (edge.data as { arcType?: string } | undefined)?.arcType ?? 'normal';
+    const isBidirectional = (edge: (typeof petriNet.edges)[number]) =>
+      (edge.data as { isBidirectional?: boolean } | undefined)?.isBidirectional === true;
+
+    // Variables bound by input arcs. Inhibitor and reset arcs are excluded: they test
+    // or clear a place rather than consuming a token into a binding.
+    const boundVariables = new Set<string>();
+    for (const edge of petriNet.edges) {
+      if (edge.target !== node.id) continue;
+      if (edgeArcType(edge) !== 'normal') continue;
+      const sourceNode = petriNet.nodes.find(n => n.id === edge.source);
+      if (sourceNode?.type !== 'place') continue;
+      const inscription = typeof edge.label === 'string' ? edge.label : '';
+      for (const v of extractReferencedVariables(inscription, variableByName)) {
+        boundVariables.add(v);
+      }
+    }
+
+    const codeSegmentVars = extractCodeSegmentAssignments(transitionData.codeSegment || '');
+
+    for (const edge of petriNet.edges) {
+      const isOutputArc =
+        edge.source === node.id || (isBidirectional(edge) && edge.target === node.id);
+      if (!isOutputArc) continue;
+      if (edgeArcType(edge) !== 'normal') continue;
+      const inscription = typeof edge.label === 'string' ? edge.label : '';
+      if (isDefaultInscription(inscription)) continue;
+
+      for (const varName of extractReferencedVariables(inscription, variableByName)) {
+        if (boundVariables.has(varName)) continue;
+        if (codeSegmentVars.has(varName)) continue;
+        if (isAutoBoundColorSet(colorSetByName.get(variableByName.get(varName)!.colorSet))) continue;
+
+        const transitionName = transitionData.label || node.id;
+        addError(edge.id, 'error',
+          `Variable "${varName}" is never bound: no input arc of "${transitionName}" binds it. ` +
+          `Firing will consume the input tokens and produce nothing.`);
+      }
+    }
+  }
+
+  // ── Check for conflicting OCEL role qualifiers on parallel arcs ──
+  // Firing events identify token movements by place, not by arc, so the OCEL export
+  // resolves an arc's role qualifier by (transition, place, direction). Parallel arcs
+  // share that key: if they declare different qualifiers, one silently wins.
+  const qualifiersByArcKey = new Map<string, { edgeIds: string[]; qualifiers: Set<string> }>();
+  for (const edge of petriNet.edges) {
+    const edgeData = edge.data as { qualifier?: string; isBidirectional?: boolean } | undefined;
+    const sourceNode = petriNet.nodes.find(n => n.id === edge.source);
+    const targetNode = petriNet.nodes.find(n => n.id === edge.target);
+    let key: string | null = null;
+    if (sourceNode?.type === 'place' && targetNode?.type === 'transition') {
+      key = `${edge.target}|${edge.source}|in`;
+    } else if (sourceNode?.type === 'transition' && targetNode?.type === 'place') {
+      key = `${edge.source}|${edge.target}|out`;
+    }
+    if (!key) continue;
+    const entry = qualifiersByArcKey.get(key) ?? { edgeIds: [], qualifiers: new Set<string>() };
+    entry.edgeIds.push(edge.id);
+    entry.qualifiers.add(edgeData?.qualifier?.trim() || '');
+    qualifiersByArcKey.set(key, entry);
+  }
+  for (const { edgeIds, qualifiers } of qualifiersByArcKey.values()) {
+    if (edgeIds.length < 2 || qualifiers.size < 2) continue;
+    const named = [...qualifiers].filter(Boolean);
+    for (const edgeId of edgeIds) {
+      addError(edgeId, 'warning',
+        `Parallel arcs between the same place and transition declare different OCEL role ` +
+        `qualifiers (${named.map(q => `"${q}"`).join(', ')}${qualifiers.has('') ? ', and one left blank' : ''}). ` +
+        `The export cannot tell them apart — give them the same qualifier.`);
+    }
   }
 
   // ── Check for disconnected nodes ─────────────────────────────────
@@ -244,17 +415,19 @@ function validateArcInscription(
   colorSetByName: Map<string, ColorSet>,
   edgeId: string,
   addError: (id: string, severity: ErrorSeverity, message: string) => void,
+  localVars: Set<string> = new Set(),
 ): void {
   // Try tuple inscription: [ac, rw] or (ac, gate)
   const tupleComponents = parseTupleInscription(inscription);
   if (tupleComponents) {
-    validateTupleInscription(tupleComponents, placeColorSet, variableByName, colorSetByName, edgeId, addError);
+    validateTupleInscription(tupleComponents, placeColorSet, variableByName, colorSetByName, edgeId, addError, localVars);
     return;
   }
 
   // Try simple variable inscription: var1 or 2`var1
   const simpleVar = parseSimpleInscription(inscription);
   if (simpleVar) {
+    if (localVars.has(simpleVar)) return; // value produced by the transition's code segment
     validateSimpleInscription(simpleVar, placeColorSet, variableByName, colorSetByName, edgeId, addError);
     return;
   }
@@ -268,6 +441,7 @@ function validateArcInscription(
   for (const ident of identifiers) {
     if (keywords.has(ident)) continue;
     if (colorSetByName.has(ident)) continue;
+    if (localVars.has(ident)) continue; // set by the transition's code segment
     // Check if identifier appears standalone (not as a record field after a dot)
     const fieldPattern = new RegExp(`\\.\\s*${ident}\\b`);
     if (fieldPattern.test(withoutStrings)) continue;
@@ -291,6 +465,7 @@ function validateTupleInscription(
   colorSetByName: Map<string, ColorSet>,
   edgeId: string,
   addError: (id: string, severity: ErrorSeverity, message: string) => void,
+  localVars: Set<string> = new Set(),
 ): void {
   // Check if place expects a product type
   if (!isProductType(placeColorSet)) {
@@ -315,6 +490,7 @@ function validateTupleInscription(
     const expectedTypeName = expectedComponents[i];
 
     // Check if it's a variable
+    if (localVars.has(component)) continue; // set by the transition's code segment
     const variable = variableByName.get(component);
     if (!variable) {
       // Could be a literal or expression — check if it's a known identifier

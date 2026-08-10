@@ -7,6 +7,28 @@ export interface ColorSet {
   definition: string
   color?: string // Add color property
   timed?: boolean // Whether this is a timed color set
+  refs?: ColorSetFieldRef[] // Object references carried by record fields (for OCEL o2o export)
+}
+
+/**
+ * Declares that a record field holds a reference to another object type, so the
+ * OCEL export can derive a qualified object-to-object relationship from it.
+ * Fields that structurally embed another record colorset (directly or as a list)
+ * are detected automatically; this annotation is for plain id-typed fields, or to
+ * override the default qualifier/direction.
+ */
+export interface ColorSetFieldRef {
+  field: string // Record field name carrying the reference
+  target: string // Referenced object type (a record colorset name)
+  qualifier?: string // OCEL o2o qualifier; defaults to the field name
+  reverse?: boolean // Emit target→owner instead of owner→target (e.g. customer "places" order)
+  /**
+   * OCEL e2o qualifier for objects reached through this field — the role they play in
+   * events touching the owning token. Defaults to `qualifier`. Needed when the two read
+   * differently: a package relates to its employee as "shipped by" (o2o) while the send
+   * event relates to the same employee as "shipper" (e2o).
+   */
+  eventQualifier?: string
 }
 
 export interface Variable {

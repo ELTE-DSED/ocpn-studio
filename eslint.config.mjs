@@ -38,4 +38,11 @@ export default defineConfig([globalIgnores(["**/dist", "**/.eslintrc.cjs"]), {
   rules: {
     semi: ['error', 'always']
   }
+}, {
+  // Build/tooling scripts run in Node, not the browser.
+  files: ['scripts/**/*.mjs'],
+  languageOptions: {
+    sourceType: 'module',
+    globals: { ...globals.node }
+  },
 }]);

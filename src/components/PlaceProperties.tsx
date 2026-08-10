@@ -428,25 +428,59 @@ const PlaceProperties = ({ colorSets }: { colorSets: ColorSet[] }) => {
               }
             }}
           />
-        ) : isTimed ? (
-          /* Timed colorset: show token count summary with Edit button */
-          <div className="flex flex-col gap-2">
-            <div className="flex gap-2 items-center">
-              <div className="flex-1 text-sm text-muted-foreground border rounded-md px-3 py-2 bg-muted/30">
-                {parseTimedMarking(data.initialMarking || "").length} timed token(s)
+        ) : isTimed ? (() => {
+          // Expression-based markings (e.g. imported `[timed((), (5.0*day))]` or a
+          // function call) are not JSON — show them as editable text instead of the
+          // structured dialog, which can only represent literal tokens and would
+          // silently replace the expression on save.
+          const marking = data.initialMarking || "";
+          let isExpression = false;
+          if (marking.trim() !== "") {
+            try {
+              JSON.parse(marking);
+            } catch {
+              isExpression = true;
+            }
+          }
+          return isExpression ? (
+            <Textarea
+              id="initialMarking"
+              value={marking}
+              placeholder='e.g., [timed((), delay_days(5))]'
+              rows={2}
+              onChange={(e) => {
+                if (activePetriNetId) {
+                  updateNodeData(activePetriNetId, id, {
+                    ...data,
+                    label: data.label || "",
+                    initialMarking: e.target.value,
+                    isArcMode: data.isArcMode || false,
+                    type: data.type || "defaultType",
+                    colorSet: data.colorSet || "defaultColorSet",
+                  });
+                }
+              }}
+            />
+          ) : (
+            /* Timed colorset: show token count summary with Edit button */
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2 items-center">
+                <div className="flex-1 text-sm text-muted-foreground border rounded-md px-3 py-2 bg-muted/30">
+                  {parseTimedMarking(marking).length} timed token(s)
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedPlace({ id, data: { ...data }, target: 'initial' });
+                    setIsTimedMarkingDialogOpen(true);
+                  }}
+                >
+                  Edit
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSelectedPlace({ id, data: { ...data }, target: 'initial' });
-                  setIsTimedMarkingDialogOpen(true);
-                }}
-              >
-                Edit
-              </Button>
             </div>
-          </div>
-        ) : (() => {
+          );
+        })() : (() => {
           // Detect whether initialMarking is a valid JSON value or an expression
           let isExpression = false;
           if (data.initialMarking && typeof data.initialMarking === 'string' && data.initialMarking.trim() !== '') {

@@ -22,6 +22,9 @@ export type PetriNetData = {
     stepsPerRun?: number;
     animationDelayMs?: number;
     simulationEpoch?: string | null;
+    /** Where a "run to end time" run stops, as model time in ms; null = open-ended. */
+    endTimeMs?: number | null;
+    keepAwakeWhileRunning?: boolean;
   }
   /** Warnings generated during CPN Tools XML import (SML expressions that could not be translated, etc.) */
   importWarnings?: string[];
@@ -86,16 +89,30 @@ export function convertToCPNToolsXML(data: PetriNetData): string {
         })
         .join("\n");
 
+      const nodeTypeById = new Map(petriNet.nodes.map((n) => [n.id, n.type]));
       const arcsXML = petriNet.edges
         .map((edge) => {
-          return `<arc id="${edge.id}" orientation="PtoT">
+          // CPN Tools names the endpoints by role, not by direction, so which of
+          // source/target is the place has to be resolved from the node types; the
+          // direction then lives entirely in the orientation attribute.
+          const sourceIsPlace = nodeTypeById.get(edge.source) === 'place';
+          const placeEnd = sourceIsPlace ? edge.source : edge.target;
+          const transEnd = sourceIsPlace ? edge.target : edge.source;
+          const arcType = (edge.data as { arcType?: string } | undefined)?.arcType;
+          const orientation =
+            arcType === 'inhibitor' ? 'Inhibitor'
+            : arcType === 'reset' ? 'Reset'
+            : (edge.data as { isBidirectional?: boolean } | undefined)?.isBidirectional ? 'BOTHDIR'
+            : sourceIsPlace ? 'PtoT'
+            : 'TtoP';
+          return `<arc id="${edge.id}" orientation="${orientation}">
             <posattr x="0.000000" y="0.000000"/>
             <fillattr colour="White" pattern="" filled="false"/>
             <lineattr colour="Black" thick="1" type="Solid"/>
             <textattr colour="Black" bold="false"/>
             <arrowattr headsize="1.200000" currentcyckle="2"/>
-            <transend idref="${edge.target}"/>
-            <placeend idref="${edge.source}"/>
+            <transend idref="${transEnd}"/>
+            <placeend idref="${placeEnd}"/>
             <annot id="${edge.id}_inscription">
               <text>${edge.label || ""}</text>
             </annot>
@@ -271,6 +288,12 @@ export function convertToJSON(data: PetriNetData): string {
             subPageId: transition.data.subPageId || undefined,
             socketAssignments: transition.data.socketAssignments || undefined,
             declareUnary: transition.data.declareUnary || undefined, // Unary Declare constraints (Existence/Absence)
+            // Whether firings become OCEL events. Written only when the modeller set it,
+            // since undefined and "the automatic default" are the same thing and saving a
+            // resolved value would freeze today's heuristic into the file.
+            includeInOcel: typeof transition.data.includeInOcel === 'boolean'
+              ? transition.data.includeInOcel
+              : undefined,
           })),
         // Declare-constraint edges (transition→transition) are NOT regular arcs — they're kept
         // separate so the WASM simulator's arc model never sees them (see declareConstraints below).
@@ -284,6 +307,7 @@ export function convertToJSON(data: PetriNetData): string {
             delay: (arc.data as Record<string, unknown>)?.delay || "", // Per-arc time delay expression
             isBidirectional: arc.data?.isBidirectional || false, // Include bidirectional flag
             arcType: arc.data?.arcType || undefined, // Include arc type if not normal
+            qualifier: (arc.data as Record<string, unknown>)?.qualifier || undefined, // OCEL e2o role qualifier
             labelOffset: arc.data?.labelOffset || undefined, // Include label offset if set
             bendpoints: arc.data?.bendpoints || undefined, // Include bendpoints if set
           })),
@@ -314,7 +338,7 @@ export function convertToJSON(data: PetriNetData): string {
 }
 
 // Parse JSON data back into PetriNetData format
-export function parseJSON(content: string): PetriNetData {
+function parseJSON(content: string): PetriNetData {
   const parsedData = JSON.parse(content);
 
   // Basic validation (can be expanded)
@@ -354,6 +378,7 @@ export function parseJSON(content: string): PetriNetData {
       subPageId?: string;
       socketAssignments?: { portPlaceId: string; socketPlaceId: string }[];
       declareUnary?: { id: string; template: 'existence' | 'absence'; enabled: boolean }[];
+      includeInOcel?: boolean;
     }[];
     arcs: {
       id: string;
@@ -363,6 +388,7 @@ export function parseJSON(content: string): PetriNetData {
       delay?: string;
       isBidirectional?: boolean;
       arcType?: string;
+      qualifier?: string;
       labelOffset?: { x: number; y: number };
       bendpoints?: { x: number; y: number }[];
     }[];
@@ -406,6 +432,8 @@ export function parseJSON(content: string): PetriNetData {
         subPageId: transition.subPageId || undefined,
         socketAssignments: transition.socketAssignments || undefined,
         declareUnary: transition.declareUnary || undefined,
+        // Absent stays absent: only an explicit choice overrides the automatic default.
+        includeInOcel: typeof transition.includeInOcel === 'boolean' ? transition.includeInOcel : undefined,
       },
       width: transition.size?.width || 50,
       height: transition.size?.height || 30,
@@ -420,6 +448,7 @@ export function parseJSON(content: string): PetriNetData {
         isBidirectional: arc.isBidirectional || false,
         arcType: arc.arcType || undefined,
         delay: arc.delay || "",
+        qualifier: arc.qualifier || undefined,
         labelOffset: arc.labelOffset || undefined,
         bendpoints: arc.bendpoints || undefined,
       },
@@ -465,6 +494,8 @@ export function parseJSON(content: string): PetriNetData {
     stepsPerRun: parsedData.simulationSettings.stepsPerRun,
     animationDelayMs: parsedData.simulationSettings.animationDelayMs,
     simulationEpoch: parsedData.simulationSettings.simulationEpoch,
+    endTimeMs: parsedData.simulationSettings.endTimeMs,
+    keepAwakeWhileRunning: parsedData.simulationSettings.keepAwakeWhileRunning,
   } : undefined;
 
   return {
@@ -1468,22 +1499,26 @@ function translateSMLInscription(inscription: string, context: string): string {
 /**
  * Parses an SML multiset literal into its constituent tokens.
  * Format: N`value ++ N`value ++ ...
- * where N is an integer multiplicity and value is an SML expression.
+ * where N is an integer multiplicity and value is an SML expression, optionally
+ * followed by a CPN Tools timestamp suffix `@ts` or `@+ts` (captured as `time`).
  * Returns null if the string doesn't look like a multiset literal.
- * 
+ *
  * Examples:
  *   1`"Dan Brown"++ 1`"John Grisham"
  *   → [{count:1, value:'"Dan Brown"'}, {count:1, value:'"John Grisham"'}]
- * 
+ *
  *   1`("Dan Brown","De Da Vinci code") ++ 1`("Dan Brown","Het Bernini mysterie")
  *   → [{count:1, value:'("Dan Brown","De Da Vinci code")'}, ...]
+ *
+ *   1`()@5 ++ 1`()@(5.0*day)
+ *   → [{count:1, value:'()', time:'5'}, {count:1, value:'()', time:'(5.0*day)'}]
  */
-function parseSMLMultiset(expr: string): Array<{ count: number; value: string }> | null {
+function parseSMLMultiset(expr: string): Array<{ count: number; value: string; time?: string }> | null {
   const s = expr.trim();
   // Quick check: must contain at least one N` pattern
   if (!/\d+`/.test(s)) return null;
 
-  const tokens: Array<{ count: number; value: string }> = [];
+  const tokens: Array<{ count: number; value: string; time?: string }> = [];
   let pos = 0;
 
   while (pos < s.length) {
@@ -1531,15 +1566,34 @@ function parseSMLMultiset(expr: string): Array<{ count: number; value: string }>
       // Record — find matching closing brace
       pos = skipBracketedExpr(s, pos, '{', '}');
     } else {
-      // Simple value (number, identifier) — read until whitespace or ++
-      while (pos < s.length && !/\s/.test(s[pos]) && !s.startsWith('++', pos)) {
+      // Simple value (number, identifier) — read until whitespace, @ timestamp, or ++
+      while (pos < s.length && !/\s/.test(s[pos]) && s[pos] !== '@' && !s.startsWith('++', pos)) {
         pos++;
       }
     }
 
     const value = s.slice(valueStart, pos).trim();
     if (!value) return null;
-    tokens.push({ count, value });
+
+    // Optional CPN Tools timestamp suffix: @ts or @+ts
+    let time: string | undefined;
+    while (pos < s.length && /\s/.test(s[pos])) pos++;
+    if (s[pos] === '@') {
+      pos++;
+      if (s[pos] === '+') pos++;
+      while (pos < s.length && /\s/.test(s[pos])) pos++;
+      const tsStart = pos;
+      if (s[pos] === '(') {
+        pos = skipBracketedExpr(s, pos, '(', ')');
+      } else {
+        while (pos < s.length && !/\s/.test(s[pos]) && !s.startsWith('++', pos)) {
+          pos++;
+        }
+      }
+      time = s.slice(tsStart, pos).trim() || undefined;
+    }
+
+    tokens.push({ count, value, ...(time ? { time } : {}) });
   }
 
   return tokens.length > 0 ? tokens : null;
@@ -1610,6 +1664,10 @@ function translateSMLTokenValue(
   colorSets: ColorSetArray,
 ): string {
   const v = value.trim();
+
+  // Unit token — must be checked before the tuple branch, which would otherwise
+  // read "()" as an empty tuple
+  if (v === '()') return '()';
 
   // Look up color set type info
   const productComponents = getProductComponentTypes(colorSetName, colorSets);
@@ -1710,25 +1768,118 @@ function splitTupleComponents(inner: string): string[] {
 }
 
 /**
- * Translates an SML initial marking expression.
- * Handles UNIT markings and common SML patterns.
+ * Interprets a CPN Tools `<arc orientation>` value.
+ *
+ * `PtoT`/`TtoP` differ only in direction; `BOTHDIR` is a double-headed read arc.
+ * `Inhibitor` and `Reset` are place→transition arcs whose meaning lives in the arc
+ * *type*: inhibitor enables the transition only while the place is empty, reset clears
+ * the place on firing. Treating either as an ordinary input arc inverts its meaning, so
+ * an unrecognised value is reported rather than silently assumed to be `PtoT`.
+ *
+ * Exported for testing.
  */
-function translateSMLInitialMarking(
+export function interpretArcOrientation(orientation: string | null): {
+  /** True when the arc runs transition→place (the inscription produces tokens) */
+  transitionToPlace: boolean;
+  bidirectional: boolean;
+  arcType?: 'inhibitor' | 'reset';
+  recognized: boolean;
+} {
+  switch ((orientation || '').trim().toLowerCase()) {
+    case 'ptot':
+      return { transitionToPlace: false, bidirectional: false, recognized: true };
+    case 'ttop':
+      return { transitionToPlace: true, bidirectional: false, recognized: true };
+    case 'bothdir':
+      return { transitionToPlace: false, bidirectional: true, recognized: true };
+    case 'inhibitor':
+      return { transitionToPlace: false, bidirectional: false, arcType: 'inhibitor', recognized: true };
+    case 'reset':
+      return { transitionToPlace: false, bidirectional: false, arcType: 'reset', recognized: true };
+    default:
+      return { transitionToPlace: false, bidirectional: false, recognized: false };
+  }
+}
+
+/**
+ * Splits a top-level CPN Tools timestamp suffix off an expression:
+ *   `()@(5.0*day)` → { value: '()', time: '(5.0*day)' }
+ *   `"x"@+5`       → { value: '"x"', time: '5' }
+ * Only an `@` outside strings and brackets counts. Returns null if there is none.
+ */
+function splitTopLevelTimestamp(s: string): { value: string; time: string } | null {
+  let depth = 0;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (ch === '"') {
+      i++;
+      while (i < s.length && s[i] !== '"') {
+        if (s[i] === '\\') i++;
+        i++;
+      }
+    } else if (ch === '(' || ch === '[' || ch === '{') {
+      depth++;
+    } else if (ch === ')' || ch === ']' || ch === '}') {
+      depth--;
+    } else if (ch === '@' && depth === 0) {
+      const value = s.slice(0, i).trim();
+      let time = s.slice(i + 1).trim();
+      if (time.startsWith('+')) time = time.slice(1).trim();
+      if (!value || !time) return null;
+      return { value, time };
+    }
+  }
+  return null;
+}
+
+/**
+ * Emits a marking string for tokens that may carry availability timestamps.
+ * Values and times are already translated to Rhai syntax.
+ *
+ * Preferred form is the UI-canonical JSON wrapper array
+ * `[{"value": ..., "timestamp": N}, ...]` (what TimedMarkingDialog edits), which
+ * requires every value to be JSON-representable (`()` maps to null) and every
+ * timestamp to be a numeric literal. Otherwise falls back to a Rhai array using the
+ * simulator's `timed(value, ts)` helper for the stamped tokens.
+ */
+function emitTimedMarkingTokens(tokens: Array<{ value: string; time?: string }>): string {
+  const jsonTokens: string[] = [];
+  let jsonOk = true;
+  for (const t of tokens) {
+    if (t.time && !/^\d+(\.\d+)?$/.test(t.time)) {
+      jsonOk = false;
+      break;
+    }
+    const jsonValue = t.value === '()' ? 'null' : t.value;
+    try {
+      JSON.parse(jsonValue);
+    } catch {
+      jsonOk = false;
+      break;
+    }
+    const ts = t.time ? Math.round(parseFloat(t.time)) : 0;
+    jsonTokens.push(`{"value": ${jsonValue}, "timestamp": ${ts}}`);
+  }
+  if (jsonOk) return `[${jsonTokens.join(', ')}]`;
+
+  return `[${tokens
+    .map(t => (t.time ? `timed(${t.value}, ${t.time})` : t.value))
+    .join(', ')}]`;
+}
+
+/**
+ * Translates an SML initial marking expression.
+ * Handles UNIT markings, timed tokens (`v@ts`), and common SML patterns.
+ * Exported for testing.
+ */
+export function translateSMLInitialMarking(
   marking: string,
   placeName: string,
   colorSetName: string,
   colorSets: ColorSetArray,
 ): string {
-  let trimmed = marking.trim();
+  const trimmed = marking.trim();
   if (!trimmed) return '';
-
-  // Strip CPN Tools timed-token timestamps: value@N → value
-  // In CPN Tools, "Mary"@6 means token "Mary" available at time 6.
-  // Rhai doesn't understand @ syntax, so strip the timestamps.
-  // Matches @N after a closing quote, paren, bracket, brace, or word character.
-  if (trimmed.includes('@')) {
-    trimmed = trimmed.replace(/(["\])\w])@\d+/g, '$1');
-  }
 
   // Handle UNIT place markings
   // The UI stores UNIT markings in array format: "[(), (), ...]" parsed by parseUnitMarkingCount
@@ -1775,19 +1926,37 @@ function translateSMLInitialMarking(
   }
 
   // Handle SML multiset notation: N`value ++ N`value ++ ...
-  // The backtick separates multiplicity from value, ++ is multiset union
+  // The backtick separates multiplicity from value, ++ is multiset union,
+  // and each term may carry a CPN Tools timestamp suffix (@ts)
   const multisetTokens = parseSMLMultiset(trimmed);
   if (multisetTokens !== null) {
-    // Convert each token value from SML to Rhai
-    const rhaiTokens: string[] = [];
-    for (const { count, value } of multisetTokens) {
-      // Translate the value (e.g., SML tuple ("a","b") → Rhai ["a","b"])
+    // Convert each token value (e.g., SML tuple ("a","b") → Rhai ["a","b"])
+    // and timestamp expression from SML to Rhai
+    const rhaiTokens: Array<{ value: string; time?: string }> = [];
+    for (const { count, value, time } of multisetTokens) {
       const rhaiValue = translateSMLTokenValue(value, colorSetName, colorSets);
+      const rhaiTime = time
+        ? translateSMLExpr(time, `Initial marking timestamp of place "${placeName}"`)
+        : undefined;
       for (let i = 0; i < count; i++) {
-        rhaiTokens.push(rhaiValue);
+        rhaiTokens.push({ value: rhaiValue, ...(rhaiTime ? { time: rhaiTime } : {}) });
       }
     }
-    return `[${rhaiTokens.join(', ')}]`;
+    if (rhaiTokens.some(t => t.time)) {
+      return emitTimedMarkingTokens(rhaiTokens);
+    }
+    return `[${rhaiTokens.map(t => t.value).join(', ')}]`;
+  }
+
+  // Handle a single timed token without multiset notation: value@ts (e.g. ()@(5.0*day))
+  const timedSingle = splitTopLevelTimestamp(trimmed);
+  if (timedSingle) {
+    const rhaiValue = translateSMLTokenValue(timedSingle.value, colorSetName, colorSets);
+    const rhaiTime = translateSMLExpr(
+      timedSingle.time,
+      `Initial marking timestamp of place "${placeName}"`
+    );
+    return emitTimedMarkingTokens([{ value: rhaiValue, time: rhaiTime }]);
   }
 
   // Apply general SML→Rhai translation
@@ -2251,41 +2420,35 @@ function parseCPNToolsXML(content: string): PetriNetData {
         y: -parseFloat(bp.querySelector('posattr')?.getAttribute('y') || '0'), // Invert y-coordinate
       }));
 
-      if (orientation === 'BOTHDIR') {
-        // Create a single double-headed arc (arrows on both ends)
-        return [{
-          id,
-          type: 'floating',
-          source: placeEndRef,
-          target: transEndRef,
-          label,
-          data: { bendpoints, isBidirectional: true, order, ...(arcDelay ? { delay: arcDelay } : {}) },
-        }];
+      const kind = interpretArcOrientation(orientation);
+      if (!kind.recognized) {
+        importWarnings.push(
+          `Arc ${id}: unrecognized orientation "${orientation}" — imported as a normal ` +
+          `place-to-transition arc, which may not preserve its meaning.`
+        );
       }
 
-      let source: string;
-      let target: string;
-
-      if (orientation === 'PtoT') {
-        source = placeEndRef;
-        target = transEndRef;
-      } else if (orientation === 'TtoP') {
-        source = transEndRef;
-        target = placeEndRef;
-      } else {
-        // Handle other orientations or default case if needed
-        source = placeEndRef;
-        target = transEndRef;
-        console.warn(`Unhandled arc orientation: ${orientation} for arc ${id}. Assuming PtoT.`);
-      }
+      const data: {
+        bendpoints: { x: number; y: number }[];
+        order: number;
+        isBidirectional?: boolean;
+        arcType?: 'inhibitor' | 'reset';
+        delay?: string;
+      } = { bendpoints, order };
+      // BOTHDIR becomes a single double-headed arc (arrows on both ends)
+      if (kind.bidirectional) data.isBidirectional = true;
+      if (kind.arcType) data.arcType = kind.arcType;
+      // Inhibitor and reset arcs carry neither inscription nor delay — the arc type is
+      // their whole meaning, and cpnsim ignores inscriptions on them
+      if (arcDelay && !kind.arcType) data.delay = arcDelay;
 
       return [{
         id,
         type: 'floating',
-        source,
-        target,
-        label,
-        data: { bendpoints, order, ...(arcDelay ? { delay: arcDelay } : {}) },
+        source: kind.transitionToPlace ? transEndRef : placeEndRef,
+        target: kind.transitionToPlace ? placeEndRef : transEndRef,
+        label: kind.arcType ? '' : label,
+        data,
       }];
     });
 
