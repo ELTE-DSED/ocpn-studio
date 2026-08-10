@@ -163,7 +163,14 @@ export function AboutLegalMenu() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <p className="text-sm font-semibold">Latest · July 2026</p>
+              <p className="text-sm font-semibold">Latest · August 2026</p>
+              <p className="text-xs text-muted-foreground">
+                Run to a point in simulated time or until deadlock, and export richer OCEL 2.0 logs
+                with object-to-object relationships, role qualifiers, and per-transition inclusion.
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold">v0.7 · July 2026</p>
               <p className="text-xs text-muted-foreground">
                 Added Declare constraints — declarative behavioral rules drawn as arcs between
                 transitions or attached to a single transition — plus a redesigned interface.
