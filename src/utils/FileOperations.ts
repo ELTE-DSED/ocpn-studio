@@ -1,4 +1,5 @@
-import type { PetriNet, FusionSet, Monitor } from '@/types';
+import type { PetriNet, FusionSet, Monitor, OcpnMetadata } from '@/types';
+import pkg from '../../package.json';
 import type { ColorSet, Variable, Priority, Function, Use, Value } from '@/declarations';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -26,8 +27,68 @@ export type PetriNetData = {
     endTimeMs?: number | null;
     keepAwakeWhileRunning?: boolean;
   }
+  /**
+   * How this model wants to be *looked at*, as opposed to how it runs. Saved with the file
+   * because the answer is model-specific — a net whose markings are noise stays legible for
+   * whoever opens it next. Deliberately absent from the dirty-tracking snapshot in
+   * `store.ts`, so flipping a view toggle never provokes an unsaved-changes prompt; the
+   * settings are written whenever the file is next saved for some other reason.
+   * Optional throughout: a file without them keeps the store defaults.
+   */
+  viewSettings?: {
+    showMarkingDisplay?: boolean;
+    showDeclareLayer?: boolean;
+  }
+  /**
+   * Descriptive metadata about the model as a document. In the file this block also carries
+   * `name`, `generator` and `modified`, which the serialiser fills in — see `FileMetadata`.
+   */
+  metadata?: OcpnMetadata;
   /** Warnings generated during CPN Tools XML import (SML expressions that could not be translated, etc.) */
   importWarnings?: string[];
+}
+
+/**
+ * The metadata block as it appears in a saved `.ocpn`: the authored fields plus the three the
+ * serialiser derives — `name` from `ocpnName`, and the two that describe the file rather than
+ * the model.
+ */
+export type FileMetadata = OcpnMetadata & {
+  name?: string;
+  /** Tool and version that wrote this file, e.g. "OCPN Studio 0.8.0". */
+  generator?: string;
+  /** ISO 8601 timestamp of the save that produced this file. */
+  modified?: string;
+};
+
+/** Identifies this build as the writer of a file. */
+export const GENERATOR = `OCPN Studio ${pkg.version}`;
+
+/**
+ * Build the metadata block for a save. Drops empty fields so a model with no metadata does not
+ * accumulate a block of nulls, and returns undefined when nothing at all is worth writing.
+ */
+function buildFileMetadata(data: PetriNetData, now: string): FileMetadata | undefined {
+  const authors = data.metadata?.authors?.map((a) => a.trim()).filter(Boolean);
+
+  const metadata: FileMetadata = {
+    name: data.ocpnName || undefined,
+    description: data.metadata?.description || undefined,
+    authors: authors?.length ? authors : undefined,
+    url: data.metadata?.url || undefined,
+    version: data.metadata?.version || undefined,
+    license: data.metadata?.license || undefined,
+    // Stamped on first save when the model predates metadata, then carried forward.
+    created: data.metadata?.created || now,
+    modified: now,
+    generator: GENERATOR,
+  };
+
+  for (const key of Object.keys(metadata) as (keyof FileMetadata)[]) {
+    if (metadata[key] === undefined) delete metadata[key];
+  }
+
+  return Object.keys(metadata).length > 0 ? metadata : undefined;
 }
 
 // Convert Petri Net data to CPN Tools XML format
@@ -253,6 +314,7 @@ export function convertToCPNPyJSON(data: PetriNetData): string {
 export function convertToJSON(data: PetriNetData): string {
   const transformedData = {
     ocpnName: data.ocpnName || undefined,
+    metadata: buildFileMetadata(data, new Date().toISOString()),
     petriNets: data.petriNetOrder.map((id) => {
       const petriNet = data.petriNetsById[id];
       return {
@@ -332,6 +394,7 @@ export function convertToJSON(data: PetriNetData): string {
     monitors: data.monitors?.length ? data.monitors : undefined, // Include monitors
     simulationSettings: data.simulationSettings || undefined, // Include simulation settings if present
     simulationEpoch: data.simulationSettings?.simulationEpoch || undefined, // Top-level for WASM simulator
+    viewSettings: data.viewSettings || undefined, // Include view toggles if present
   };
 
   return JSON.stringify(transformedData, null, 2);
@@ -498,8 +561,28 @@ function parseJSON(content: string): PetriNetData {
     keepAwakeWhileRunning: parsedData.simulationSettings.keepAwakeWhileRunning,
   } : undefined;
 
+  // Parse metadata if present. `name` is folded back into ocpnName rather than kept here,
+  // and `generator`/`modified` describe the file that was just read, so they are dropped:
+  // the next save stamps its own.
+  const fileMetadata: FileMetadata | undefined = parsedData.metadata;
+  const metadata: OcpnMetadata | undefined = fileMetadata ? {
+    description: fileMetadata.description,
+    authors: Array.isArray(fileMetadata.authors) ? fileMetadata.authors : undefined,
+    url: fileMetadata.url,
+    version: fileMetadata.version,
+    license: fileMetadata.license,
+    created: fileMetadata.created,
+  } : undefined;
+
+  // Parse view settings if present
+  const viewSettings = parsedData.viewSettings ? {
+    showMarkingDisplay: parsedData.viewSettings.showMarkingDisplay,
+    showDeclareLayer: parsedData.viewSettings.showDeclareLayer,
+  } : undefined;
+
   return {
-    ocpnName: parsedData.ocpnName || undefined,
+    ocpnName: parsedData.ocpnName || fileMetadata?.name || undefined,
+    metadata,
     petriNetsById,
     petriNetOrder,
     colorSets,
@@ -511,6 +594,7 @@ function parseJSON(content: string): PetriNetData {
     fusionSets, // Include fusion sets
     monitors, // Include monitors
     simulationSettings, // Include simulation settings in the returned data
+    viewSettings, // Include view toggles in the returned data
   };
 }
 

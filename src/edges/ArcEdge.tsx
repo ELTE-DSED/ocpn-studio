@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useInternalNode, EdgeLabelRenderer, useReactFlow } from '@xyflow/react';
-import { getEdgeParams, getNodeIntersectionToPoint } from '../utils.js';
+import { getEdgeParams, getNodeIntersectionToPoint, getParallelEdgeEndpoints } from '../utils.js';
 import useStore from '@/stores/store'; // Import Zustand store
 import type { ArcType } from '@/types';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -8,6 +8,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 /** Label offset used by arcs whose label has never been dragged. Frozen and shared so
  *  every render of every such arc yields the same reference — see its use site. */
 const DEFAULT_LABEL_OFFSET = Object.freeze({ x: 0, y: 0 });
+
+/** Gap between straight parallel arcs. Node-relative in effect: getParallelEdgeEndpoints
+ *  clamps it down when the nodes are too small to carry the full separation. */
+const PARALLEL_ARC_SPACING = 8;
+
+/** Gap between parallel arcs that carry bendpoints. Larger, because those are routed by
+ *  hand and shift whole polylines rather than sliding two straight lines apart. */
+const PARALLEL_BENDPOINT_SPACING = 60;
 
 /**
  * Calculate the distance from a point to a line segment
@@ -637,16 +645,17 @@ function ArcEdge({ id, source, target, style, label, data }: FloatingEdgeProps) 
   
   // Calculate offset for parallel arcs
   // Center the group of arcs: offset from -(n-1)/2 to +(n-1)/2
-  const offsetSpacing = 60; // pixels between parallel arcs
+  const hasBendpoints = !!bendpoints && bendpoints.length > 0;
+  const offsetSpacing = hasBendpoints ? PARALLEL_BENDPOINT_SPACING : PARALLEL_ARC_SPACING;
   let offsetAmount = 0;
-  
+
   if (totalParallelArcs > 1) {
-    // For 2 arcs: indices 0,1 → offsets -6, +6
-    // For 3 arcs: indices 0,1,2 → offsets -12, 0, +12
+    // For 2 arcs: indices 0,1 → offsets -half, +half
+    // For 3 arcs: indices 0,1,2 → offsets -spacing, 0, +spacing
     const centerOffset = (totalParallelArcs - 1) / 2;
     offsetAmount = (parallelArcIndex - centerOffset) * offsetSpacing;
   }
-  
+
   // First, get the base edge params (center-to-center direction)
   const edgeParams = getEdgeParams(sourceNode, targetNode);
   
@@ -675,7 +684,7 @@ function ArcEdge({ id, source, target, style, label, data }: FloatingEdgeProps) 
   let edgePath: string;
   let labelX: number, labelY: number;
   
-  if (bendpoints && bendpoints.length > 0) {
+  if (hasBendpoints && bendpoints) {
     // Apply offset to bendpoints first
     const offsetBendpoints = offsetAmount !== 0 
       ? bendpoints.map(bp => ({
@@ -703,37 +712,25 @@ function ArcEdge({ id, source, target, style, label, data }: FloatingEdgeProps) 
     labelX = pathResult.labelX;
     labelY = pathResult.labelY;
   } else {
-    // No bendpoints
-    if (offsetAmount !== 0) {
-      // Parallel straight arcs: offset aim points perpendicularly so that
-      // each arc exits/enters on a different side of the baseline.
-      // perpX/perpY is already canonical (same for both arc directions),
-      // and offsetAmount differs in sign across arcs, producing separation.
-      const sPos = (sourceNode as { internals: { positionAbsolute: { x: number; y: number } } }).internals.positionAbsolute;
-      const tPos = (targetNode as { internals: { positionAbsolute: { x: number; y: number } } }).internals.positionAbsolute;
-      const sCx = sPos.x + ((sourceNode.measured?.width ?? 0) / 2);
-      const sCy = sPos.y + ((sourceNode.measured?.height ?? 0) / 2);
-      const tCx = tPos.x + ((targetNode.measured?.width ?? 0) / 2);
-      const tCy = tPos.y + ((targetNode.measured?.height ?? 0) / 2);
+    // No bendpoints. Parallel arcs slide the whole centre-to-centre line sideways and take
+    // their endpoints from where that line meets the two shapes, so every arc of a group
+    // shares one direction and the arcs stay parallel at any relative node position.
+    // getParallelEdgeEndpoints measures its offset along the left-hand normal of the
+    // source → target direction, which flips with the arc, hence the canonical negation.
+    const parallelEndpoints =
+      offsetAmount !== 0
+        ? getParallelEdgeEndpoints(
+            sourceNode,
+            targetNode,
+            isCanonicalDirection ? offsetAmount : -offsetAmount
+          )
+        : null;
 
-      const offX = perpX * offsetAmount;
-      const offY = perpY * offsetAmount;
-
-      // Source aims toward an offset target center
-      const srcInt = getNodeIntersectionToPoint(sourceNode, {
-        x: tCx + offX,
-        y: tCy + offY,
-      });
-      // Target receives from an offset source center
-      const tgtInt = getNodeIntersectionToPoint(targetNode, {
-        x: sCx + offX,
-        y: sCy + offY,
-      });
-
-      sx = srcInt.x;
-      sy = srcInt.y;
-      tx = tgtInt.x;
-      ty = tgtInt.y;
+    if (parallelEndpoints) {
+      sx = parallelEndpoints.sx;
+      sy = parallelEndpoints.sy;
+      tx = parallelEndpoints.tx;
+      ty = parallelEndpoints.ty;
     } else {
       sx = edgeParams.sx;
       sy = edgeParams.sy;

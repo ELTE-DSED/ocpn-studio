@@ -30,8 +30,11 @@ export function SaveDialog({ open, onOpenChange, onSave, petriNetName }: SaveDia
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Save Petri Net</DialogTitle>
-          <DialogDescription>Choose a format to save your Petri Net "{petriNetName}".</DialogDescription>
+          <DialogTitle>Export Petri Net</DialogTitle>
+          <DialogDescription>
+            Download &quot;{petriNetName}&quot; in another format. Exports are one-way copies:
+            they do not become the file that Save writes to.
+          </DialogDescription>
         </DialogHeader>
         <div className="py-4">
           <RadioGroup value={selectedFormat} onValueChange={setSelectedFormat} className="space-y-3">
@@ -85,7 +88,7 @@ export function SaveDialog({ open, onOpenChange, onSave, petriNetName }: SaveDia
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>Save</Button>
+          <Button onClick={handleSave}>Export</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

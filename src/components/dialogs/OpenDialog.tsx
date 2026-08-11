@@ -11,11 +11,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Upload, FileUp, Plane } from "lucide-react"
+import { toast } from "sonner"
+import * as fsa from "@/utils/fileSystemAccess"
 
 interface OpenDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onFileLoaded: (fileContent: string, fileName: string) => void
+  /** `handle` is non-null only when the browser handed one over, which makes Save overwrite
+   *  the original file instead of downloading a copy. */
+  onFileLoaded: (fileContent: string, fileName: string, handle: FileSystemFileHandle | null) => void
 }
 
 export function OpenDialog({ open, onOpenChange, onFileLoaded }: OpenDialogProps) {
@@ -32,13 +36,32 @@ export function OpenDialog({ open, onOpenChange, onFileLoaded }: OpenDialogProps
     setIsDragging(false)
   }
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
 
+    // A dropped item can also yield a writable handle, so a drag-and-drop open is just as
+    // save-able as one through the picker. Falls back to the plain File where it cannot.
+    const item = e.dataTransfer.items?.[0] as (DataTransferItem & {
+      getAsFileSystemHandle?: () => Promise<FileSystemHandle | null>
+    }) | undefined
+    if (item?.getAsFileSystemHandle) {
+      try {
+        const handle = await item.getAsFileSystemHandle()
+        if (handle && handle.kind === "file") {
+          const fileHandle = handle as FileSystemFileHandle
+          const file = await fileHandle.getFile()
+          onFileLoaded(await file.text(), file.name, fileHandle)
+          onOpenChange(false)
+          return
+        }
+      } catch {
+        // Fall through to the FileReader path below.
+      }
+    }
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0]
-      readFile(file)
+      readFile(e.dataTransfer.files[0])
     }
   }
 
@@ -53,15 +76,29 @@ export function OpenDialog({ open, onOpenChange, onFileLoaded }: OpenDialogProps
     const reader = new FileReader()
     reader.onload = (e) => {
       if (e.target?.result) {
-        onFileLoaded(e.target.result as string, file.name)
+        onFileLoaded(e.target.result as string, file.name, null)
         onOpenChange(false)
       }
     }
     reader.readAsText(file)
   }
 
-  const handleOpenFileClick = () => {
-    fileInputRef.current?.click()
+  const handleOpenFileClick = async () => {
+    // Where the File System Access API exists, go through its picker so the app keeps a
+    // handle to the file. Elsewhere fall back to the hidden <input type="file">.
+    if (!fsa.isSupported()) {
+      fileInputRef.current?.click()
+      return
+    }
+    try {
+      const opened = await fsa.openWithPicker()
+      if (!opened) return // cancelled
+      onFileLoaded(opened.content, opened.fileName, opened.handle)
+      onOpenChange(false)
+    } catch (error) {
+      console.error("Error opening file:", error)
+      toast.error("Could not open that file.")
+    }
   }
 
   const handleLoadExample = async () => {
@@ -72,7 +109,8 @@ export function OpenDialog({ open, onOpenChange, onFileLoaded }: OpenDialogProps
         throw new Error('Failed to load example file')
       }
       const content = await response.text()
-      onFileLoaded(content, 'airport.ocpn')
+      // An example fetched over HTTP has no file on disk to write back to.
+      onFileLoaded(content, 'airport.ocpn', null)
       onOpenChange(false)
     } catch (error) {
       console.error('Error loading example:', error)

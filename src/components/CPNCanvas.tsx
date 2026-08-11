@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 
 import { BoomerDial, type Slice } from "@/components/BoomerDial";
 
-import { Save, FolderOpen, Undo2, Redo2, FilePlus2 } from "lucide-react";
+import { Save, SaveAll, FolderOpen, Undo2, Redo2, FilePlus2, Info } from "lucide-react";
 import { formatSimulationTime } from '@/utils/timeFormat';
 
 import CustomConnectionLine from '../edges/CustomConnectionLine';
@@ -32,6 +32,8 @@ import { useDnD } from '../utils/DnDContext';
 
 import { OpenDialog } from '@/components/dialogs/OpenDialog';
 import { SaveDialog } from '@/components/dialogs/SaveDialog';
+import { ModelMetadataDialog } from '@/components/dialogs/ModelMetadataDialog';
+import * as fsa from '@/utils/fileSystemAccess';
 
 import { SimulationToolbar } from '@/components/SimulationToolbar';
 import { AssistanceToolbar } from '@/components/AssistanceToolbar';
@@ -81,9 +83,18 @@ import { LayoutOptions } from '@/components/LayoutPopover';
 // Correct the import path for SimulationContext
 import { SimulationContext } from '@/context/useSimulationContextHook';
 
+/** Modifier shown in shortcut hints, matching the platform the user is actually on. */
+const metaKeyLabel = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
+  ? '\u2318'
+  : 'Ctrl+';
+
 const selector = (state: StoreState) => ({
   ocpnName: state.ocpnName,
   setOcpnName: state.setOcpnName,
+  metadata: state.metadata,
+  setMetadata: state.setMetadata,
+  currentFile: state.currentFile,
+  setCurrentFile: state.setCurrentFile,
   petriNetOrder: state.petriNetOrder,
   petriNetsById: state.petriNetsById,
   activePetriNetId: state.activePetriNetId,
@@ -131,6 +142,7 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
   const [openDialogOpen, setOpenDialogOpen] = useState(false);
   const [newPetriNetDialogOpen, setNewPetriNetDialogOpen] = useState(false);
   const [confirmNewDialogOpen, setConfirmNewDialogOpen] = useState(false);
+  const [metadataDialogOpen, setMetadataDialogOpen] = useState(false);
   const [newPetriNetName, setNewPetriNetName] = useState('');
   const [renamePetriNetDialogOpen, setRenamePetriNetDialogOpen] = useState(false);
   const [renamePetriNetId, setRenamePetriNetId] = useState<string | null>(null);
@@ -151,10 +163,22 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
   }>({ snappedPositions: new Map(), isDragging: false, isSnapping: false });
 
   const simulationContext = useContext(SimulationContext); // Get simulation context
+
+  // The save actions close over most of the store, so binding them into the keydown listener
+  // directly would re-subscribe it on every render. The listener reads them through this ref,
+  // kept current by an effect further down.
+  const saveActionsRef = useRef<{ save: () => Promise<void>; saveAs: () => Promise<void> }>({
+    save: async () => {},
+    saveAs: async () => {},
+  });
   
   const {
     ocpnName,
     setOcpnName,
+    metadata,
+    setMetadata,
+    currentFile,
+    setCurrentFile,
     petriNetOrder,
     petriNetsById,
     activePetriNetId,
@@ -376,6 +400,14 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
         return;
       }
 
+      // Ctrl/Cmd + S: Save to the current file; Shift as well: Save As.
+      // preventDefault matters here — otherwise the browser's own "save page" dialog opens.
+      if (event.code === 'KeyS' && isMeta) {
+        event.preventDefault();
+        void (event.shiftKey ? saveActionsRef.current.saveAs() : saveActionsRef.current.save());
+        return;
+      }
+
       // Escape: break the current Chain Mode chain (start fresh on the next click)
       // without leaving Chain Mode itself.
       if (event.code === 'Escape' && isChainMode) {
@@ -470,6 +502,10 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
         setOcpnName(baseName);
       }
 
+      // A file without a metadata block clears whatever the previous model had, rather than
+      // letting its description and authors bleed into the newly opened one.
+      setMetadata(data.metadata ?? {});
+
       // Iterate over the array of Petri nets and add them to the store
       Object.values(data.petriNetsById).forEach((petriNet) => {
         useStore.getState().addPetriNet(petriNet);
@@ -514,6 +550,17 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
         }
       }
 
+      // Restore view toggles if the file carries them. Absent keys keep the current
+      // setting rather than resetting it, so older files behave as before.
+      if (data.viewSettings) {
+        if (data.viewSettings.showMarkingDisplay !== undefined) {
+          useStore.getState().setShowMarkingDisplay(data.viewSettings.showMarkingDisplay);
+        }
+        if (data.viewSettings.showDeclareLayer !== undefined) {
+          useStore.getState().setShowDeclareLayer(data.viewSettings.showDeclareLayer);
+        }
+      }
+
       // If we imported a JSON file, layout the graph
       if (fileName.endsWith('.json')) {
         const layoutOptions: LayoutOptions = {
@@ -543,7 +590,11 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
     }
   };
 
-  const handleFileLoaded = (fileContent: string, fileName: string) => {
+  const handleFileLoaded = (
+    fileContent: string,
+    fileName: string,
+    handle: FileSystemFileHandle | null,
+  ) => {
     // Reset simulation state before loading new file
     if (simulationContext) {
       simulationContext.reset(); // Call simulation reset
@@ -554,6 +605,14 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
     const data = parseFileContent(fileContent, fileName)
     if (data) {
       onOpenPetriNet(data, fileName);
+
+      // Bind the model to the file it came from — but only a native .ocpn is bound for
+      // writing back. A .cpn/.pnml/.json is an *import*: its name is kept for display, while
+      // Save prompts for an .ocpn location rather than rewriting the original in a format
+      // that cannot carry everything the model now holds. Runs after onOpenPetriNet, whose
+      // reset() clears currentFile.
+      const isNativeFormat = fileName.toLowerCase().endsWith('.ocpn');
+      setCurrentFile({ name: fileName, handle: isNativeFormat ? handle : null });
       // Show import warnings (e.g., untranslated SML expressions)
       if (data.importWarnings && data.importWarnings.length > 0) {
         toast.warning('CPN import completed with warnings', {
@@ -579,6 +638,10 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
 
     // Set up the fresh OCPN
     setOcpnName('Untitled Petri Net');
+    // reset() leaves metadata empty; stamp the creation time here so it reflects when this
+    // model was started rather than when the tab was opened.
+    setMetadata({ created: new Date().toISOString() });
+    setCurrentFile(null);
     setColorSets(initialColorSets.map(cs => ({ ...cs, id: uuidv4() })));
     setPriorities(initialPriorities.map(p => ({ ...p, id: uuidv4() })));
     setVariables([]);
@@ -612,12 +675,11 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
     }
   }
 
-  const handleSave = (format: string) => {
-    let content: string
-    let filename: string
-
-    const petriNetData: PetriNetData = {
+  /** Snapshot of everything that goes into a saved file. */
+  const buildPetriNetData = (): PetriNetData => {
+    return {
       ocpnName,
+      metadata,
       petriNetsById,
       petriNetOrder,
       colorSets,
@@ -636,7 +698,24 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
         endTimeMs: simulationContext?.simulationConfig?.endTimeMs,
         keepAwakeWhileRunning: simulationContext?.simulationConfig?.keepAwakeWhileRunning,
       },
-    }
+      // View toggles, read imperatively: subscribing would re-render the whole canvas
+      // every time one is flipped, and they are only ever needed at save time.
+      viewSettings: {
+        showMarkingDisplay: useStore.getState().showMarkingDisplay,
+        showDeclareLayer: useStore.getState().showDeclareLayer,
+      },
+    };
+  };
+
+  /**
+   * Export to one of the interchange formats. These are lossy relative to .ocpn, so an export
+   * never becomes "the current file" and never marks the document clean — the model still has
+   * unsaved changes as far as OCPN Studio is concerned.
+   */
+  const handleExport = (format: string) => {
+    const petriNetData = buildPetriNetData();
+    let content: string;
+    let filename: string;
 
     switch (format) {
       case "cpn-tools":
@@ -673,14 +752,71 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
       case "json":
       default:
         content = convertToJSON(petriNetData);
-        //filename = `${petriNetData.name.replace(/\s+/g, "_")}.ocpn`;
-        filename = `${ocpnName.replace(/\s+/g, '_')}.ocpn`;
+        filename = defaultFileName();
         break;
     }
 
     saveFile(content, filename);
-    markClean();
+  };
+
+  /** Name to suggest when the model has never been written to disk. */
+  const defaultFileName = () => `${ocpnName.replace(/\s+/g, '_')}.ocpn`;
+
+  /**
+   * Save As: ask where to put the file and bind the model to it. Falls back to a download
+   * where the File System Access API is missing, in which case there is nothing to bind to.
+   */
+  const handleSaveAs = async () => {
+    const content = convertToJSON(buildPetriNetData());
+    // Keep the base name of an imported file but always target .ocpn — this is the path an
+    // opened .cpn takes, and it must not suggest overwriting the CPN Tools original.
+    const suggestedName = currentFile
+      ? `${currentFile.name.replace(/\.\w+$/, '')}.ocpn`
+      : defaultFileName();
+
+    if (!fsa.isSupported()) {
+      saveFile(content, suggestedName);
+      markClean();
+      return;
+    }
+
+    try {
+      const handle = await fsa.saveAsWithPicker(suggestedName, content);
+      if (!handle) return; // cancelled
+      setCurrentFile({ name: handle.name, handle });
+      markClean();
+      toast.success(`Saved to ${handle.name}`);
+    } catch (error) {
+      console.error('Save As failed:', error);
+      toast.error(error instanceof Error ? error.message : 'Could not save the file.');
+    }
+  };
+
+  /**
+   * Save: overwrite the file the model came from. With no handle — a new model, an imported
+   * .cpn, or a browser without the API — this is the same as Save As, which is what makes the
+   * imported-file case prompt for an .ocpn location rather than writing back lossily.
+   */
+  const handleSaveToFile = async () => {
+    const handle = currentFile?.handle;
+    if (!handle) {
+      await handleSaveAs();
+      return;
+    }
+
+    try {
+      await fsa.writeToHandle(handle, convertToJSON(buildPetriNetData()));
+      markClean();
+      toast.success(`Saved ${currentFile.name}`);
+    } catch (error) {
+      console.error('Save failed:', error);
+      toast.error(error instanceof Error ? error.message : 'Could not save the file.');
+    }
   }
+
+  useEffect(() => {
+    saveActionsRef.current = { save: handleSaveToFile, saveAs: handleSaveAs };
+  });
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -1541,14 +1677,57 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span>
-                    <Button variant="ghost" size="icon" title="Save" onClick={() => setSaveDialogOpen(true)}>
+                    <Button variant="ghost" size="icon" title="Save" onClick={() => void handleSaveToFile()}>
                       <Save className="h-5 w-5" />
-                      <span className="sr-only">Save Petri Net</span>
+                      <span className="sr-only">Save</span>
                     </Button>
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Save Petri Net</p>
+                  <p>
+                    {currentFile?.handle
+                      ? `Save to ${currentFile.name} (${metaKeyLabel}S)`
+                      : fsa.isSupported()
+                        ? `Save\u2026 (${metaKeyLabel}S)`
+                        : `Download .ocpn (${metaKeyLabel}S)`}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Save As only exists where a location can actually be chosen. Without the File
+                System Access API it would be indistinguishable from Save — both just download —
+                so it is hidden rather than shown as a second button that does the same thing. */}
+            {fsa.isSupported() && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button variant="ghost" size="icon" title="Save As" onClick={() => void handleSaveAs()}>
+                        <SaveAll className="h-5 w-5" />
+                        <span className="sr-only">Save As</span>
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Save As&hellip; ({metaKeyLabel}&#8679;S)</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button variant="ghost" size="icon" title="Export" onClick={() => setSaveDialogOpen(true)}>
+                      <Download className="h-5 w-5" />
+                      <span className="sr-only">Export</span>
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Export&hellip;</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -1634,6 +1813,22 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
                 {ocpnName}
               </button>
             )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                  onClick={() => setMetadataDialogOpen(true)}
+                  aria-label="Model information"
+                >
+                  <Info className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Model Information</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <AssistanceToolbar onToggleAIAssistant={onToggleAIAssistant} />
         </div>
@@ -1643,8 +1838,19 @@ const CPNCanvas = ({ onToggleAIAssistant }: { onToggleAIAssistant: () => void })
         <SaveDialog
           open={saveDialogOpen}
           onOpenChange={setSaveDialogOpen}
-          onSave={handleSave}
+          onSave={handleExport}
           petriNetName={ocpnName}
+        />
+
+        <ModelMetadataDialog
+          open={metadataDialogOpen}
+          onOpenChange={setMetadataDialogOpen}
+          ocpnName={ocpnName}
+          metadata={metadata}
+          onSave={(name, updated) => {
+            setOcpnName(name);
+            setMetadata(updated);
+          }}
         />
 
         {/* Confirm discard dialog for New Petri Net */}

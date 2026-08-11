@@ -266,8 +266,47 @@ export type FocusRequest = {
   keepMode?: boolean;
 } | null;
 
+/**
+ * Descriptive metadata about the model as a document — who made it, what it is for, where it
+ * lives. Every field is optional: a model is perfectly valid with none of them.
+ *
+ * The model's *name* is not here. It lives in `ocpnName`, which predates this type and drives
+ * the header, the export filenames and the PNML `<name>`; a second copy would only drift.
+ * The serialiser writes it into `metadata.name` on the way out so the block is self-contained
+ * for anything reading the file, and the parser accepts it back as a fallback.
+ *
+ * `generator` and `modified` are likewise absent: both describe the *file*, not the model, and
+ * are stamped by the serialiser at save time. Keeping them out of the store is what stops a
+ * save from dirtying the document it has just written.
+ */
+export type OcpnMetadata = {
+  /** What the model is about. Free text, expected to be a paragraph or two. */
+  description?: string;
+  /** Model authors, in whatever order they should be credited. */
+  authors?: string[];
+  /** Where the model lives — a repository, a paper, a project page. */
+  url?: string;
+  /** The *model's* own version, chosen by its authors. Unrelated to the app version. */
+  version?: string;
+  /** Licence the model is published under, as an SPDX identifier or free text. */
+  license?: string;
+  /** ISO 8601 timestamp, stamped once when the model is first created. */
+  created?: string;
+};
+
 export type AppState = {
   ocpnName: string; // Top-level name for the OCPN project
+  metadata: OcpnMetadata; // Descriptive metadata about the model as a document
+  /**
+   * The file this model is currently bound to, or null when it has never been saved and has
+   * no origin on disk. `handle` is present only where the File System Access API is available
+   * *and* the file is a native .ocpn — an imported .cpn or .pnml keeps its `name` for display
+   * but no handle, so Save prompts for an .ocpn location instead of writing back lossily.
+   *
+   * Deliberately outside both the dirty snapshot and the undo history: which file the model
+   * came from is not part of the model.
+   */
+  currentFile: { name: string; handle: FileSystemFileHandle | null } | null;
   petriNetsById: Record<string, PetriNet>;
   petriNetOrder: string[]; // IDs in tab order
   activePetriNetId: string | null;
@@ -348,6 +387,8 @@ export type AppActions = {
   toggleFireMode: (state: boolean) => void;
   setActiveMode: (mode: ActiveMode) => void;
   setOcpnName: (name: string) => void;
+  setMetadata: (metadata: OcpnMetadata) => void;
+  setCurrentFile: (file: { name: string; handle: FileSystemFileHandle | null } | null) => void;
   setSimulationEpoch: (epoch: string | null) => void;
   setShowMarkingDisplay: (show: boolean) => void;
 

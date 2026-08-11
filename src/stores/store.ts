@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { temporal } from 'zundo';
 import { Node, Edge } from '@xyflow/react';
 import { AppState, AppActions, PetriNet, SelectedElement } from '@/types';
-import type { FusionSet, Monitor } from '@/types';
+import type { FusionSet, Monitor, OcpnMetadata } from '@/types';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -64,6 +64,8 @@ function parseInitialMarkingToArray(
 // define the initial state
 const emptyState: AppState = {
   ocpnName: 'Demo OCPN',
+  metadata: {},
+  currentFile: null,
   petriNetsById: {},
   petriNetOrder: [],
   activePetriNetId: null,
@@ -141,6 +143,8 @@ const stripTransientPetriNetFields = (petriNetsById: Record<string, PetriNet>) =
 // this is our useStore hook that we can use in our components to get parts of the store and call actions
 const useStore = create<StoreState>()(temporal((set) => ({
   ocpnName: 'Demo OCPN',
+  metadata: { created: new Date().toISOString() },
+  currentFile: null,
   petriNetsById: {
     [initialPetriNetId]: initialPetriNet,
   },
@@ -853,6 +857,16 @@ const useStore = create<StoreState>()(temporal((set) => ({
   setOcpnName: (name: string) =>
     set(() => ({
       ocpnName: name,
+    })),
+
+  setMetadata: (metadata: OcpnMetadata) =>
+    set(() => ({
+      metadata,
+    })),
+
+  setCurrentFile: (currentFile) =>
+    set(() => ({
+      currentFile,
     })),
 
   setSimulationEpoch: (epoch: string | null) =>
@@ -1622,6 +1636,7 @@ function getSnapshotString(): string {
   const s = useStore.getState();
   return JSON.stringify({
     ocpnName: s.ocpnName,
+    metadata: s.metadata,
     petriNetsById: stripTransientPetriNetFields(s.petriNetsById),
     petriNetOrder: s.petriNetOrder,
     colorSets: s.colorSets,
