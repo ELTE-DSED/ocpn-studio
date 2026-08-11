@@ -16,6 +16,7 @@ import type { PlaceNodeData } from '@/nodes/PlaceNode';
 import { Separator } from "@/components/ui/separator";
 import { v4 as uuidv4 } from 'uuid';
 import { useSimulationContext } from '@/context/useSimulationContextHook';
+import { parseRecordFields } from '@/utils/markingColumns';
 
 // Define the type for the values within a parsed record (matches RecordMarkingDialog)
 type RecordValue = string | number | boolean | unknown[] | Record<string, unknown>;
@@ -178,51 +179,18 @@ const PlaceProperties = ({ colorSets }: { colorSets: ColorSet[] }) => {
     return `[${units}]`;
   };
 
-  // Helper function to get record attributes
+  // Record fields for the untimed record-marking dialog, read from the colour set's own
+  // definition. This used to return hardcoded attributes for the names "Product" and "Order",
+  // which silently mislabelled the columns for any model that happens to use those names —
+  // the order-management example among them, whose Product is id/weight/price rather than the
+  // hardcoded id/name/price.
   const getRecordAttributes = (colorSetName: string) => {
     const colorSet = colorSets.find((cs) => cs.name === colorSetName)
     if (!colorSet || colorSet.type !== "record") return []
-
-    // In a real implementation, parse the record definition
-    // For now, we'll use a simplified approach for the demo
-    if (colorSetName === "Product") {
-      return [
-        { name: "id", type: "INT" },
-        { name: "name", type: "STRING" },
-        { name: "price", type: "REAL" },
-      ]
-    } else if (colorSetName === "Order") {
-      return [
-        { name: "orderId", type: "STRING" },
-        { name: "status", type: "STRING" },
-        { name: "amount", type: "INT" },
-      ]
-    }
-
-    // Try to parse from the definition
-    try {
-      const recordRegex = /colset\s+(\w+)\s*=\s*record\s+([^;]+);/i
-      const fieldsRegex = /(\w+)\s*:\s*(\w+)/g
-
-      const match = colorSet.definition.match(recordRegex)
-      if (!match) return []
-
-      const fields = match[2]
-      const attributes = []
-      let fieldMatch
-
-      while ((fieldMatch = fieldsRegex.exec(fields)) !== null) {
-        attributes.push({
-          name: fieldMatch[1],
-          type: fieldMatch[2].toUpperCase(),
-        })
-      }
-
-      return attributes
-    } catch (error) {
-      console.error("Failed to parse record definition:", error)
-      return []
-    }
+    return parseRecordFields(colorSet.definition).map((field) => ({
+      name: field.name,
+      type: field.type.toUpperCase(),
+    }))
   }
 
   // Helper function to parse initial marking
@@ -798,7 +766,6 @@ const PlaceProperties = ({ colorSets }: { colorSets: ColorSet[] }) => {
             colorSetName={selectedPlace.data?.colorSet || ""}
             titleLabel={selectedPlace.target === 'current' ? 'Edit Current Marking' : undefined}
             colorSetType={getColorSetBaseType()}
-            recordAttributes={getRecordAttributes(selectedPlace.data?.colorSet || "")}
             initialData={
               selectedPlace.target === 'current'
                 ? parseTimedMarking(JSON.stringify(selectedPlace.data?.marking ?? []))

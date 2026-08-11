@@ -1,6 +1,6 @@
 {
   "name": "OCPN Studio",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "homepage": "https://elte-dsed.github.io/ocpn-studio",
   "description": "OCPN Studio is a web application for designing, simulating and analyzing Object-Centric Petri Nets",
   "type": "module",

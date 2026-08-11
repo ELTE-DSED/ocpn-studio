@@ -1,0 +1,5511 @@
+{
+  "ocpnName": "Airport Ground Handling (Extended)",
+  "metadata": {
+    "name": "Airport Ground Handling (Extended)",
+    "description": "A fictitious Central-European hub — Danube International (DNB/LHDN) — sized like Budapest Ferenc Liszt: two runways, two piers of contact stands either side of the Schengen border, a remote apron, and roughly 175 arrivals a day.\n\nThe process follows the A-CDM milestone approach (M1 flight plan filed through M16 take-off). Each turnaround splits into five concurrent threads — cabin, hold, fuel, cabin service and departure planning — that rejoin at ARDT, so the critical path emerges from resource contention rather than being fixed in the model.\n\nGround vehicles carry their apron position, so driving a fuel tanker, catering truck, ambulift or tug from its last stand to the next one costs real time; tankers run their load down and return to the depot to reload, while contact and code-E stands are fuelled from hydrant pits at a much higher flow rate. Passengers with reduced mobility (~1.1% of passengers) are individual objects, assisted by an agent at an airbridge or by an ambulift at a remote stand.\n\nAircraft are a based fleet of 141 airframes, each with a fixed registration, type and operator. A flight plan takes an airframe out of the pool and it returns after flying its outbound sector, so an aircraft is one long-lived object flying rotation after rotation rather than a fresh object per arrival.",
+    "authors": [
+      "István Koren"
+    ],
+    "version": "1.0",
+    "license": "MIT",
+    "created": "2026-08-11T22:42:27.446Z"
+  },
+  "petriNets": [
+    {
+      "id": "net-airport",
+      "name": "Airport",
+      "places": [
+        {
+          "id": "p-runways",
+          "name": "Runways\nAvailable",
+          "colorSet": "Runway",
+          "initialMarking": "[{\"id\":\"RWY-13R\",\"name\":\"13R/31L\",\"lengthM\":3009},{\"id\":\"RWY-13L\",\"name\":\"13L/31R\",\"lengthM\":3707}]",
+          "marking": [],
+          "position": {
+            "x": 60,
+            "y": 60
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-stands",
+          "name": "Stands\nAvailable",
+          "colorSet": "Stand",
+          "initialMarking": "[{\"id\":\"A1\",\"pier\":\"A\",\"contact\":true,\"maxCode\":\"C\",\"schengen\":\"S\",\"hydrant\":true,\"x\":260,\"y\":180,\"taxiIn\":2,\"taxiOut\":3},{\"id\":\"A2\",\"pier\":\"A\",\"contact\":true,\"maxCode\":\"C\",\"schengen\":\"S\",\"hydrant\":true,\"x\":338,\"y\":180,\"taxiIn\":2,\"taxiOut\":3},{\"id\":\"A3\",\"pier\":\"A\",\"contact\":true,\"maxCode\":\"C\",\"schengen\":\"S\",\"hydrant\":true,\"x\":416,\"y\":180,\"taxiIn\":3,\"taxiOut\":4},{\"id\":\"A4\",\"pier\":\"A\",\"contact\":true,\"maxCode\":\"C\",\"schengen\":\"S\",\"hydrant\":true,\"x\":494,\"y\":180,\"taxiIn\":3,\"taxiOut\":4},{\"id\":\"A5\",\"pier\":\"A\",\"contact\":true,\"maxCode\":\"C\",\"schengen\":\"S\",\"hydrant\":true,\"x\":572,\"y\":180,\"taxiIn\":3,\"taxiOut\":4},{\"id\":\"A6\",\"pier\":\"A\",\"contact\":true,\"maxCode\":\"C\",\"schengen\":\"S\",\"hydrant\":true,\"x\":650,\"y\":180,\"taxiIn\":3,\"taxiOut\":4},{\"id\":\"A7\",\"pier\":\"A\",\"contact\":true,\"maxCode\":\"C\",\"schengen\":\"S\",\"hydrant\":true,\"x\":728,\"y\":180,\"taxiIn\":3,\"taxiOut\":4},{\"id\":\"B1\",\"pier\":\"B\",\"contact\":true,\"maxCode\":\"C\",\"schengen\":\"N\",\"hydrant\":true,\"x\":880,\"y\":180,\"taxiIn\":3,\"taxiOut\":4},{\"id\":\"B2\",\"pier\":\"B\",\"contact\":true,\"maxCode\":\"C\",\"schengen\":\"N\",\"hydrant\":true,\"x\":962,\"y\":180,\"taxiIn\":4,\"taxiOut\":5},{\"id\":\"B3\",\"pier\":\"B\",\"contact\":true,\"maxCode\":\"C\",\"schengen\":\"N\",\"hydrant\":true,\"x\":1044,\"y\":180,\"taxiIn\":4,\"taxiOut\":5},{\"id\":\"B4\",\"pier\":\"B\",\"contact\":true,\"maxCode\":\"C\",\"schengen\":\"N\",\"hydrant\":true,\"x\":1126,\"y\":180,\"taxiIn\":4,\"taxiOut\":5},{\"id\":\"B5\",\"pier\":\"B\",\"contact\":true,\"maxCode\":\"E\",\"schengen\":\"N\",\"hydrant\":true,\"x\":1208,\"y\":180,\"taxiIn\":4,\"taxiOut\":5},{\"id\":\"R21\",\"pier\":\"R\",\"contact\":false,\"maxCode\":\"C\",\"schengen\":\"B\",\"hydrant\":false,\"x\":240,\"y\":620,\"taxiIn\":3,\"taxiOut\":4},{\"id\":\"R22\",\"pier\":\"R\",\"contact\":false,\"maxCode\":\"C\",\"schengen\":\"B\",\"hydrant\":false,\"x\":330,\"y\":620,\"taxiIn\":4,\"taxiOut\":5},{\"id\":\"R23\",\"pier\":\"R\",\"contact\":false,\"maxCode\":\"C\",\"schengen\":\"B\",\"hydrant\":false,\"x\":420,\"y\":620,\"taxiIn\":4,\"taxiOut\":5},{\"id\":\"R24\",\"pier\":\"R\",\"contact\":false,\"maxCode\":\"C\",\"schengen\":\"B\",\"hydrant\":false,\"x\":510,\"y\":620,\"taxiIn\":4,\"taxiOut\":5},{\"id\":\"R25\",\"pier\":\"R\",\"contact\":false,\"maxCode\":\"C\",\"schengen\":\"B\",\"hydrant\":false,\"x\":600,\"y\":620,\"taxiIn\":4,\"taxiOut\":5},{\"id\":\"R26\",\"pier\":\"R\",\"contact\":false,\"maxCode\":\"C\",\"schengen\":\"B\",\"hydrant\":false,\"x\":690,\"y\":620,\"taxiIn\":5,\"taxiOut\":6},{\"id\":\"R27\",\"pier\":\"R\",\"contact\":false,\"maxCode\":\"C\",\"schengen\":\"B\",\"hydrant\":false,\"x\":780,\"y\":620,\"taxiIn\":5,\"taxiOut\":6},{\"id\":\"R28\",\"pier\":\"R\",\"contact\":false,\"maxCode\":\"C\",\"schengen\":\"B\",\"hydrant\":false,\"x\":870,\"y\":620,\"taxiIn\":5,\"taxiOut\":6},{\"id\":\"R31\",\"pier\":\"R\",\"contact\":false,\"maxCode\":\"E\",\"schengen\":\"B\",\"hydrant\":true,\"x\":1020,\"y\":620,\"taxiIn\":5,\"taxiOut\":6},{\"id\":\"R32\",\"pier\":\"R\",\"contact\":false,\"maxCode\":\"E\",\"schengen\":\"B\",\"hydrant\":true,\"x\":1125,\"y\":620,\"taxiIn\":5,\"taxiOut\":6},{\"id\":\"R33\",\"pier\":\"R\",\"contact\":false,\"maxCode\":\"E\",\"schengen\":\"B\",\"hydrant\":true,\"x\":1230,\"y\":620,\"taxiIn\":6,\"taxiOut\":7},{\"id\":\"R34\",\"pier\":\"R\",\"contact\":false,\"maxCode\":\"E\",\"schengen\":\"B\",\"hydrant\":true,\"x\":1335,\"y\":620,\"taxiIn\":6,\"taxiOut\":7},{\"id\":\"F1\",\"pier\":\"R\",\"contact\":false,\"maxCode\":\"F\",\"schengen\":\"B\",\"hydrant\":true,\"x\":1480,\"y\":700,\"taxiIn\":6,\"taxiOut\":8}]",
+          "marking": [],
+          "position": {
+            "x": 60,
+            "y": 190
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-twy-main",
+          "name": "Taxiway A\nSegments",
+          "colorSet": "TaxiSegment",
+          "initialMarking": "[{\"id\":\"TWY-A1\",\"name\":\"Taxiway A (north)\",\"kind\":\"main\"},{\"id\":\"TWY-A2\",\"name\":\"Taxiway A (mid)\",\"kind\":\"main\"},{\"id\":\"TWY-A3\",\"name\":\"Taxiway A (south)\",\"kind\":\"main\"}]",
+          "marking": [],
+          "position": {
+            "x": 60,
+            "y": 320
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-twy-apron-in",
+          "name": "Apron Entry\nLanes (inbound)",
+          "colorSet": "TaxiSegment",
+          "initialMarking": "[{\"id\":\"TWY-E\",\"name\":\"Apron entry east\",\"kind\":\"apron-in\"},{\"id\":\"TWY-W\",\"name\":\"Apron entry west\",\"kind\":\"apron-in\"}]",
+          "marking": [],
+          "position": {
+            "x": 60,
+            "y": 450
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-twy-apron-out",
+          "name": "Apron Exit\nLanes (outbound)",
+          "colorSet": "TaxiSegment",
+          "initialMarking": "[{\"id\":\"TWY-F\",\"name\":\"Apron exit east\",\"kind\":\"apron-out\"},{\"id\":\"TWY-V\",\"name\":\"Apron exit west\",\"kind\":\"apron-out\"}]",
+          "marking": [],
+          "position": {
+            "x": 60,
+            "y": 580
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-fleet",
+          "name": "Fleet\nAvailable",
+          "colorSet": "Aircraft",
+          "initialMarking": "[{\"id\":\"DA-FAN\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"QuartzAir\"},{\"id\":\"DA-EDD\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"HorizonVale Air\"},{\"id\":\"DA-WJX\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"Nimbus Coast\"},{\"id\":\"DA-ZTP\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"EmberAir\"},{\"id\":\"DA-CNT\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"Cobalt Wings\"},{\"id\":\"DA-XML\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"OrchidJet\"},{\"id\":\"DA-CRT\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"QuartzAir\"},{\"id\":\"DA-KDG\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"BorealJet\"},{\"id\":\"DA-FFJ\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"BorealJet\"},{\"id\":\"DA-NWT\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"EmberAir\"},{\"id\":\"DA-RHX\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"LumenWings\"},{\"id\":\"DA-SZX\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"HorizonVale Air\"},{\"id\":\"DA-KVC\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"OrchidJet\"},{\"id\":\"DA-DCB\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"EmberAir\"},{\"id\":\"DA-BCH\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"Nimbus Coast\"},{\"id\":\"DA-CRZ\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"QuartzAir\"},{\"id\":\"DA-BYV\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"QuartzAir\"},{\"id\":\"DA-BGC\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"OrchidJet\"},{\"id\":\"DA-BSB\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"OrchidJet\"},{\"id\":\"DA-SGY\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"HorizonVale Air\"},{\"id\":\"DA-GAV\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"BorealJet\"},{\"id\":\"DA-HGV\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"HorizonVale Air\"},{\"id\":\"DA-KXC\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"BorealJet\"},{\"id\":\"DA-SWT\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"EmberAir\"},{\"id\":\"DA-LXN\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"Nimbus Coast\"},{\"id\":\"DA-GLR\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"Cobalt Wings\"},{\"id\":\"DA-EEE\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"EmberAir\"},{\"id\":\"DA-TMV\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"HorizonVale Air\"},{\"id\":\"DA-XPN\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"QuartzAir\"},{\"id\":\"DA-FBN\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"EmberAir\"},{\"id\":\"DA-SPM\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"BorealJet\"},{\"id\":\"DA-JTK\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"FableFly\"},{\"id\":\"DA-MFX\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"LumenWings\"},{\"id\":\"DA-ZVB\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"SilverKite\"},{\"id\":\"DA-HMX\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"Cobalt Wings\"},{\"id\":\"DA-BGL\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"AuroraSkies Air\"},{\"id\":\"DA-SZB\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"LumenWings\"},{\"id\":\"DA-NLK\",\"typeCode\":\"A320\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":180,\"fuelCapL\":24210,\"airline\":\"QuartzAir\"},{\"id\":\"DA-FLS\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"Nimbus Coast\"},{\"id\":\"DA-GPL\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"FableFly\"},{\"id\":\"DA-JEG\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"QuartzAir\"},{\"id\":\"DA-AFJ\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"Cobalt Wings\"},{\"id\":\"DA-LVT\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"HorizonVale Air\"},{\"id\":\"DA-WZY\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"LumenWings\"},{\"id\":\"DA-RKB\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"BorealJet\"},{\"id\":\"DA-MLH\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"BorealJet\"},{\"id\":\"DA-PDZ\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"BorealJet\"},{\"id\":\"DA-SVH\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"FableFly\"},{\"id\":\"DA-CDK\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"BorealJet\"},{\"id\":\"DA-AXR\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"FableFly\"},{\"id\":\"DA-KZY\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"FableFly\"},{\"id\":\"DA-FPH\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"FableFly\"},{\"id\":\"DA-CLL\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"QuartzAir\"},{\"id\":\"DA-ZNK\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"EmberAir\"},{\"id\":\"DA-FGK\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"FableFly\"},{\"id\":\"DA-DJX\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-WXM\",\"typeCode\":\"A321\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":230,\"fuelCapL\":30030,\"airline\":\"LumenWings\"},{\"id\":\"DA-KCN\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"OrchidJet\"},{\"id\":\"DA-AAX\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"OrchidJet\"},{\"id\":\"DA-GWM\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"Nimbus Coast\"},{\"id\":\"DA-YYN\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"EmberAir\"},{\"id\":\"DA-RRB\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"QuartzAir\"},{\"id\":\"DA-KLG\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-RTB\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"FableFly\"},{\"id\":\"DA-NWD\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"EmberAir\"},{\"id\":\"DA-KLL\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"BorealJet\"},{\"id\":\"DA-TXS\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"LumenWings\"},{\"id\":\"DA-WCY\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"FableFly\"},{\"id\":\"DA-LPX\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"EmberAir\"},{\"id\":\"DA-TLF\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"EmberAir\"},{\"id\":\"DA-DBR\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"LumenWings\"},{\"id\":\"DA-JBW\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"BorealJet\"},{\"id\":\"DA-VHT\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"OrchidJet\"},{\"id\":\"DA-FKT\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"QuartzAir\"},{\"id\":\"DA-WZT\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"LumenWings\"},{\"id\":\"DA-JBG\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"Nimbus Coast\"},{\"id\":\"DA-ZAA\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"EmberAir\"},{\"id\":\"DA-MPW\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"BorealJet\"},{\"id\":\"DA-RTD\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"BorealJet\"},{\"id\":\"DA-BVL\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"Nimbus Coast\"},{\"id\":\"DA-LKL\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"SilverKite\"},{\"id\":\"DA-NHZ\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"SilverKite\"},{\"id\":\"DA-LCW\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"AuroraSkies Air\"},{\"id\":\"DA-JBH\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"EmberAir\"},{\"id\":\"DA-ZAN\",\"typeCode\":\"B738\",\"codeLetter\":\"C\",\"body\":\"narrow\",\"seats\":189,\"fuelCapL\":26020,\"airline\":\"HorizonVale Air\"},{\"id\":\"DA-ARF\",\"typeCode\":\"E195\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":132,\"fuelCapL\":16600,\"airline\":\"Cobalt Wings\"},{\"id\":\"DA-DJY\",\"typeCode\":\"E195\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":132,\"fuelCapL\":16600,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-RJH\",\"typeCode\":\"E195\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":132,\"fuelCapL\":16600,\"airline\":\"SilverKite\"},{\"id\":\"DA-RCT\",\"typeCode\":\"E195\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":132,\"fuelCapL\":16600,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-SLK\",\"typeCode\":\"E195\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":132,\"fuelCapL\":16600,\"airline\":\"AuroraSkies Air\"},{\"id\":\"DA-FSL\",\"typeCode\":\"E195\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":132,\"fuelCapL\":16600,\"airline\":\"AuroraSkies Air\"},{\"id\":\"DA-JRA\",\"typeCode\":\"E195\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":132,\"fuelCapL\":16600,\"airline\":\"Nimbus Coast\"},{\"id\":\"DA-BNT\",\"typeCode\":\"E195\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":132,\"fuelCapL\":16600,\"airline\":\"Cobalt Wings\"},{\"id\":\"DA-RWA\",\"typeCode\":\"E195\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":132,\"fuelCapL\":16600,\"airline\":\"LumenWings\"},{\"id\":\"DA-XVV\",\"typeCode\":\"E195\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":132,\"fuelCapL\":16600,\"airline\":\"SilverKite\"},{\"id\":\"DA-TWW\",\"typeCode\":\"E195\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":132,\"fuelCapL\":16600,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-NMP\",\"typeCode\":\"E195\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":132,\"fuelCapL\":16600,\"airline\":\"AuroraSkies Air\"},{\"id\":\"DA-EDY\",\"typeCode\":\"E195\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":132,\"fuelCapL\":16600,\"airline\":\"Nimbus Coast\"},{\"id\":\"DA-JFJ\",\"typeCode\":\"E195\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":132,\"fuelCapL\":16600,\"airline\":\"LumenWings\"},{\"id\":\"DA-EHD\",\"typeCode\":\"E195\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":132,\"fuelCapL\":16600,\"airline\":\"Cobalt Wings\"},{\"id\":\"DA-GEA\",\"typeCode\":\"AT76\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":78,\"fuelCapL\":6390,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-AHJ\",\"typeCode\":\"AT76\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":78,\"fuelCapL\":6390,\"airline\":\"HorizonVale Air\"},{\"id\":\"DA-VFC\",\"typeCode\":\"AT76\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":78,\"fuelCapL\":6390,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-SXK\",\"typeCode\":\"AT76\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":78,\"fuelCapL\":6390,\"airline\":\"Cobalt Wings\"},{\"id\":\"DA-AYY\",\"typeCode\":\"AT76\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":78,\"fuelCapL\":6390,\"airline\":\"AuroraSkies Air\"},{\"id\":\"DA-HJB\",\"typeCode\":\"AT76\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":78,\"fuelCapL\":6390,\"airline\":\"LumenWings\"},{\"id\":\"DA-WGN\",\"typeCode\":\"AT76\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":78,\"fuelCapL\":6390,\"airline\":\"Cobalt Wings\"},{\"id\":\"DA-YSJ\",\"typeCode\":\"AT76\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":78,\"fuelCapL\":6390,\"airline\":\"SilverKite\"},{\"id\":\"DA-VZE\",\"typeCode\":\"AT76\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":78,\"fuelCapL\":6390,\"airline\":\"LumenWings\"},{\"id\":\"DA-ZBC\",\"typeCode\":\"AT76\",\"codeLetter\":\"C\",\"body\":\"regional\",\"seats\":78,\"fuelCapL\":6390,\"airline\":\"LumenWings\"},{\"id\":\"DA-RCX\",\"typeCode\":\"A333\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":293,\"fuelCapL\":97530,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-GZG\",\"typeCode\":\"A333\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":293,\"fuelCapL\":97530,\"airline\":\"AuroraSkies Air\"},{\"id\":\"DA-KMS\",\"typeCode\":\"A333\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":293,\"fuelCapL\":97530,\"airline\":\"Cobalt Wings\"},{\"id\":\"DA-NTA\",\"typeCode\":\"A333\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":293,\"fuelCapL\":97530,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-RRT\",\"typeCode\":\"A333\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":293,\"fuelCapL\":97530,\"airline\":\"Cobalt Wings\"},{\"id\":\"DA-WFF\",\"typeCode\":\"A333\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":293,\"fuelCapL\":97530,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-NHN\",\"typeCode\":\"A333\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":293,\"fuelCapL\":97530,\"airline\":\"Cobalt Wings\"},{\"id\":\"DA-HFV\",\"typeCode\":\"A333\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":293,\"fuelCapL\":97530,\"airline\":\"HorizonVale Air\"},{\"id\":\"DA-EAL\",\"typeCode\":\"A333\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":293,\"fuelCapL\":97530,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-VBA\",\"typeCode\":\"A333\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":293,\"fuelCapL\":97530,\"airline\":\"AuroraSkies Air\"},{\"id\":\"DA-XAW\",\"typeCode\":\"A333\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":293,\"fuelCapL\":97530,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-LZK\",\"typeCode\":\"A333\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":293,\"fuelCapL\":97530,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-CDV\",\"typeCode\":\"A333\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":293,\"fuelCapL\":97530,\"airline\":\"AuroraSkies Air\"},{\"id\":\"DA-BHE\",\"typeCode\":\"A333\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":293,\"fuelCapL\":97530,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-HSW\",\"typeCode\":\"B789\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":296,\"fuelCapL\":126370,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-CSC\",\"typeCode\":\"B789\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":296,\"fuelCapL\":126370,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-HNX\",\"typeCode\":\"B789\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":296,\"fuelCapL\":126370,\"airline\":\"HorizonVale Air\"},{\"id\":\"DA-JPV\",\"typeCode\":\"B789\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":296,\"fuelCapL\":126370,\"airline\":\"HorizonVale Air\"},{\"id\":\"DA-LCC\",\"typeCode\":\"B789\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":296,\"fuelCapL\":126370,\"airline\":\"HorizonVale Air\"},{\"id\":\"DA-YKC\",\"typeCode\":\"B789\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":296,\"fuelCapL\":126370,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-RDY\",\"typeCode\":\"B789\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":296,\"fuelCapL\":126370,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-YLK\",\"typeCode\":\"B789\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":296,\"fuelCapL\":126370,\"airline\":\"HorizonVale Air\"},{\"id\":\"DA-EGM\",\"typeCode\":\"B789\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":296,\"fuelCapL\":126370,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-MDC\",\"typeCode\":\"B789\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":296,\"fuelCapL\":126370,\"airline\":\"Cobalt Wings\"},{\"id\":\"DA-RAR\",\"typeCode\":\"B789\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":296,\"fuelCapL\":126370,\"airline\":\"AuroraSkies Air\"},{\"id\":\"DA-FPK\",\"typeCode\":\"B789\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":296,\"fuelCapL\":126370,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-GVR\",\"typeCode\":\"B789\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":296,\"fuelCapL\":126370,\"airline\":\"HorizonVale Air\"},{\"id\":\"DA-CXT\",\"typeCode\":\"B789\",\"codeLetter\":\"E\",\"body\":\"wide\",\"seats\":296,\"fuelCapL\":126370,\"airline\":\"Cobalt Wings\"},{\"id\":\"DA-LMM\",\"typeCode\":\"A388\",\"codeLetter\":\"F\",\"body\":\"superheavy\",\"seats\":525,\"fuelCapL\":320000,\"airline\":\"AuroraSkies Air\"},{\"id\":\"DA-JDJ\",\"typeCode\":\"A388\",\"codeLetter\":\"F\",\"body\":\"superheavy\",\"seats\":525,\"fuelCapL\":320000,\"airline\":\"DawnLine Airways\"},{\"id\":\"DA-NMN\",\"typeCode\":\"A388\",\"codeLetter\":\"F\",\"body\":\"superheavy\",\"seats\":525,\"fuelCapL\":320000,\"airline\":\"Cobalt Wings\"}]",
+          "marking": [],
+          "position": {
+            "x": 250,
+            "y": 780
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-approach",
+          "name": "Inbound\nFlights",
+          "colorSet": "Flight",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 460,
+            "y": 620
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-inblock",
+          "name": "Aircraft\nOn Stand",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 900,
+            "y": 620
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-cabin-in",
+          "name": "Cabin\nThread",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1330,
+            "y": 300
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-hold-in",
+          "name": "Hold\nThread",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1330,
+            "y": 440
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-fuel-in",
+          "name": "Fuel\nThread",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1330,
+            "y": 580
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-svc-in",
+          "name": "Cabin Service\nThread",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1330,
+            "y": 720
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-cater-in",
+          "name": "Catering\nThread",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1330,
+            "y": 160
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-plan-in",
+          "name": "Departure Planning\nThread",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1330,
+            "y": 860
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-join",
+          "name": "Turnaround\nProgress",
+          "colorSet": "TurnCount",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1620,
+            "y": 1000
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-thread-done",
+          "name": "Thread\nCompleted",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1620,
+            "y": 860
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-ready",
+          "name": "Turnaround\nComplete",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 2060,
+            "y": 620
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-departed",
+          "name": "Departed\nFlights",
+          "colorSet": "Flight",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 2500,
+            "y": 620
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-prm-arr",
+          "name": "PRM in\nTerminal",
+          "colorSet": "PRMPax",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1620,
+            "y": 160
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "p-uld-store",
+          "name": "ULD\nStore",
+          "colorSet": "ULD",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1620,
+            "y": 60
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "st-schedule",
+          "name": "Flight\nSchedule",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 250,
+            "y": 620
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": false,
+          "subPageId": "net-schedule",
+          "socketAssignments": [
+            {
+              "portPlaceId": "s-out",
+              "socketPlaceId": "p-approach"
+            },
+            {
+              "portPlaceId": "s-fleet",
+              "socketPlaceId": "p-fleet"
+            }
+          ]
+        },
+        {
+          "id": "st-arrival",
+          "name": "Approach,\nLanding &\nTaxi In",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 680,
+            "y": 620
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": false,
+          "subPageId": "net-arrival",
+          "socketAssignments": [
+            {
+              "portPlaceId": "a-in",
+              "socketPlaceId": "p-approach"
+            },
+            {
+              "portPlaceId": "a-rwy",
+              "socketPlaceId": "p-runways"
+            },
+            {
+              "portPlaceId": "a-stands",
+              "socketPlaceId": "p-stands"
+            },
+            {
+              "portPlaceId": "a-twy-main",
+              "socketPlaceId": "p-twy-main"
+            },
+            {
+              "portPlaceId": "a-twy-apron",
+              "socketPlaceId": "p-twy-apron-in"
+            },
+            {
+              "portPlaceId": "a-out",
+              "socketPlaceId": "p-inblock"
+            }
+          ]
+        },
+        {
+          "id": "st-cabin",
+          "name": "Turnaround:\nCabin & PRM",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1620,
+            "y": 300
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": false,
+          "subPageId": "net-cabin",
+          "socketAssignments": [
+            {
+              "portPlaceId": "c-in",
+              "socketPlaceId": "p-cabin-in"
+            },
+            {
+              "portPlaceId": "c-cater-in",
+              "socketPlaceId": "p-cater-in"
+            },
+            {
+              "portPlaceId": "c-done",
+              "socketPlaceId": "p-thread-done"
+            },
+            {
+              "portPlaceId": "c-prm-out",
+              "socketPlaceId": "p-prm-arr"
+            }
+          ]
+        },
+        {
+          "id": "st-ramp",
+          "name": "Turnaround:\nRamp, Fuel\n& Services",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1620,
+            "y": 520
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": false,
+          "subPageId": "net-ramp",
+          "socketAssignments": [
+            {
+              "portPlaceId": "r-hold-in",
+              "socketPlaceId": "p-hold-in"
+            },
+            {
+              "portPlaceId": "r-fuel-in",
+              "socketPlaceId": "p-fuel-in"
+            },
+            {
+              "portPlaceId": "r-svc-in",
+              "socketPlaceId": "p-svc-in"
+            },
+            {
+              "portPlaceId": "r-done",
+              "socketPlaceId": "p-thread-done"
+            },
+            {
+              "portPlaceId": "r-uld-out",
+              "socketPlaceId": "p-uld-store"
+            }
+          ]
+        },
+        {
+          "id": "st-departure",
+          "name": "Departure,\nPushback &\nTake Off",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 2280,
+            "y": 620
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": false,
+          "subPageId": "net-departure",
+          "socketAssignments": [
+            {
+              "portPlaceId": "d-plan-in",
+              "socketPlaceId": "p-plan-in"
+            },
+            {
+              "portPlaceId": "d-plan-out",
+              "socketPlaceId": "p-thread-done"
+            },
+            {
+              "portPlaceId": "d-in",
+              "socketPlaceId": "p-ready"
+            },
+            {
+              "portPlaceId": "d-stands",
+              "socketPlaceId": "p-stands"
+            },
+            {
+              "portPlaceId": "d-rwy",
+              "socketPlaceId": "p-runways"
+            },
+            {
+              "portPlaceId": "d-twy-main",
+              "socketPlaceId": "p-twy-main"
+            },
+            {
+              "portPlaceId": "d-twy-apron",
+              "socketPlaceId": "p-twy-apron-out"
+            },
+            {
+              "portPlaceId": "d-out",
+              "socketPlaceId": "p-departed"
+            },
+            {
+              "portPlaceId": "d-fleet",
+              "socketPlaceId": "p-fleet"
+            }
+          ]
+        },
+        {
+          "id": "t-aght",
+          "name": "Start Ground\nHandling\n(M8 · AGHT)",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "// The turnaround splits into five concurrent threads: cabin, hold, fuel,\n// cabin service and departure planning. A counter token joins them again.",
+          "position": {
+            "x": 1120,
+            "y": 620
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "t-thread-done",
+          "name": "Thread\nCompleted",
+          "guard": "trd.id == tr.id",
+          "time": "",
+          "priority": "P_HIGH",
+          "codeSegment": "",
+          "position": {
+            "x": 1840,
+            "y": 930
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": false
+        },
+        {
+          "id": "t-joined",
+          "name": "All Handling\nComplete",
+          "guard": "n == 0",
+          "time": "",
+          "priority": "P_HIGH",
+          "codeSegment": "",
+          "position": {
+            "x": 1900,
+            "y": 620
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": false
+        }
+      ],
+      "arcs": [
+        {
+          "id": "e1",
+          "source": "p-approach",
+          "target": "st-arrival",
+          "inscription": "fl",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e2",
+          "source": "st-schedule",
+          "target": "p-approach",
+          "inscription": "fl",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e3",
+          "source": "p-fleet",
+          "target": "st-schedule",
+          "inscription": "ac",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e4",
+          "source": "st-arrival",
+          "target": "p-inblock",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e5",
+          "source": "p-inblock",
+          "target": "t-aght",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e6",
+          "source": "t-aght",
+          "target": "p-cabin-in",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e7",
+          "source": "t-aght",
+          "target": "p-cater-in",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e8",
+          "source": "t-aght",
+          "target": "p-hold-in",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e9",
+          "source": "t-aght",
+          "target": "p-fuel-in",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e10",
+          "source": "t-aght",
+          "target": "p-svc-in",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e11",
+          "source": "t-aght",
+          "target": "p-plan-in",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e12",
+          "source": "t-aght",
+          "target": "p-join",
+          "inscription": "[tr, 6]",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e13",
+          "source": "p-join",
+          "target": "t-thread-done",
+          "inscription": "[tr, n]",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e14",
+          "source": "p-thread-done",
+          "target": "t-thread-done",
+          "inscription": "trd",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e15",
+          "source": "t-thread-done",
+          "target": "p-join",
+          "inscription": "[tr, n - 1]",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e16",
+          "source": "p-join",
+          "target": "t-joined",
+          "inscription": "[tr, n]",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e17",
+          "source": "t-joined",
+          "target": "p-ready",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e18",
+          "source": "p-ready",
+          "target": "st-departure",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e19",
+          "source": "st-departure",
+          "target": "p-departed",
+          "inscription": "fl",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e20",
+          "source": "st-departure",
+          "target": "p-fleet",
+          "inscription": "ac",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e21",
+          "source": "p-runways",
+          "target": "st-arrival",
+          "inscription": "rw",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e22",
+          "source": "st-arrival",
+          "target": "p-runways",
+          "inscription": "rw",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e23",
+          "source": "p-stands",
+          "target": "st-arrival",
+          "inscription": "st",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e24",
+          "source": "p-twy-main",
+          "target": "st-arrival",
+          "inscription": "sg",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e25",
+          "source": "st-arrival",
+          "target": "p-twy-main",
+          "inscription": "sg",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e26",
+          "source": "p-twy-apron-in",
+          "target": "st-arrival",
+          "inscription": "sg",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e27",
+          "source": "st-arrival",
+          "target": "p-twy-apron-in",
+          "inscription": "sg",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e28",
+          "source": "p-cabin-in",
+          "target": "st-cabin",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e29",
+          "source": "p-cater-in",
+          "target": "st-cabin",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e30",
+          "source": "st-cabin",
+          "target": "p-thread-done",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e31",
+          "source": "st-cabin",
+          "target": "p-prm-arr",
+          "inscription": "prm",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e32",
+          "source": "p-hold-in",
+          "target": "st-ramp",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e33",
+          "source": "p-fuel-in",
+          "target": "st-ramp",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e34",
+          "source": "p-svc-in",
+          "target": "st-ramp",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e35",
+          "source": "st-ramp",
+          "target": "p-thread-done",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e36",
+          "source": "st-ramp",
+          "target": "p-uld-store",
+          "inscription": "uld",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e37",
+          "source": "p-plan-in",
+          "target": "st-departure",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e38",
+          "source": "st-departure",
+          "target": "p-thread-done",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e39",
+          "source": "p-runways",
+          "target": "st-departure",
+          "inscription": "rw",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e40",
+          "source": "st-departure",
+          "target": "p-runways",
+          "inscription": "rw",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e41",
+          "source": "st-departure",
+          "target": "p-stands",
+          "inscription": "st",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e42",
+          "source": "p-twy-main",
+          "target": "st-departure",
+          "inscription": "sg",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e43",
+          "source": "st-departure",
+          "target": "p-twy-main",
+          "inscription": "sg",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e44",
+          "source": "p-twy-apron-out",
+          "target": "st-departure",
+          "inscription": "sg",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e45",
+          "source": "st-departure",
+          "target": "p-twy-apron-out",
+          "inscription": "sg",
+          "delay": "",
+          "isBidirectional": false
+        }
+      ]
+    },
+    {
+      "id": "net-schedule",
+      "name": "Flight Schedule",
+      "places": [
+        {
+          "id": "s-clock",
+          "name": "Schedule\nClock",
+          "colorSet": "UNIT",
+          "initialMarking": "[timed((), 0)]",
+          "marking": [],
+          "position": {
+            "x": 60,
+            "y": 200
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "s-seq",
+          "name": "Flight\nCounter",
+          "colorSet": "INT",
+          "initialMarking": "[1]",
+          "marking": [],
+          "position": {
+            "x": 60,
+            "y": 340
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "s-fleet",
+          "name": "Fleet\nAvailable",
+          "colorSet": "Aircraft",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 60,
+            "y": 60
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "in"
+        },
+        {
+          "id": "s-out",
+          "name": "Inbound\nFlights",
+          "colorSet": "Flight",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 520,
+            "y": 200
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "out"
+        }
+      ],
+      "transitions": [
+        {
+          "id": "s-t-file",
+          "name": "File Flight Plan\n(M1)",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "// One inbound leg enters the day's schedule, flown by an airframe taken from the\n// based fleet. Which aircraft is free decides the equipment and the operator; only\n// the sector and the passenger load are drawn here.\nlet long_haul = ac.body == \"wide\" || ac.body == \"superheavy\";\nlet schengen = if long_haul { false } else { bernoulli(0.62) == 1 };\nlet fl = make_flight(k, \"ARR\", ac, schengen, long_haul);",
+          "position": {
+            "x": 290,
+            "y": 200
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        }
+      ],
+      "arcs": [
+        {
+          "id": "e46",
+          "source": "s-clock",
+          "target": "s-t-file",
+          "inscription": "u",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e47",
+          "source": "s-seq",
+          "target": "s-t-file",
+          "inscription": "k",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e48",
+          "source": "s-fleet",
+          "target": "s-t-file",
+          "inscription": "ac",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "aircraft"
+        },
+        {
+          "id": "e49",
+          "source": "s-t-file",
+          "target": "s-clock",
+          "inscription": "u",
+          "delay": "delay_sec(interarrival_sec(current_time()))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e50",
+          "source": "s-t-file",
+          "target": "s-seq",
+          "inscription": "k + 1",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e51",
+          "source": "s-t-file",
+          "target": "s-out",
+          "inscription": "fl",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "flight"
+        }
+      ]
+    },
+    {
+      "id": "net-arrival",
+      "name": "Approach, Landing & Taxi In",
+      "places": [
+        {
+          "id": "a-in",
+          "name": "Inbound\nFlights",
+          "colorSet": "Flight",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 60,
+            "y": 300
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "in"
+        },
+        {
+          "id": "a-rwy",
+          "name": "Runways\nAvailable",
+          "colorSet": "Runway",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 900,
+            "y": 80
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "io"
+        },
+        {
+          "id": "a-stands",
+          "name": "Stands\nAvailable",
+          "colorSet": "Stand",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 480,
+            "y": 560
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "io"
+        },
+        {
+          "id": "a-twy-main",
+          "name": "Taxiway A\nSegments",
+          "colorSet": "TaxiSegment",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1540,
+            "y": 80
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "io"
+        },
+        {
+          "id": "a-twy-apron",
+          "name": "Apron Entry\nLanes (inbound)",
+          "colorSet": "TaxiSegment",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1860,
+            "y": 80
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "io"
+        },
+        {
+          "id": "a-out",
+          "name": "Aircraft\nOn Stand",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 2260,
+            "y": 300
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "out"
+        },
+        {
+          "id": "a-enroute",
+          "name": "En Route",
+          "colorSet": "Flight",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 280,
+            "y": 300
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "a-tma",
+          "name": "In TMA",
+          "colorSet": "Flight",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 500,
+            "y": 300
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "a-planned",
+          "name": "Stand\nAssigned",
+          "colorSet": "FlightStand",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 720,
+            "y": 300
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "a-final",
+          "name": "On Final\nApproach",
+          "colorSet": "TurnRunway",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1020,
+            "y": 300
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "a-roll",
+          "name": "Landing\nRoll",
+          "colorSet": "TurnRunway",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1240,
+            "y": 300
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "a-vacated",
+          "name": "Runway\nVacated",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1450,
+            "y": 300
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "a-taxi1",
+          "name": "Taxiing\n(Taxiway A)",
+          "colorSet": "TurnSeg",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1680,
+            "y": 300
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "a-taxi2",
+          "name": "Taxiing\n(Apron)",
+          "colorSet": "TurnSeg",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 2000,
+            "y": 300
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "a-t-dep-out",
+          "name": "Take Off from\nOutstation (M3)",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 170,
+            "y": 300
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "a-t-tma",
+          "name": "Enter TMA\n(M4)",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 390,
+            "y": 300
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "a-t-stand-contact",
+          "name": "Assign Contact\nStand",
+          "guard": "st.contact && stand_fits(st, fl.aircraft, fl.schengen)",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 620,
+            "y": 300
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "a-t-stand-remote",
+          "name": "Assign Remote\nStand",
+          "guard": "!st.contact && stand_fits(st, fl.aircraft, fl.schengen)",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 620,
+            "y": 430
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "a-t-final",
+          "name": "Final Approach\n(M5)",
+          "guard": "runway_fits(rw, fl.aircraft)",
+          "time": "",
+          "priority": "",
+          "codeSegment": "// The turnaround object is created once the stand is known: from here on the\n// inbound leg, the outbound leg, the airframe and the stand travel together.\nlet dep_lh = fl.aircraft.body == \"wide\" || fl.aircraft.body == \"superheavy\";\nlet dep = make_flight(fl.id.sub_string(4), \"DEP\", fl.aircraft, fl.schengen, dep_lh);\nlet tr = #{\n    id: \"TA-\" + fl.id.sub_string(4),\n    arr: fl,\n    dep: dep,\n    stand: st,\n    upliftL: uplift_l(fl.aircraft.body, dep.sectorMin),\n    hold: hold_kind(fl.aircraft.typeCode, fl.carrierType),\n    ulds: uld_count(hold_kind(fl.aircraft.typeCode, fl.carrierType), fl.aircraft.body, fl.pax),\n    depUlds: uld_count(hold_kind(fl.aircraft.typeCode, fl.carrierType), fl.aircraft.body, dep.pax),\n    // Which optional services this rotation needs is decided once, here, so that the\n    // guards downstream are deterministic: a die rolled separately in two mutually\n    // exclusive guards can come up \"no\" in both and strand the token.\n    needCater: if dep_lh || fl.aircraft.body == \"wide\" || fl.aircraft.body == \"superheavy\" { true }\n               else if fl.carrierType == \"full\" { bernoulli(0.85) == 1 }\n               else { bernoulli(0.35) == 1 },\n    needWater: if dep.sectorMin > 300 { true } else { bernoulli(0.55) == 1 }\n};",
+          "position": {
+            "x": 870,
+            "y": 300
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "a-t-land",
+          "name": "Landing\n(M6 · ALDT)",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1130,
+            "y": 300
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "a-t-vacate",
+          "name": "Vacate Runway",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1340,
+            "y": 300
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "a-t-twy-main",
+          "name": "Enter Taxiway A",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1560,
+            "y": 300
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "a-t-apron",
+          "name": "Enter Apron",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1880,
+            "y": 300
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "a-t-inblock",
+          "name": "In-Block\n(M7 · AIBT)",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 2140,
+            "y": 300
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        }
+      ],
+      "arcs": [
+        {
+          "id": "e52",
+          "source": "a-in",
+          "target": "a-t-dep-out",
+          "inscription": "fl",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "flight"
+        },
+        {
+          "id": "e53",
+          "source": "a-t-dep-out",
+          "target": "a-enroute",
+          "inscription": "fl",
+          "delay": "curfew_delay(delay_min(fl.sectorMin))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e54",
+          "source": "a-enroute",
+          "target": "a-t-tma",
+          "inscription": "fl",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "flight"
+        },
+        {
+          "id": "e55",
+          "source": "a-t-tma",
+          "target": "a-tma",
+          "inscription": "fl",
+          "delay": "delay_min(discrete(6, 12))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e56",
+          "source": "a-tma",
+          "target": "a-t-stand-contact",
+          "inscription": "fl",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "flight"
+        },
+        {
+          "id": "e57",
+          "source": "a-stands",
+          "target": "a-t-stand-contact",
+          "inscription": "st",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "stand"
+        },
+        {
+          "id": "e58",
+          "source": "a-t-stand-contact",
+          "target": "a-planned",
+          "inscription": "[fl, st]",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e59",
+          "source": "a-tma",
+          "target": "a-t-stand-remote",
+          "inscription": "fl",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "flight"
+        },
+        {
+          "id": "e60",
+          "source": "a-stands",
+          "target": "a-t-stand-remote",
+          "inscription": "st",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "stand"
+        },
+        {
+          "id": "e61",
+          "source": "a-t-stand-remote",
+          "target": "a-planned",
+          "inscription": "[fl, st]",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e62",
+          "source": "a-planned",
+          "target": "a-t-final",
+          "inscription": "[fl, st]",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e63",
+          "source": "a-rwy",
+          "target": "a-t-final",
+          "inscription": "rw",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "runway"
+        },
+        {
+          "id": "e64",
+          "source": "a-t-final",
+          "target": "a-final",
+          "inscription": "[tr, rw]",
+          "delay": "delay_min(discrete(4, 8))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e65",
+          "source": "a-final",
+          "target": "a-t-land",
+          "inscription": "[tr, rw]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e66",
+          "source": "a-t-land",
+          "target": "a-roll",
+          "inscription": "[tr, rw]",
+          "delay": "delay_sec(discrete(50, 85))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e67",
+          "source": "a-roll",
+          "target": "a-t-vacate",
+          "inscription": "[tr, rw]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e68",
+          "source": "a-t-vacate",
+          "target": "a-rwy",
+          "inscription": "rw",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e69",
+          "source": "a-t-vacate",
+          "target": "a-vacated",
+          "inscription": "tr",
+          "delay": "delay_sec((tr.stand.taxiIn.to_float() * 60.0 * 0.2 * (if rw.id == \"RWY-13L\" { 1.35 } else { 1.0 })).to_int())",
+          "isBidirectional": false
+        },
+        {
+          "id": "e70",
+          "source": "a-vacated",
+          "target": "a-t-twy-main",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e71",
+          "source": "a-twy-main",
+          "target": "a-t-twy-main",
+          "inscription": "sg",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "taxiway"
+        },
+        {
+          "id": "e72",
+          "source": "a-t-twy-main",
+          "target": "a-taxi1",
+          "inscription": "[tr, sg]",
+          "delay": "delay_sec((tr.stand.taxiIn.to_float() * 60.0 * 0.45).to_int())",
+          "isBidirectional": false
+        },
+        {
+          "id": "e73",
+          "source": "a-taxi1",
+          "target": "a-t-apron",
+          "inscription": "[tr, sg]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e74",
+          "source": "a-twy-apron",
+          "target": "a-t-apron",
+          "inscription": "sg2",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "taxiway"
+        },
+        {
+          "id": "e75",
+          "source": "a-t-apron",
+          "target": "a-twy-main",
+          "inscription": "sg",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e76",
+          "source": "a-t-apron",
+          "target": "a-taxi2",
+          "inscription": "[tr, sg2]",
+          "delay": "delay_sec((tr.stand.taxiIn.to_float() * 60.0 * 0.35).to_int())",
+          "isBidirectional": false
+        },
+        {
+          "id": "e77",
+          "source": "a-taxi2",
+          "target": "a-t-inblock",
+          "inscription": "[tr, sg]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e78",
+          "source": "a-t-inblock",
+          "target": "a-twy-apron",
+          "inscription": "sg",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e79",
+          "source": "a-t-inblock",
+          "target": "a-out",
+          "inscription": "tr",
+          "delay": "delay_sec(discrete(45, 110))",
+          "isBidirectional": false
+        }
+      ]
+    },
+    {
+      "id": "net-cabin",
+      "name": "Turnaround: Cabin & PRM",
+      "places": [
+        {
+          "id": "c-in",
+          "name": "Cabin\nThread",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 60,
+            "y": 400
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "in"
+        },
+        {
+          "id": "c-done",
+          "name": "Thread\nCompleted",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 3480,
+            "y": 400
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "out"
+        },
+        {
+          "id": "c-prm-out",
+          "name": "PRM in\nTerminal",
+          "colorSet": "PRMPax",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 900,
+            "y": 40
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "out"
+        },
+        {
+          "id": "c-cater-in",
+          "name": "Catering\nThread",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1900,
+            "y": 900
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "in"
+        },
+        {
+          "id": "c-buses",
+          "name": "Apron\nBuses",
+          "colorSet": "Bus",
+          "initialMarking": "[{\"id\":\"BUS-1\",\"cap\":80,\"x\":640,\"y\":400},{\"id\":\"BUS-2\",\"cap\":80,\"x\":640,\"y\":400},{\"id\":\"BUS-3\",\"cap\":80,\"x\":640,\"y\":400},{\"id\":\"BUS-4\",\"cap\":80,\"x\":640,\"y\":400},{\"id\":\"BUS-5\",\"cap\":80,\"x\":640,\"y\":400},{\"id\":\"BUS-6\",\"cap\":80,\"x\":640,\"y\":400},{\"id\":\"BUS-7\",\"cap\":80,\"x\":640,\"y\":400},{\"id\":\"BUS-8\",\"cap\":80,\"x\":640,\"y\":400}]",
+          "marking": [],
+          "position": {
+            "x": 260,
+            "y": 720
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "c-ambu",
+          "name": "Ambulifts",
+          "colorSet": "Ambulift",
+          "initialMarking": "[{\"id\":\"AMB-1\",\"x\":640,\"y\":400},{\"id\":\"AMB-2\",\"x\":640,\"y\":400},{\"id\":\"AMB-3\",\"x\":640,\"y\":400},{\"id\":\"AMB-4\",\"x\":640,\"y\":400}]",
+          "marking": [],
+          "position": {
+            "x": 700,
+            "y": 720
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "c-agents",
+          "name": "PRM Assistance\nAgents",
+          "colorSet": "PRMAgent",
+          "initialMarking": "[{\"id\":\"PRA-1\",\"x\":640,\"y\":400},{\"id\":\"PRA-2\",\"x\":640,\"y\":400},{\"id\":\"PRA-3\",\"x\":640,\"y\":400},{\"id\":\"PRA-4\",\"x\":640,\"y\":400},{\"id\":\"PRA-5\",\"x\":640,\"y\":400},{\"id\":\"PRA-6\",\"x\":640,\"y\":400},{\"id\":\"PRA-7\",\"x\":640,\"y\":400},{\"id\":\"PRA-8\",\"x\":640,\"y\":400}]",
+          "marking": [],
+          "position": {
+            "x": 900,
+            "y": 720
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "c-clean",
+          "name": "Cleaning\nTeams",
+          "colorSet": "CleaningTeam",
+          "initialMarking": "[{\"id\":\"CLN-1\",\"size\":4,\"x\":640,\"y\":400},{\"id\":\"CLN-2\",\"size\":4,\"x\":640,\"y\":400},{\"id\":\"CLN-3\",\"size\":4,\"x\":640,\"y\":400},{\"id\":\"CLN-4\",\"size\":4,\"x\":640,\"y\":400},{\"id\":\"CLN-5\",\"size\":4,\"x\":640,\"y\":400},{\"id\":\"CLN-6\",\"size\":4,\"x\":640,\"y\":400},{\"id\":\"CLN-7\",\"size\":4,\"x\":640,\"y\":400},{\"id\":\"CLN-8\",\"size\":4,\"x\":640,\"y\":400},{\"id\":\"CLN-9\",\"size\":4,\"x\":640,\"y\":400}]",
+          "marking": [],
+          "position": {
+            "x": 1720,
+            "y": 720
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "c-cater",
+          "name": "Catering\nTrucks",
+          "colorSet": "CateringTruck",
+          "initialMarking": "[{\"id\":\"CAT-1\",\"x\":640,\"y\":400},{\"id\":\"CAT-2\",\"x\":640,\"y\":400},{\"id\":\"CAT-3\",\"x\":640,\"y\":400},{\"id\":\"CAT-4\",\"x\":640,\"y\":400},{\"id\":\"CAT-5\",\"x\":640,\"y\":400},{\"id\":\"CAT-6\",\"x\":640,\"y\":400}]",
+          "marking": [],
+          "position": {
+            "x": 2340,
+            "y": 1120
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "c-deboarding",
+          "name": "Deplaning\n(Airbridge)",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 400,
+            "y": 300
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "c-deboarding-bus",
+          "name": "Deplaning\n(Apron Bus)",
+          "colorSet": "TurnBus",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 400,
+            "y": 520
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "c-prmq",
+          "name": "PRM Deplaning\nOutstanding",
+          "colorSet": "TurnCount",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 780,
+            "y": 400
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "c-cleanq",
+          "name": "Awaiting\nCleaning",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1560,
+            "y": 400
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "c-cleaning",
+          "name": "Cabin Cleaning\nin Progress",
+          "colorSet": "TurnCleaning",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1800,
+            "y": 400
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "c-catering",
+          "name": "Catering\nin Progress",
+          "colorSet": "TurnCatering",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 2340,
+            "y": 900
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "c-prmbq",
+          "name": "PRM Boarding\nOutstanding",
+          "colorSet": "TurnCount",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 2520,
+            "y": 400
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "c-boarding",
+          "name": "Boarding\n(Airbridge)",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 2900,
+            "y": 300
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "c-boarding-bus",
+          "name": "Boarding\n(Apron Bus)",
+          "colorSet": "TurnBus",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 2900,
+            "y": 520
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "c-doorq",
+          "name": "Awaiting\nDoor Close",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 3260,
+            "y": 400
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "c-t-deb-bridge",
+          "name": "Deplaning Start\n(Airbridge)",
+          "guard": "tr.stand.contact",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 260,
+            "y": 300
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "c-t-deb-bus",
+          "name": "Deplaning Start\n(Apron Bus)",
+          "guard": "!tr.stand.contact",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 260,
+            "y": 520
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "c-t-deb-bridge-end",
+          "name": "Deplaning\nComplete",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 560,
+            "y": 300
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "c-t-deb-bus-end",
+          "name": "Deplaning\nComplete (Bus)",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 560,
+            "y": 520
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "c-t-prm-deb-agent",
+          "name": "PRM Deplaning\n(Agent)",
+          "guard": "n > 0 && tr.stand.contact",
+          "time": "",
+          "priority": "",
+          "codeSegment": "let prm = #{\n    id: tr.arr.id + \"-PRM\" + n,\n    flight: tr.arr.id,\n    assist: pick_weighted([#{ w: 68, code: \"WCHR\" }, #{ w: 24, code: \"WCHS\" }, #{ w: 8, code: \"WCHC\" }]).code,\n    phase: \"arrival\"\n};",
+          "position": {
+            "x": 900,
+            "y": 260
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "c-t-prm-deb-ambu",
+          "name": "PRM Deplaning\n(Ambulift)",
+          "guard": "n > 0 && !tr.stand.contact",
+          "time": "",
+          "priority": "",
+          "codeSegment": "let prm = #{\n    id: tr.arr.id + \"-PRM\" + n,\n    flight: tr.arr.id,\n    assist: pick_weighted([#{ w: 68, code: \"WCHR\" }, #{ w: 24, code: \"WCHS\" }, #{ w: 8, code: \"WCHC\" }]).code,\n    phase: \"arrival\"\n};",
+          "position": {
+            "x": 900,
+            "y": 540
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "c-t-clean-start",
+          "name": "Cabin Cleaning\nStart",
+          "guard": "n == 0",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1680,
+            "y": 400
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "c-t-clean-end",
+          "name": "Cabin Cleaning\nComplete",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1920,
+            "y": 400
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "c-t-cater-start",
+          "name": "Catering\nStart",
+          "guard": "tr.needCater",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 2140,
+            "y": 900
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "c-t-cater-skip",
+          "name": "No Catering\nUplift",
+          "guard": "!tr.needCater",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 2140,
+            "y": 1040
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": false
+        },
+        {
+          "id": "c-t-cater-end",
+          "name": "Catering\nComplete",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 2560,
+            "y": 900
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "c-t-prm-brd-agent",
+          "name": "PRM Pre-Boarding\n(Agent)",
+          "guard": "n > 0 && tr.stand.contact",
+          "time": "",
+          "priority": "",
+          "codeSegment": "let prm = #{\n    id: tr.dep.id + \"-PRM\" + n,\n    flight: tr.dep.id,\n    assist: pick_weighted([#{ w: 68, code: \"WCHR\" }, #{ w: 24, code: \"WCHS\" }, #{ w: 8, code: \"WCHC\" }]).code,\n    phase: \"departure\"\n};",
+          "position": {
+            "x": 2640,
+            "y": 260
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "c-t-prm-brd-ambu",
+          "name": "PRM Pre-Boarding\n(Ambulift)",
+          "guard": "n > 0 && !tr.stand.contact",
+          "time": "",
+          "priority": "",
+          "codeSegment": "let prm = #{\n    id: tr.dep.id + \"-PRM\" + n,\n    flight: tr.dep.id,\n    assist: pick_weighted([#{ w: 68, code: \"WCHR\" }, #{ w: 24, code: \"WCHS\" }, #{ w: 8, code: \"WCHC\" }]).code,\n    phase: \"departure\"\n};",
+          "position": {
+            "x": 2640,
+            "y": 540
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "c-t-board-bridge",
+          "name": "Boarding Start\n(M11 · ASBT)",
+          "guard": "n == 0 && tr.stand.contact",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 2780,
+            "y": 300
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "c-t-board-bus",
+          "name": "Boarding Start\n(M11 · ASBT, Bus)",
+          "guard": "n == 0 && !tr.stand.contact",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 2780,
+            "y": 520
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "c-t-board-bridge-end",
+          "name": "Boarding\nComplete",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 3080,
+            "y": 300
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "c-t-board-bus-end",
+          "name": "Boarding\nComplete (Bus)",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 3080,
+            "y": 520
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "c-t-doors",
+          "name": "Doors Closed",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 3360,
+            "y": 400
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        }
+      ],
+      "arcs": [
+        {
+          "id": "e80",
+          "source": "c-in",
+          "target": "c-t-deb-bridge",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e81",
+          "source": "c-t-deb-bridge",
+          "target": "c-deboarding",
+          "inscription": "tr",
+          "delay": "delay_sec(deboard_sec(tr.arr.aircraft.body, tr.arr.pax, true))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e82",
+          "source": "c-in",
+          "target": "c-t-deb-bus",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e83",
+          "source": "c-buses",
+          "target": "c-t-deb-bus",
+          "inscription": "bus",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "bus"
+        },
+        {
+          "id": "e84",
+          "source": "c-t-deb-bus",
+          "target": "c-deboarding-bus",
+          "inscription": "[tr, bus]",
+          "delay": "delay_sec(drive_sec_between(bus.x, bus.y, tr.stand.x, tr.stand.y) + deboard_sec(tr.arr.aircraft.body, tr.arr.pax, false) + bus_sec(tr.arr.pax, bus.cap))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e85",
+          "source": "c-deboarding",
+          "target": "c-t-deb-bridge-end",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e86",
+          "source": "c-t-deb-bridge-end",
+          "target": "c-prmq",
+          "inscription": "[tr, tr.arr.prm]",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e87",
+          "source": "c-deboarding-bus",
+          "target": "c-t-deb-bus-end",
+          "inscription": "[tr, bus]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e88",
+          "source": "c-t-deb-bus-end",
+          "target": "c-buses",
+          "inscription": "#{ id: bus.id, cap: bus.cap, x: tr.stand.x, y: tr.stand.y }",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e89",
+          "source": "c-t-deb-bus-end",
+          "target": "c-prmq",
+          "inscription": "[tr, tr.arr.prm]",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e90",
+          "source": "c-prmq",
+          "target": "c-t-prm-deb-agent",
+          "inscription": "[tr, n]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e91",
+          "source": "c-agents",
+          "target": "c-t-prm-deb-agent",
+          "inscription": "agt",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "assistance agent"
+        },
+        {
+          "id": "e92",
+          "source": "c-t-prm-deb-agent",
+          "target": "c-prmq",
+          "inscription": "[tr, n - 1]",
+          "delay": "delay_sec(prm_sec(true))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e93",
+          "source": "c-t-prm-deb-agent",
+          "target": "c-agents",
+          "inscription": "#{ id: agt.id, x: tr.stand.x, y: tr.stand.y }",
+          "delay": "delay_sec(drive_sec_between(agt.x, agt.y, tr.stand.x, tr.stand.y) + prm_sec(true))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e94",
+          "source": "c-t-prm-deb-agent",
+          "target": "c-prm-out",
+          "inscription": "prm",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "assisted passenger"
+        },
+        {
+          "id": "e95",
+          "source": "c-prmq",
+          "target": "c-t-prm-deb-ambu",
+          "inscription": "[tr, n]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e96",
+          "source": "c-ambu",
+          "target": "c-t-prm-deb-ambu",
+          "inscription": "amb",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "ambulift"
+        },
+        {
+          "id": "e97",
+          "source": "c-t-prm-deb-ambu",
+          "target": "c-prmq",
+          "inscription": "[tr, n - 1]",
+          "delay": "delay_sec(drive_sec_between(amb.x, amb.y, tr.stand.x, tr.stand.y) + prm_sec(false))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e98",
+          "source": "c-t-prm-deb-ambu",
+          "target": "c-ambu",
+          "inscription": "#{ id: amb.id, x: tr.stand.x, y: tr.stand.y }",
+          "delay": "delay_sec(drive_sec_between(amb.x, amb.y, tr.stand.x, tr.stand.y) + prm_sec(false))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e99",
+          "source": "c-t-prm-deb-ambu",
+          "target": "c-prm-out",
+          "inscription": "prm",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "assisted passenger"
+        },
+        {
+          "id": "e100",
+          "source": "c-prmq",
+          "target": "c-t-clean-start",
+          "inscription": "[tr, n]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e101",
+          "source": "c-clean",
+          "target": "c-t-clean-start",
+          "inscription": "cln",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "cleaning team"
+        },
+        {
+          "id": "e102",
+          "source": "c-t-clean-start",
+          "target": "c-cleaning",
+          "inscription": "[tr, cln]",
+          "delay": "delay_sec(drive_sec_between(cln.x, cln.y, tr.stand.x, tr.stand.y) + clean_sec(tr.arr.aircraft.body, tr.arr.carrierType))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e103",
+          "source": "c-cleaning",
+          "target": "c-t-clean-end",
+          "inscription": "[tr, cln]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e104",
+          "source": "c-t-clean-end",
+          "target": "c-clean",
+          "inscription": "#{ id: cln.id, size: cln.size, x: tr.stand.x, y: tr.stand.y }",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e105",
+          "source": "c-t-clean-end",
+          "target": "c-prmbq",
+          "inscription": "[tr, tr.dep.prm]",
+          "delay": "curfew_delay(0)",
+          "isBidirectional": false
+        },
+        {
+          "id": "e106",
+          "source": "c-cater-in",
+          "target": "c-t-cater-skip",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e107",
+          "source": "c-t-cater-skip",
+          "target": "c-done",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e108",
+          "source": "c-cater-in",
+          "target": "c-t-cater-start",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e109",
+          "source": "c-cater",
+          "target": "c-t-cater-start",
+          "inscription": "cat",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "catering truck"
+        },
+        {
+          "id": "e110",
+          "source": "c-t-cater-start",
+          "target": "c-catering",
+          "inscription": "[tr, cat]",
+          "delay": "delay_sec(drive_sec_between(cat.x, cat.y, tr.stand.x, tr.stand.y) + cater_sec(tr.dep.aircraft.body, tr.dep.sectorMin))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e111",
+          "source": "c-catering",
+          "target": "c-t-cater-end",
+          "inscription": "[tr, cat]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e112",
+          "source": "c-t-cater-end",
+          "target": "c-cater",
+          "inscription": "#{ id: cat.id, x: tr.stand.x, y: tr.stand.y }",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e113",
+          "source": "c-t-cater-end",
+          "target": "c-done",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e114",
+          "source": "c-prmbq",
+          "target": "c-t-prm-brd-agent",
+          "inscription": "[tr, n]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e115",
+          "source": "c-agents",
+          "target": "c-t-prm-brd-agent",
+          "inscription": "agt",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "assistance agent"
+        },
+        {
+          "id": "e116",
+          "source": "c-t-prm-brd-agent",
+          "target": "c-prmbq",
+          "inscription": "[tr, n - 1]",
+          "delay": "delay_sec(prm_sec(true))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e117",
+          "source": "c-t-prm-brd-agent",
+          "target": "c-agents",
+          "inscription": "#{ id: agt.id, x: tr.stand.x, y: tr.stand.y }",
+          "delay": "delay_sec(drive_sec_between(agt.x, agt.y, tr.stand.x, tr.stand.y) + prm_sec(true))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e118",
+          "source": "c-t-prm-brd-agent",
+          "target": "c-prm-out",
+          "inscription": "prm",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "assisted passenger"
+        },
+        {
+          "id": "e119",
+          "source": "c-prmbq",
+          "target": "c-t-prm-brd-ambu",
+          "inscription": "[tr, n]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e120",
+          "source": "c-ambu",
+          "target": "c-t-prm-brd-ambu",
+          "inscription": "amb",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "ambulift"
+        },
+        {
+          "id": "e121",
+          "source": "c-t-prm-brd-ambu",
+          "target": "c-prmbq",
+          "inscription": "[tr, n - 1]",
+          "delay": "delay_sec(drive_sec_between(amb.x, amb.y, tr.stand.x, tr.stand.y) + prm_sec(false))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e122",
+          "source": "c-t-prm-brd-ambu",
+          "target": "c-ambu",
+          "inscription": "#{ id: amb.id, x: tr.stand.x, y: tr.stand.y }",
+          "delay": "delay_sec(drive_sec_between(amb.x, amb.y, tr.stand.x, tr.stand.y) + prm_sec(false))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e123",
+          "source": "c-t-prm-brd-ambu",
+          "target": "c-prm-out",
+          "inscription": "prm",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "assisted passenger"
+        },
+        {
+          "id": "e124",
+          "source": "c-prmbq",
+          "target": "c-t-board-bridge",
+          "inscription": "[tr, n]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e125",
+          "source": "c-t-board-bridge",
+          "target": "c-boarding",
+          "inscription": "tr",
+          "delay": "delay_sec(board_sec(tr.dep.aircraft.body, tr.dep.pax, true))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e126",
+          "source": "c-prmbq",
+          "target": "c-t-board-bus",
+          "inscription": "[tr, n]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e127",
+          "source": "c-buses",
+          "target": "c-t-board-bus",
+          "inscription": "bus",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "bus"
+        },
+        {
+          "id": "e128",
+          "source": "c-t-board-bus",
+          "target": "c-boarding-bus",
+          "inscription": "[tr, bus]",
+          "delay": "delay_sec(drive_sec_between(bus.x, bus.y, tr.stand.x, tr.stand.y) + bus_sec(tr.dep.pax, bus.cap) + board_sec(tr.dep.aircraft.body, tr.dep.pax, false))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e129",
+          "source": "c-boarding",
+          "target": "c-t-board-bridge-end",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e130",
+          "source": "c-t-board-bridge-end",
+          "target": "c-doorq",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e131",
+          "source": "c-boarding-bus",
+          "target": "c-t-board-bus-end",
+          "inscription": "[tr, bus]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e132",
+          "source": "c-t-board-bus-end",
+          "target": "c-buses",
+          "inscription": "#{ id: bus.id, cap: bus.cap, x: tr.stand.x, y: tr.stand.y }",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e133",
+          "source": "c-t-board-bus-end",
+          "target": "c-doorq",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e134",
+          "source": "c-doorq",
+          "target": "c-t-doors",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e135",
+          "source": "c-t-doors",
+          "target": "c-done",
+          "inscription": "tr",
+          "delay": "delay_sec(discrete(120, 260))",
+          "isBidirectional": false
+        }
+      ]
+    },
+    {
+      "id": "net-ramp",
+      "name": "Turnaround: Ramp, Fuel & Services",
+      "places": [
+        {
+          "id": "r-hold-in",
+          "name": "Hold\nThread",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 60,
+            "y": 200
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "in"
+        },
+        {
+          "id": "r-fuel-in",
+          "name": "Fuel\nThread",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 60,
+            "y": 700
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "in"
+        },
+        {
+          "id": "r-svc-in",
+          "name": "Cabin Service\nThread",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 60,
+            "y": 1080
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "in"
+        },
+        {
+          "id": "r-done",
+          "name": "Thread\nCompleted",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 2500,
+            "y": 640
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "out"
+        },
+        {
+          "id": "r-uld-out",
+          "name": "ULD\nStore",
+          "colorSet": "ULD",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1200,
+            "y": 40
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "out"
+        },
+        {
+          "id": "r-teams",
+          "name": "Ramp\nTeams",
+          "colorSet": "RampTeam",
+          "initialMarking": "[{\"id\":\"RMP-1\",\"size\":5,\"x\":640,\"y\":400},{\"id\":\"RMP-2\",\"size\":5,\"x\":640,\"y\":400},{\"id\":\"RMP-3\",\"size\":5,\"x\":640,\"y\":400},{\"id\":\"RMP-4\",\"size\":5,\"x\":640,\"y\":400},{\"id\":\"RMP-5\",\"size\":5,\"x\":640,\"y\":400},{\"id\":\"RMP-6\",\"size\":5,\"x\":640,\"y\":400},{\"id\":\"RMP-7\",\"size\":5,\"x\":640,\"y\":400},{\"id\":\"RMP-8\",\"size\":5,\"x\":640,\"y\":400},{\"id\":\"RMP-9\",\"size\":5,\"x\":640,\"y\":400},{\"id\":\"RMP-10\",\"size\":5,\"x\":640,\"y\":400},{\"id\":\"RMP-11\",\"size\":5,\"x\":640,\"y\":400},{\"id\":\"RMP-12\",\"size\":5,\"x\":640,\"y\":400}]",
+          "marking": [],
+          "position": {
+            "x": 700,
+            "y": 400
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "r-fuellers",
+          "name": "Fuellers\n(hydrant / tanker)",
+          "colorSet": "Fueller",
+          "initialMarking": "[{\"id\":\"HYD-1\",\"kind\":\"hydrant\",\"rateLpm\":2500,\"tankL\":999000000,\"loadL\":999000000,\"x\":640,\"y\":400},{\"id\":\"HYD-2\",\"kind\":\"hydrant\",\"rateLpm\":2500,\"tankL\":999000000,\"loadL\":999000000,\"x\":640,\"y\":400},{\"id\":\"HYD-3\",\"kind\":\"hydrant\",\"rateLpm\":2500,\"tankL\":999000000,\"loadL\":999000000,\"x\":640,\"y\":400},{\"id\":\"HYD-4\",\"kind\":\"hydrant\",\"rateLpm\":2500,\"tankL\":999000000,\"loadL\":999000000,\"x\":640,\"y\":400},{\"id\":\"TNK-1\",\"kind\":\"tanker\",\"rateLpm\":1200,\"tankL\":40000,\"loadL\":40000,\"x\":1650,\"y\":400},{\"id\":\"TNK-2\",\"kind\":\"tanker\",\"rateLpm\":1200,\"tankL\":40000,\"loadL\":40000,\"x\":1650,\"y\":400},{\"id\":\"TNK-3\",\"kind\":\"tanker\",\"rateLpm\":1200,\"tankL\":40000,\"loadL\":40000,\"x\":1650,\"y\":400},{\"id\":\"TNK-4\",\"kind\":\"tanker\",\"rateLpm\":1200,\"tankL\":40000,\"loadL\":40000,\"x\":1650,\"y\":400}]",
+          "marking": [],
+          "position": {
+            "x": 500,
+            "y": 900
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "r-loaders",
+          "name": "Belt &\nHigh Loaders",
+          "colorSet": "Loader",
+          "initialMarking": "[{\"id\":\"BLT-1\",\"kind\":\"belt\",\"x\":640,\"y\":400},{\"id\":\"BLT-2\",\"kind\":\"belt\",\"x\":640,\"y\":400},{\"id\":\"BLT-3\",\"kind\":\"belt\",\"x\":640,\"y\":400},{\"id\":\"BLT-4\",\"kind\":\"belt\",\"x\":640,\"y\":400},{\"id\":\"BLT-5\",\"kind\":\"belt\",\"x\":640,\"y\":400},{\"id\":\"BLT-6\",\"kind\":\"belt\",\"x\":640,\"y\":400},{\"id\":\"BLT-7\",\"kind\":\"belt\",\"x\":640,\"y\":400},{\"id\":\"BLT-8\",\"kind\":\"belt\",\"x\":640,\"y\":400},{\"id\":\"BLT-9\",\"kind\":\"belt\",\"x\":640,\"y\":400},{\"id\":\"BLT-10\",\"kind\":\"belt\",\"x\":640,\"y\":400},{\"id\":\"BLT-11\",\"kind\":\"belt\",\"x\":640,\"y\":400},{\"id\":\"BLT-12\",\"kind\":\"belt\",\"x\":640,\"y\":400},{\"id\":\"BLT-13\",\"kind\":\"belt\",\"x\":640,\"y\":400},{\"id\":\"BLT-14\",\"kind\":\"belt\",\"x\":640,\"y\":400},{\"id\":\"HLD-1\",\"kind\":\"container\",\"x\":640,\"y\":400},{\"id\":\"HLD-2\",\"kind\":\"container\",\"x\":640,\"y\":400},{\"id\":\"HLD-3\",\"kind\":\"container\",\"x\":640,\"y\":400},{\"id\":\"HLD-4\",\"kind\":\"container\",\"x\":640,\"y\":400},{\"id\":\"HLD-5\",\"kind\":\"container\",\"x\":640,\"y\":400}]",
+          "marking": [],
+          "position": {
+            "x": 1000,
+            "y": 400
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "r-service",
+          "name": "Water &\nLavatory Trucks",
+          "colorSet": "ServiceTruck",
+          "initialMarking": "[{\"id\":\"SVC-1\",\"x\":640,\"y\":400},{\"id\":\"SVC-2\",\"x\":640,\"y\":400},{\"id\":\"SVC-3\",\"x\":640,\"y\":400},{\"id\":\"SVC-4\",\"x\":640,\"y\":400},{\"id\":\"SVC-5\",\"x\":640,\"y\":400},{\"id\":\"SVC-6\",\"x\":640,\"y\":400},{\"id\":\"SVC-7\",\"x\":640,\"y\":400},{\"id\":\"SVC-8\",\"x\":640,\"y\":400}]",
+          "marking": [],
+          "position": {
+            "x": 700,
+            "y": 1280
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "r-unloading",
+          "name": "Unloading\nin Progress",
+          "colorSet": "TurnRamp",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 480,
+            "y": 200
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "r-uldq",
+          "name": "ULDs to\nUnload",
+          "colorSet": "TurnCount",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 900,
+            "y": 200
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "r-loading",
+          "name": "Loading\nin Progress",
+          "colorSet": "TurnRamp",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1500,
+            "y": 200
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "r-uldq2",
+          "name": "ULDs to\nLoad",
+          "colorSet": "TurnCount",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1860,
+            "y": 200
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "r-driving",
+          "name": "Fueller\nen Route",
+          "colorSet": "TurnFueller",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 900,
+            "y": 700
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "r-fuelling",
+          "name": "Refuelling\nin Progress",
+          "colorSet": "TurnFueller",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1500,
+            "y": 700
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "r-watering",
+          "name": "Potable Water\nin Progress",
+          "colorSet": "TurnService",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 700,
+            "y": 1080
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "r-lavq",
+          "name": "Awaiting\nLavatory Service",
+          "colorSet": "TurnService",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1200,
+            "y": 1080
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "r-lav",
+          "name": "Lavatory Service\nin Progress",
+          "colorSet": "TurnService",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1700,
+            "y": 1080
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "r-t-unload-start",
+          "name": "Baggage Unload\nStart",
+          "guard": "loader_fits(ldr.kind, tr.hold)",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 280,
+            "y": 200
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "r-t-unload-end",
+          "name": "Baggage Unload\nComplete",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 700,
+            "y": 200
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "r-t-uld-off",
+          "name": "Offload ULD",
+          "guard": "n > 0",
+          "time": "",
+          "priority": "P_HIGH",
+          "codeSegment": "let uld = #{ id: tr.arr.id + \"-U\" + n, kind: uld_kind(tr.arr.aircraft.body, n), weightKg: (uniform(180.0, 1150.0) * 10.0).round() / 10.0, flight: tr.arr.id };",
+          "position": {
+            "x": 1080,
+            "y": 120
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "r-t-load-start",
+          "name": "Baggage Load\nStart",
+          "guard": "n == 0 && loader_fits(ldr.kind, tr.hold)",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1300,
+            "y": 200
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "r-t-load-end",
+          "name": "Baggage Load\nComplete",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1700,
+            "y": 200
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "r-t-uld-on",
+          "name": "Load ULD",
+          "guard": "n > 0",
+          "time": "",
+          "priority": "P_HIGH",
+          "codeSegment": "let uld = #{ id: tr.dep.id + \"-U\" + n, kind: uld_kind(tr.dep.aircraft.body, n), weightKg: (uniform(180.0, 1150.0) * 10.0).round() / 10.0, flight: tr.dep.id };",
+          "position": {
+            "x": 2040,
+            "y": 120
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "r-t-hold-done",
+          "name": "Hold Closed",
+          "guard": "n == 0",
+          "time": "",
+          "priority": "P_HIGH",
+          "codeSegment": "",
+          "position": {
+            "x": 2260,
+            "y": 200
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "r-t-fuel-hyd",
+          "name": "Connect Hydrant\nDispenser",
+          "guard": "tr.stand.hydrant && fu.kind == \"hydrant\"",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 300,
+            "y": 620
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "r-t-fuel-tnk",
+          "name": "Dispatch Fuel\nTanker",
+          "guard": "!tr.stand.hydrant && fu.kind == \"tanker\" && fu.loadL >= tr.upliftL",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 300,
+            "y": 800
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "r-t-fuel-start",
+          "name": "Refuelling\nStart",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1200,
+            "y": 700
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "r-t-fuel-end",
+          "name": "Refuelling\nComplete",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1800,
+            "y": 700
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "r-t-tanker-refill",
+          "name": "Tanker Reload\nat Depot",
+          "guard": "fu.kind == \"tanker\" && fu.loadL < 22000",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 500,
+            "y": 1000
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "r-t-water-start",
+          "name": "Potable Water\nStart",
+          "guard": "tr.needWater",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 400,
+            "y": 1080
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "r-t-water-skip",
+          "name": "No Cabin Service\nRequired",
+          "guard": "!tr.needWater",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 400,
+            "y": 1240
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": false
+        },
+        {
+          "id": "r-t-water-end",
+          "name": "Potable Water\nComplete",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 950,
+            "y": 1080
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "r-t-lav-start",
+          "name": "Lavatory Service\nStart",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1450,
+            "y": 1080
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "r-t-lav-end",
+          "name": "Lavatory Service\nComplete",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1950,
+            "y": 1080
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        }
+      ],
+      "arcs": [
+        {
+          "id": "e136",
+          "source": "r-hold-in",
+          "target": "r-t-unload-start",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e137",
+          "source": "r-teams",
+          "target": "r-t-unload-start",
+          "inscription": "rmp",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "ramp team"
+        },
+        {
+          "id": "e138",
+          "source": "r-loaders",
+          "target": "r-t-unload-start",
+          "inscription": "ldr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "loader"
+        },
+        {
+          "id": "e139",
+          "source": "r-t-unload-start",
+          "target": "r-unloading",
+          "inscription": "[tr, rmp, ldr]",
+          "delay": "delay_sec(drive_sec_between(ldr.x, ldr.y, tr.stand.x, tr.stand.y) + hold_sec(tr.hold, tr.arr.pax, tr.ulds, false))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e140",
+          "source": "r-unloading",
+          "target": "r-t-unload-end",
+          "inscription": "[tr, rmp, ldr]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e141",
+          "source": "r-t-unload-end",
+          "target": "r-teams",
+          "inscription": "#{ id: rmp.id, size: rmp.size, x: tr.stand.x, y: tr.stand.y }",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e142",
+          "source": "r-t-unload-end",
+          "target": "r-loaders",
+          "inscription": "#{ id: ldr.id, kind: ldr.kind, x: tr.stand.x, y: tr.stand.y }",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e143",
+          "source": "r-t-unload-end",
+          "target": "r-uldq",
+          "inscription": "[tr, tr.ulds]",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e144",
+          "source": "r-uldq",
+          "target": "r-t-uld-off",
+          "inscription": "[tr, n]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e145",
+          "source": "r-t-uld-off",
+          "target": "r-uldq",
+          "inscription": "[tr, n - 1]",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e146",
+          "source": "r-t-uld-off",
+          "target": "r-uld-out",
+          "inscription": "uld",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "container"
+        },
+        {
+          "id": "e147",
+          "source": "r-uldq",
+          "target": "r-t-load-start",
+          "inscription": "[tr, n]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e148",
+          "source": "r-teams",
+          "target": "r-t-load-start",
+          "inscription": "rmp",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "ramp team"
+        },
+        {
+          "id": "e149",
+          "source": "r-loaders",
+          "target": "r-t-load-start",
+          "inscription": "ldr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "loader"
+        },
+        {
+          "id": "e150",
+          "source": "r-t-load-start",
+          "target": "r-loading",
+          "inscription": "[tr, rmp, ldr]",
+          "delay": "delay_sec(drive_sec_between(ldr.x, ldr.y, tr.stand.x, tr.stand.y) + hold_sec(tr.hold, tr.dep.pax, tr.depUlds, true))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e151",
+          "source": "r-loading",
+          "target": "r-t-load-end",
+          "inscription": "[tr, rmp, ldr]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e152",
+          "source": "r-t-load-end",
+          "target": "r-teams",
+          "inscription": "#{ id: rmp.id, size: rmp.size, x: tr.stand.x, y: tr.stand.y }",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e153",
+          "source": "r-t-load-end",
+          "target": "r-loaders",
+          "inscription": "#{ id: ldr.id, kind: ldr.kind, x: tr.stand.x, y: tr.stand.y }",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e154",
+          "source": "r-t-load-end",
+          "target": "r-uldq2",
+          "inscription": "[tr, tr.depUlds]",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e155",
+          "source": "r-uldq2",
+          "target": "r-t-uld-on",
+          "inscription": "[tr, n]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e156",
+          "source": "r-t-uld-on",
+          "target": "r-uldq2",
+          "inscription": "[tr, n - 1]",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e157",
+          "source": "r-t-uld-on",
+          "target": "r-uld-out",
+          "inscription": "uld",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "container"
+        },
+        {
+          "id": "e158",
+          "source": "r-uldq2",
+          "target": "r-t-hold-done",
+          "inscription": "[tr, n]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e159",
+          "source": "r-t-hold-done",
+          "target": "r-done",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e160",
+          "source": "r-fuel-in",
+          "target": "r-t-fuel-hyd",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e161",
+          "source": "r-fuellers",
+          "target": "r-t-fuel-hyd",
+          "inscription": "fu",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "fueller"
+        },
+        {
+          "id": "e162",
+          "source": "r-t-fuel-hyd",
+          "target": "r-driving",
+          "inscription": "[tr, fu]",
+          "delay": "delay_sec(drive_sec_between(fu.x, fu.y, tr.stand.x, tr.stand.y))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e163",
+          "source": "r-fuel-in",
+          "target": "r-t-fuel-tnk",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e164",
+          "source": "r-fuellers",
+          "target": "r-t-fuel-tnk",
+          "inscription": "fu",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "fueller"
+        },
+        {
+          "id": "e165",
+          "source": "r-t-fuel-tnk",
+          "target": "r-driving",
+          "inscription": "[tr, fu]",
+          "delay": "delay_sec(drive_sec_between(fu.x, fu.y, tr.stand.x, tr.stand.y))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e166",
+          "source": "r-driving",
+          "target": "r-t-fuel-start",
+          "inscription": "[tr, fu]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e167",
+          "source": "r-t-fuel-start",
+          "target": "r-fuelling",
+          "inscription": "[tr, fu]",
+          "delay": "delay_sec(fuel_sec(tr.upliftL, fu.rateLpm, tr.dep.aircraft.body))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e168",
+          "source": "r-fuelling",
+          "target": "r-t-fuel-end",
+          "inscription": "[tr, fu]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e169",
+          "source": "r-t-fuel-end",
+          "target": "r-fuellers",
+          "inscription": "#{ id: fu.id, kind: fu.kind, rateLpm: fu.rateLpm, tankL: fu.tankL, loadL: if fu.kind == \"tanker\" { fu.loadL - tr.upliftL } else { fu.loadL }, x: tr.stand.x, y: tr.stand.y }",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e170",
+          "source": "r-t-fuel-end",
+          "target": "r-done",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e171",
+          "source": "r-fuellers",
+          "target": "r-t-tanker-refill",
+          "inscription": "fu",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "fueller"
+        },
+        {
+          "id": "e172",
+          "source": "r-t-tanker-refill",
+          "target": "r-fuellers",
+          "inscription": "#{ id: fu.id, kind: fu.kind, rateLpm: fu.rateLpm, tankL: fu.tankL, loadL: fu.tankL, x: 1650, y: 400 }",
+          "delay": "delay_sec(drive_sec_between(fu.x, fu.y, 1650, 400) + ((fu.tankL - fu.loadL) / 2000) * 60 + 300)",
+          "isBidirectional": false
+        },
+        {
+          "id": "e173",
+          "source": "r-svc-in",
+          "target": "r-t-water-skip",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e174",
+          "source": "r-t-water-skip",
+          "target": "r-done",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e175",
+          "source": "r-svc-in",
+          "target": "r-t-water-start",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e176",
+          "source": "r-service",
+          "target": "r-t-water-start",
+          "inscription": "svc",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "service truck"
+        },
+        {
+          "id": "e177",
+          "source": "r-t-water-start",
+          "target": "r-watering",
+          "inscription": "[tr, svc]",
+          "delay": "delay_sec(drive_sec_between(svc.x, svc.y, tr.stand.x, tr.stand.y) + discrete(420, 900))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e178",
+          "source": "r-watering",
+          "target": "r-t-water-end",
+          "inscription": "[tr, svc]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e179",
+          "source": "r-t-water-end",
+          "target": "r-lavq",
+          "inscription": "[tr, svc]",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e180",
+          "source": "r-lavq",
+          "target": "r-t-lav-start",
+          "inscription": "[tr, svc]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e181",
+          "source": "r-t-lav-start",
+          "target": "r-lav",
+          "inscription": "[tr, svc]",
+          "delay": "delay_sec(discrete(480, 1020))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e182",
+          "source": "r-lav",
+          "target": "r-t-lav-end",
+          "inscription": "[tr, svc]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e183",
+          "source": "r-t-lav-end",
+          "target": "r-service",
+          "inscription": "#{ id: svc.id, x: tr.stand.x, y: tr.stand.y }",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e184",
+          "source": "r-t-lav-end",
+          "target": "r-done",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        }
+      ]
+    },
+    {
+      "id": "net-departure",
+      "name": "Departure, Pushback & Take Off",
+      "places": [
+        {
+          "id": "d-plan-in",
+          "name": "Departure Planning\nThread",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 60,
+            "y": 60
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "in"
+        },
+        {
+          "id": "d-plan-out",
+          "name": "Thread\nCompleted",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 700,
+            "y": 60
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "out"
+        },
+        {
+          "id": "d-in",
+          "name": "Turnaround\nComplete",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 60,
+            "y": 420
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "in"
+        },
+        {
+          "id": "d-stands",
+          "name": "Stands\nAvailable",
+          "colorSet": "Stand",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1180,
+            "y": 700
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "out"
+        },
+        {
+          "id": "d-rwy",
+          "name": "Runways\nAvailable",
+          "colorSet": "Runway",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 2540,
+            "y": 200
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "io"
+        },
+        {
+          "id": "d-twy-main",
+          "name": "Taxiway A\nSegments",
+          "colorSet": "TaxiSegment",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 2100,
+            "y": 200
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "io"
+        },
+        {
+          "id": "d-twy-apron",
+          "name": "Apron Exit\nLanes (outbound)",
+          "colorSet": "TaxiSegment",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1740,
+            "y": 200
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "io"
+        },
+        {
+          "id": "d-out",
+          "name": "Departed\nFlights",
+          "colorSet": "Flight",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 3060,
+            "y": 420
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "out"
+        },
+        {
+          "id": "d-fleet",
+          "name": "Fleet\nAvailable",
+          "colorSet": "Aircraft",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 3060,
+            "y": 600
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          },
+          "portType": "out"
+        },
+        {
+          "id": "d-tugs",
+          "name": "Pushback\nTugs",
+          "colorSet": "PushbackTug",
+          "initialMarking": "[{\"id\":\"TUG-1\",\"maxCode\":\"C\",\"x\":640,\"y\":400},{\"id\":\"TUG-2\",\"maxCode\":\"C\",\"x\":640,\"y\":400},{\"id\":\"TUG-3\",\"maxCode\":\"C\",\"x\":640,\"y\":400},{\"id\":\"TUG-4\",\"maxCode\":\"C\",\"x\":640,\"y\":400},{\"id\":\"TUG-5\",\"maxCode\":\"C\",\"x\":640,\"y\":400},{\"id\":\"TUG-6\",\"maxCode\":\"C\",\"x\":640,\"y\":400},{\"id\":\"TUG-7\",\"maxCode\":\"F\",\"x\":640,\"y\":400},{\"id\":\"TUG-8\",\"maxCode\":\"F\",\"x\":640,\"y\":400}]",
+          "marking": [],
+          "position": {
+            "x": 900,
+            "y": 700
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "d-deicers",
+          "name": "De-icing\nTrucks",
+          "colorSet": "DeicingTruck",
+          "initialMarking": "[{\"id\":\"DEI-1\",\"fluidL\":4000,\"x\":640,\"y\":400},{\"id\":\"DEI-2\",\"fluidL\":4000,\"x\":640,\"y\":400},{\"id\":\"DEI-3\",\"fluidL\":4000,\"x\":640,\"y\":400},{\"id\":\"DEI-4\",\"fluidL\":4000,\"x\":640,\"y\":400}]",
+          "marking": [],
+          "position": {
+            "x": 1500,
+            "y": 700
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "d-tsatq",
+          "name": "Awaiting\nTSAT",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 380,
+            "y": 60
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "d-asrtq",
+          "name": "Ready for\nStart-Up",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 320,
+            "y": 420
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "d-tugged",
+          "name": "Tug\nAttached",
+          "colorSet": "TurnTug",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 320,
+            "y": 560
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "d-asatq",
+          "name": "Start-Up\nRequested",
+          "colorSet": "TurnTug",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 580,
+            "y": 420
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "d-pushq",
+          "name": "Cleared for\nPushback",
+          "colorSet": "TurnTug",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 840,
+            "y": 420
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "d-pushing",
+          "name": "Pushback\nin Progress",
+          "colorSet": "TurnTug",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1080,
+            "y": 420
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "d-deiceq",
+          "name": "Off Block",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1320,
+            "y": 420
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "d-deicing",
+          "name": "De-icing\nin Progress",
+          "colorSet": "TurnDeicer",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1440,
+            "y": 560
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "d-taxiq",
+          "name": "Ready to\nTaxi",
+          "colorSet": "Turnaround",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1620,
+            "y": 420
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "d-taxi1",
+          "name": "Taxiing\n(Apron)",
+          "colorSet": "TurnSeg",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1900,
+            "y": 420
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "d-taxi2",
+          "name": "Taxiing\n(Taxiway A)",
+          "colorSet": "TurnSeg",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 2280,
+            "y": 420
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        },
+        {
+          "id": "d-lineup",
+          "name": "Lined Up",
+          "colorSet": "TurnRunway",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 2700,
+            "y": 420
+          },
+          "size": {
+            "width": 70,
+            "height": 44
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "d-t-tobt",
+          "name": "TOBT Update\n(M9)",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 230,
+            "y": 60
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "d-t-tsat",
+          "name": "TSAT Issue\n(M10)",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 540,
+            "y": 60
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "d-t-ardt",
+          "name": "Aircraft Ready\n(M12 · ARDT)",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 190,
+            "y": 420
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "d-t-asrt",
+          "name": "Start-Up Request\n(M13 · ASRT)",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 450,
+            "y": 420
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "d-t-asat",
+          "name": "Start-Up Approved\n(M14 · ASAT)",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 710,
+            "y": 420
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "d-t-tug-attach",
+          "name": "Pushback Tug\nAttached",
+          "guard": "code_rank(tug.maxCode) >= code_rank(tr.arr.aircraft.codeLetter)",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 260,
+            "y": 560
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "d-t-push-start",
+          "name": "Off Block\n(M15 · AOBT)",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 960,
+            "y": 420
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "d-t-push-end",
+          "name": "Pushback\nComplete",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1200,
+            "y": 420
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "d-t-deice-start",
+          "name": "De-icing\nStart",
+          "guard": "needs_deicing(current_time())",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1380,
+            "y": 560
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "d-t-deice-end",
+          "name": "De-icing\nComplete",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1560,
+            "y": 560
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "d-t-deice-skip",
+          "name": "No De-icing\nRequired",
+          "guard": "!needs_deicing(current_time())",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1470,
+            "y": 340
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": false
+        },
+        {
+          "id": "d-t-taxi-out",
+          "name": "Taxi Out",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 1800,
+            "y": 420
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "d-t-taxi-main",
+          "name": "Enter Taxiway A",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 2100,
+            "y": 420
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "d-t-lineup",
+          "name": "Line Up",
+          "guard": "runway_fits(rw, tr.arr.aircraft)",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 2480,
+            "y": 420
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "d-t-takeoff",
+          "name": "Take Off\n(M16 · ATOT)",
+          "guard": "",
+          "time": "",
+          "priority": "",
+          "codeSegment": "",
+          "position": {
+            "x": 2880,
+            "y": 420
+          },
+          "size": {
+            "width": 78,
+            "height": 46
+          },
+          "includeInOcel": true
+        }
+      ],
+      "arcs": [
+        {
+          "id": "e185",
+          "source": "d-plan-in",
+          "target": "d-t-tobt",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e186",
+          "source": "d-t-tobt",
+          "target": "d-tsatq",
+          "inscription": "tr",
+          "delay": "delay_min(discrete(3, 9))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e187",
+          "source": "d-tsatq",
+          "target": "d-t-tsat",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e188",
+          "source": "d-t-tsat",
+          "target": "d-plan-out",
+          "inscription": "tr",
+          "delay": "delay_min(discrete(2, 7))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e189",
+          "source": "d-in",
+          "target": "d-t-ardt",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e190",
+          "source": "d-t-ardt",
+          "target": "d-asrtq",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e191",
+          "source": "d-tugged",
+          "target": "d-t-asrt",
+          "inscription": "[tr, tug]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e192",
+          "source": "d-t-asrt",
+          "target": "d-asatq",
+          "inscription": "[tr, tug]",
+          "delay": "delay_sec(discrete(45, 150))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e193",
+          "source": "d-asatq",
+          "target": "d-t-asat",
+          "inscription": "[tr, tug]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e194",
+          "source": "d-t-asat",
+          "target": "d-pushq",
+          "inscription": "[tr, tug]",
+          "delay": "curfew_delay(delay_sec(discrete(30, 300)))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e195",
+          "source": "d-asrtq",
+          "target": "d-t-tug-attach",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e196",
+          "source": "d-tugs",
+          "target": "d-t-tug-attach",
+          "inscription": "tug",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "tug"
+        },
+        {
+          "id": "e197",
+          "source": "d-t-tug-attach",
+          "target": "d-tugged",
+          "inscription": "[tr, tug]",
+          "delay": "delay_sec(drive_sec_between(tug.x, tug.y, tr.stand.x, tr.stand.y))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e198",
+          "source": "d-pushq",
+          "target": "d-t-push-start",
+          "inscription": "[tr, tug]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e199",
+          "source": "d-t-push-start",
+          "target": "d-pushing",
+          "inscription": "[tr, tug]",
+          "delay": "delay_sec(discrete(180, 300))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e200",
+          "source": "d-pushing",
+          "target": "d-t-push-end",
+          "inscription": "[tr, tug]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e201",
+          "source": "d-t-push-end",
+          "target": "d-tugs",
+          "inscription": "#{ id: tug.id, maxCode: tug.maxCode, x: tr.stand.x, y: tr.stand.y }",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e202",
+          "source": "d-t-push-end",
+          "target": "d-stands",
+          "inscription": "tr.stand",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "stand"
+        },
+        {
+          "id": "e203",
+          "source": "d-t-push-end",
+          "target": "d-deiceq",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e204",
+          "source": "d-deiceq",
+          "target": "d-t-deice-start",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e205",
+          "source": "d-deicers",
+          "target": "d-t-deice-start",
+          "inscription": "dei",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "de-icing truck"
+        },
+        {
+          "id": "e206",
+          "source": "d-t-deice-start",
+          "target": "d-deicing",
+          "inscription": "[tr, dei]",
+          "delay": "delay_sec(drive_sec_between(dei.x, dei.y, tr.stand.x, tr.stand.y) + (if tr.arr.aircraft.body == \"narrow\" || tr.arr.aircraft.body == \"regional\" { discrete(360, 720) } else { discrete(900, 1500) }))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e207",
+          "source": "d-deicing",
+          "target": "d-t-deice-end",
+          "inscription": "[tr, dei]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e208",
+          "source": "d-t-deice-end",
+          "target": "d-deicers",
+          "inscription": "#{ id: dei.id, fluidL: dei.fluidL, x: tr.stand.x, y: tr.stand.y }",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e209",
+          "source": "d-t-deice-end",
+          "target": "d-taxiq",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e210",
+          "source": "d-deiceq",
+          "target": "d-t-deice-skip",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e211",
+          "source": "d-t-deice-skip",
+          "target": "d-taxiq",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e212",
+          "source": "d-taxiq",
+          "target": "d-t-taxi-out",
+          "inscription": "tr",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e213",
+          "source": "d-twy-apron",
+          "target": "d-t-taxi-out",
+          "inscription": "sg",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "taxiway"
+        },
+        {
+          "id": "e214",
+          "source": "d-t-taxi-out",
+          "target": "d-taxi1",
+          "inscription": "[tr, sg]",
+          "delay": "delay_sec((tr.stand.taxiOut.to_float() * 60.0 * 0.35).to_int())",
+          "isBidirectional": false
+        },
+        {
+          "id": "e215",
+          "source": "d-taxi1",
+          "target": "d-t-taxi-main",
+          "inscription": "[tr, sg]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e216",
+          "source": "d-twy-main",
+          "target": "d-t-taxi-main",
+          "inscription": "sg2",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "taxiway"
+        },
+        {
+          "id": "e217",
+          "source": "d-t-taxi-main",
+          "target": "d-twy-apron",
+          "inscription": "sg",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e218",
+          "source": "d-t-taxi-main",
+          "target": "d-taxi2",
+          "inscription": "[tr, sg2]",
+          "delay": "delay_sec((tr.stand.taxiOut.to_float() * 60.0 * 0.65).to_int())",
+          "isBidirectional": false
+        },
+        {
+          "id": "e219",
+          "source": "d-taxi2",
+          "target": "d-t-lineup",
+          "inscription": "[tr, sg]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e220",
+          "source": "d-rwy",
+          "target": "d-t-lineup",
+          "inscription": "rw",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "runway"
+        },
+        {
+          "id": "e221",
+          "source": "d-t-lineup",
+          "target": "d-twy-main",
+          "inscription": "sg",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e222",
+          "source": "d-t-lineup",
+          "target": "d-lineup",
+          "inscription": "[tr, rw]",
+          "delay": "delay_sec(discrete(30, 100))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e223",
+          "source": "d-lineup",
+          "target": "d-t-takeoff",
+          "inscription": "[tr, rw]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "turnaround"
+        },
+        {
+          "id": "e224",
+          "source": "d-t-takeoff",
+          "target": "d-rwy",
+          "inscription": "rw",
+          "delay": "delay_sec(discrete(45, 80))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e225",
+          "source": "d-t-takeoff",
+          "target": "d-out",
+          "inscription": "tr.dep",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "flight"
+        },
+        {
+          "id": "e226",
+          "source": "d-t-takeoff",
+          "target": "d-fleet",
+          "inscription": "tr.dep.aircraft",
+          "delay": "delay_min(tr.dep.sectorMin + discrete(45, 130))",
+          "isBidirectional": false
+        }
+      ]
+    }
+  ],
+  "colorSets": [
+    {
+      "id": "cs-unit",
+      "name": "UNIT",
+      "type": "basic",
+      "definition": "colset UNIT = unit timed;",
+      "color": "#9ca3af",
+      "timed": true
+    },
+    {
+      "id": "cs-bool",
+      "name": "BOOL",
+      "type": "basic",
+      "definition": "colset BOOL = bool;",
+      "color": "#10b981"
+    },
+    {
+      "id": "cs-int",
+      "name": "INT",
+      "type": "basic",
+      "definition": "colset INT = int;",
+      "color": "#10b981"
+    },
+    {
+      "id": "cs-real",
+      "name": "REAL",
+      "type": "basic",
+      "definition": "colset REAL = real;",
+      "color": "#ef4444"
+    },
+    {
+      "id": "cs-string",
+      "name": "STRING",
+      "type": "basic",
+      "definition": "colset STRING = string;",
+      "color": "#8b5cf6"
+    },
+    {
+      "id": "cs-aircraft",
+      "name": "Aircraft",
+      "type": "record",
+      "definition": "colset Aircraft = record id: STRING * typeCode: STRING * codeLetter: STRING * body: STRING * seats: INT * fuelCapL: INT * airline: STRING timed;",
+      "color": "#2563eb",
+      "timed": true
+    },
+    {
+      "id": "cs-flight",
+      "name": "Flight",
+      "type": "record",
+      "definition": "colset Flight = record id: STRING * callsign: STRING * airline: STRING * carrierType: STRING * direction: STRING * schengen: BOOL * station: STRING * pax: INT * prm: INT * sectorMin: INT * aircraft: Aircraft timed;",
+      "color": "#0ea5e9",
+      "timed": true,
+      "refs": [
+        {
+          "field": "aircraft",
+          "target": "Aircraft",
+          "qualifier": "operated by",
+          "eventQualifier": "aircraft"
+        }
+      ]
+    },
+    {
+      "id": "cs-stand",
+      "name": "Stand",
+      "type": "record",
+      "definition": "colset Stand = record id: STRING * pier: STRING * contact: BOOL * maxCode: STRING * schengen: STRING * hydrant: BOOL * x: INT * y: INT * taxiIn: INT * taxiOut: INT timed;",
+      "color": "#06b6d4",
+      "timed": true
+    },
+    {
+      "id": "cs-runway",
+      "name": "Runway",
+      "type": "record",
+      "definition": "colset Runway = record id: STRING * name: STRING * lengthM: INT timed;",
+      "color": "#78716c",
+      "timed": true
+    },
+    {
+      "id": "cs-taxisegment",
+      "name": "TaxiSegment",
+      "type": "record",
+      "definition": "colset TaxiSegment = record id: STRING * name: STRING * kind: STRING timed;",
+      "color": "#a16207",
+      "timed": true
+    },
+    {
+      "id": "cs-turnaround",
+      "name": "Turnaround",
+      "type": "record",
+      "definition": "colset Turnaround = record id: STRING * arr: Flight * dep: Flight * stand: Stand * upliftL: INT * ulds: INT * depUlds: INT * hold: STRING * needCater: BOOL * needWater: BOOL timed;",
+      "color": "#e11d48",
+      "timed": true,
+      "refs": [
+        {
+          "field": "arr",
+          "target": "Flight",
+          "qualifier": "inbound flight",
+          "eventQualifier": "arrival"
+        },
+        {
+          "field": "dep",
+          "target": "Flight",
+          "qualifier": "outbound flight",
+          "eventQualifier": "departure"
+        },
+        {
+          "field": "stand",
+          "target": "Stand",
+          "qualifier": "parked at",
+          "eventQualifier": "stand"
+        }
+      ]
+    },
+    {
+      "id": "cs-uld",
+      "name": "ULD",
+      "type": "record",
+      "definition": "colset ULD = record id: STRING * kind: STRING * weightKg: REAL * flight: STRING timed;",
+      "color": "#84cc16",
+      "timed": true,
+      "refs": [
+        {
+          "field": "flight",
+          "target": "Flight",
+          "qualifier": "loaded on",
+          "eventQualifier": "flight"
+        }
+      ]
+    },
+    {
+      "id": "cs-prmpax",
+      "name": "PRMPax",
+      "type": "record",
+      "definition": "colset PRMPax = record id: STRING * flight: STRING * assist: STRING * phase: STRING timed;",
+      "color": "#d946ef",
+      "timed": true,
+      "refs": [
+        {
+          "field": "flight",
+          "target": "Flight",
+          "qualifier": "travels on",
+          "eventQualifier": "flight"
+        }
+      ]
+    },
+    {
+      "id": "cs-fueller",
+      "name": "Fueller",
+      "type": "record",
+      "definition": "colset Fueller = record id: STRING * kind: STRING * rateLpm: INT * tankL: INT * loadL: INT * x: INT * y: INT timed;",
+      "color": "#ef4444",
+      "timed": true
+    },
+    {
+      "id": "cs-bus",
+      "name": "Bus",
+      "type": "record",
+      "definition": "colset Bus = record id: STRING * cap: INT * x: INT * y: INT timed;",
+      "color": "#f59e0b",
+      "timed": true
+    },
+    {
+      "id": "cs-ambulift",
+      "name": "Ambulift",
+      "type": "record",
+      "definition": "colset Ambulift = record id: STRING * x: INT * y: INT timed;",
+      "color": "#c026d3",
+      "timed": true
+    },
+    {
+      "id": "cs-prmagent",
+      "name": "PRMAgent",
+      "type": "record",
+      "definition": "colset PRMAgent = record id: STRING * x: INT * y: INT timed;",
+      "color": "#a855f7",
+      "timed": true
+    },
+    {
+      "id": "cs-cateringtruck",
+      "name": "CateringTruck",
+      "type": "record",
+      "definition": "colset CateringTruck = record id: STRING * x: INT * y: INT timed;",
+      "color": "#14b8a6",
+      "timed": true
+    },
+    {
+      "id": "cs-cleaningteam",
+      "name": "CleaningTeam",
+      "type": "record",
+      "definition": "colset CleaningTeam = record id: STRING * size: INT * x: INT * y: INT timed;",
+      "color": "#22c55e",
+      "timed": true
+    },
+    {
+      "id": "cs-loader",
+      "name": "Loader",
+      "type": "record",
+      "definition": "colset Loader = record id: STRING * kind: STRING * x: INT * y: INT timed;",
+      "color": "#7c3aed",
+      "timed": true
+    },
+    {
+      "id": "cs-rampteam",
+      "name": "RampTeam",
+      "type": "record",
+      "definition": "colset RampTeam = record id: STRING * size: INT * x: INT * y: INT timed;",
+      "color": "#f97316",
+      "timed": true
+    },
+    {
+      "id": "cs-servicetruck",
+      "name": "ServiceTruck",
+      "type": "record",
+      "definition": "colset ServiceTruck = record id: STRING * x: INT * y: INT timed;",
+      "color": "#0891b2",
+      "timed": true
+    },
+    {
+      "id": "cs-pushbacktug",
+      "name": "PushbackTug",
+      "type": "record",
+      "definition": "colset PushbackTug = record id: STRING * maxCode: STRING * x: INT * y: INT timed;",
+      "color": "#eab308",
+      "timed": true
+    },
+    {
+      "id": "cs-deicingtruck",
+      "name": "DeicingTruck",
+      "type": "record",
+      "definition": "colset DeicingTruck = record id: STRING * fluidL: INT * x: INT * y: INT timed;",
+      "color": "#38bdf8",
+      "timed": true
+    },
+    {
+      "id": "cs-turncount",
+      "name": "TurnCount",
+      "type": "product",
+      "definition": "colset TurnCount = product Turnaround * INT timed;",
+      "color": "#94a3b8",
+      "timed": true
+    },
+    {
+      "id": "cs-turnrunway",
+      "name": "TurnRunway",
+      "type": "product",
+      "definition": "colset TurnRunway = product Turnaround * Runway timed;",
+      "color": "#64748b",
+      "timed": true
+    },
+    {
+      "id": "cs-turnseg",
+      "name": "TurnSeg",
+      "type": "product",
+      "definition": "colset TurnSeg = product Turnaround * TaxiSegment timed;",
+      "color": "#b45309",
+      "timed": true
+    },
+    {
+      "id": "cs-flightstand",
+      "name": "FlightStand",
+      "type": "product",
+      "definition": "colset FlightStand = product Flight * Stand timed;",
+      "color": "#0d9488",
+      "timed": true
+    },
+    {
+      "id": "cs-turnfueller",
+      "name": "TurnFueller",
+      "type": "product",
+      "definition": "colset TurnFueller = product Turnaround * Fueller timed;",
+      "color": "#dc2626",
+      "timed": true
+    },
+    {
+      "id": "cs-turnbus",
+      "name": "TurnBus",
+      "type": "product",
+      "definition": "colset TurnBus = product Turnaround * Bus timed;",
+      "color": "#d97706",
+      "timed": true
+    },
+    {
+      "id": "cs-turncatering",
+      "name": "TurnCatering",
+      "type": "product",
+      "definition": "colset TurnCatering = product Turnaround * CateringTruck timed;",
+      "color": "#0f766e",
+      "timed": true
+    },
+    {
+      "id": "cs-turncleaning",
+      "name": "TurnCleaning",
+      "type": "product",
+      "definition": "colset TurnCleaning = product Turnaround * CleaningTeam timed;",
+      "color": "#16a34a",
+      "timed": true
+    },
+    {
+      "id": "cs-turnramp",
+      "name": "TurnRamp",
+      "type": "product",
+      "definition": "colset TurnRamp = product Turnaround * RampTeam * Loader timed;",
+      "color": "#ea580c",
+      "timed": true
+    },
+    {
+      "id": "cs-turnservice",
+      "name": "TurnService",
+      "type": "product",
+      "definition": "colset TurnService = product Turnaround * ServiceTruck timed;",
+      "color": "#0e7490",
+      "timed": true
+    },
+    {
+      "id": "cs-turntug",
+      "name": "TurnTug",
+      "type": "product",
+      "definition": "colset TurnTug = product Turnaround * PushbackTug timed;",
+      "color": "#ca8a04",
+      "timed": true
+    },
+    {
+      "id": "cs-turndeicer",
+      "name": "TurnDeicer",
+      "type": "product",
+      "definition": "colset TurnDeicer = product Turnaround * DeicingTruck timed;",
+      "color": "#0284c7",
+      "timed": true
+    }
+  ],
+  "variables": [
+    {
+      "id": "var-0",
+      "name": "u",
+      "colorSet": "UNIT"
+    },
+    {
+      "id": "var-1",
+      "name": "k",
+      "colorSet": "INT"
+    },
+    {
+      "id": "var-2",
+      "name": "n",
+      "colorSet": "INT"
+    },
+    {
+      "id": "var-3",
+      "name": "fl",
+      "colorSet": "Flight"
+    },
+    {
+      "id": "var-4",
+      "name": "ac",
+      "colorSet": "Aircraft"
+    },
+    {
+      "id": "var-5",
+      "name": "tr",
+      "colorSet": "Turnaround"
+    },
+    {
+      "id": "var-6",
+      "name": "trd",
+      "colorSet": "Turnaround"
+    },
+    {
+      "id": "var-7",
+      "name": "st",
+      "colorSet": "Stand"
+    },
+    {
+      "id": "var-8",
+      "name": "rw",
+      "colorSet": "Runway"
+    },
+    {
+      "id": "var-9",
+      "name": "sg",
+      "colorSet": "TaxiSegment"
+    },
+    {
+      "id": "var-10",
+      "name": "sg2",
+      "colorSet": "TaxiSegment"
+    },
+    {
+      "id": "var-11",
+      "name": "uld",
+      "colorSet": "ULD"
+    },
+    {
+      "id": "var-12",
+      "name": "prm",
+      "colorSet": "PRMPax"
+    },
+    {
+      "id": "var-13",
+      "name": "fu",
+      "colorSet": "Fueller"
+    },
+    {
+      "id": "var-14",
+      "name": "bus",
+      "colorSet": "Bus"
+    },
+    {
+      "id": "var-15",
+      "name": "amb",
+      "colorSet": "Ambulift"
+    },
+    {
+      "id": "var-16",
+      "name": "agt",
+      "colorSet": "PRMAgent"
+    },
+    {
+      "id": "var-17",
+      "name": "cat",
+      "colorSet": "CateringTruck"
+    },
+    {
+      "id": "var-18",
+      "name": "cln",
+      "colorSet": "CleaningTeam"
+    },
+    {
+      "id": "var-19",
+      "name": "rmp",
+      "colorSet": "RampTeam"
+    },
+    {
+      "id": "var-20",
+      "name": "ldr",
+      "colorSet": "Loader"
+    },
+    {
+      "id": "var-21",
+      "name": "svc",
+      "colorSet": "ServiceTruck"
+    },
+    {
+      "id": "var-22",
+      "name": "tug",
+      "colorSet": "PushbackTug"
+    },
+    {
+      "id": "var-23",
+      "name": "dei",
+      "colorSet": "DeicingTruck"
+    }
+  ],
+  "priorities": [
+    {
+      "id": "prio-high",
+      "name": "P_HIGH",
+      "level": 100
+    },
+    {
+      "id": "prio-normal",
+      "name": "P_NORMAL",
+      "level": 1000
+    },
+    {
+      "id": "prio-low",
+      "name": "P_LOW",
+      "level": 10000
+    }
+  ],
+  "functions": [
+    {
+      "id": "fn-dist_m",
+      "name": "dist_m",
+      "code": "fn dist_m(x1, y1, x2, y2) {\n    // Straight-line apron distance in metres. Service roads are not straight, so\n    // callers apply a routing factor on top.\n    let dx = x2.to_float() - x1.to_float();\n    let dy = y2.to_float() - y1.to_float();\n    (dx * dx + dy * dy).sqrt()\n}"
+    },
+    {
+      "id": "fn-drive_min",
+      "name": "drive_min",
+      "code": "fn drive_min(x1, y1, x2, y2) {\n    // Ground-vehicle driving time between two apron positions. Apron service roads\n    // are speed-limited (30 km/h, less near stands); 22 km/h average = 367 m/min.\n    // 1.35 routing factor for the road layout, plus positioning/chocking at the stand.\n    let d = dist_m(x1, y1, x2, y2) * 1.35;\n    // Already standing at the aircraft (e.g. an ambulift making a second trip for the\n    // next assisted passenger): no repositioning, just the manoeuvre onto the sill.\n    if d < 50.0 { return 0.2; }\n    let t = d / 367.0 + 1.5;\n    if t < 1.0 { 1.0 } else { t }\n}"
+    },
+    {
+      "id": "fn-drive_sec_between",
+      "name": "drive_sec_between",
+      "code": "fn drive_sec_between(x1, y1, x2, y2) {\n    // Driving time in seconds, so it can be added to service durations before being\n    // wrapped in a single delay_sec(...) on the arc.\n    (drive_min(x1, y1, x2, y2) * 60.0).to_int()\n}"
+    },
+    {
+      "id": "fn-code_rank",
+      "name": "code_rank",
+      "code": "fn code_rank(c) {\n    // ICAO aerodrome reference code letter as an ordinal, so stand/tug capability\n    // can be compared against the aircraft that needs it.\n    if c == \"A\" { 1 } else if c == \"B\" { 2 } else if c == \"C\" { 3 }\n    else if c == \"D\" { 4 } else if c == \"E\" { 5 } else { 6 }\n}"
+    },
+    {
+      "id": "fn-stand_fits",
+      "name": "stand_fits",
+      "code": "fn stand_fits(st, ac, schengen) {\n    // A stand must be big enough for the code letter and on the right side of the\n    // Schengen border. Remote stands (\"B\") are bussed to either terminal.\n    let sr = code_rank(st.maxCode);\n    let ar = code_rank(ac.codeLetter);\n    // Big enough, but not wastefully big: a code-E stand is not given to a turboprop\n    // while wide-bodies are waiting for one.\n    if sr < ar || sr > ar + 1 { return false; }\n    if st.schengen == \"B\" { return true; }\n    if schengen { st.schengen == \"S\" } else { st.schengen == \"N\" }\n}"
+    },
+    {
+      "id": "fn-runway_fits",
+      "name": "runway_fits",
+      "code": "fn runway_fits(rw, ac) {\n    // Take-off run required: regional/narrow-bodies work off the shorter runway,\n    // wide-bodies and the A380 need the long one.\n    let need = if ac.body == \"regional\" { 1800 }\n               else if ac.body == \"narrow\" { 2400 }\n               else if ac.body == \"wide\" { 3000 }\n               else { 3300 };\n    rw.lengthM >= need\n}"
+    },
+    {
+      "id": "fn-uplift_l",
+      "name": "uplift_l",
+      "code": "fn uplift_l(body, sector_min) {\n    // Trip fuel plus reserves (contingency + alternate + final reserve ~ 12% + fixed).\n    // Cruise burn per minute: E190/ATR ~ 22 L, A320/B738 ~ 42 L, A330/B789 ~ 125 L, A380 ~ 220 L.\n    let burn = if body == \"regional\" { 22.0 }\n               else if body == \"narrow\" { 42.0 }\n               else if body == \"wide\" { 125.0 }\n               else { 220.0 };\n    let trip = burn * sector_min.to_float();\n    (trip * 1.12 + 1200.0).to_int()\n}"
+    },
+    {
+      "id": "fn-accept_lpm",
+      "name": "accept_lpm",
+      "code": "fn accept_lpm(body) {\n    // What the aircraft itself will take through its single-point refuelling coupling.\n    // A narrow-body accepts far less than a hydrant dispenser can deliver, so on those\n    // the aircraft is the bottleneck; on a wide-body the dispenser type starts to matter.\n    if body == \"regional\" { 700 }\n    else if body == \"narrow\" { 1100 }\n    else if body == \"wide\" { 3000 }\n    else { 4000 }\n}"
+    },
+    {
+      "id": "fn-fuel_sec",
+      "name": "fuel_sec",
+      "code": "fn fuel_sec(litres, rate_lpm, body) {\n    // Bonding, hose connection and metering, pumping at whichever of the dispenser and\n    // the aircraft manifold is slower, then disconnect and paperwork. Hydrant dispensers\n    // run ~2500 L/min and tankers ~1200 L/min, against a narrow-body's ~1100 L/min intake.\n    let acc = accept_lpm(body);\n    let rate = if rate_lpm < acc { rate_lpm } else { acc };\n    let pump = litres.to_float() / rate.to_float();\n    ((4.0 + pump + 3.0) * 60.0).to_int()\n}"
+    },
+    {
+      "id": "fn-deboard_sec",
+      "name": "deboard_sec",
+      "code": "fn deboard_sec(body, pax, contact) {\n    // Deplaning rate scales with the number of usable doors. A single airbridge on a\n    // narrow-body clears ~20 pax/min; a remote stand with front and rear stairs is\n    // faster (the bus cycle is added on top); a wide-body uses two bridges.\n    let rate = if body == \"regional\" { 15.0 }\n               else if body == \"narrow\" { 20.0 }\n               else if body == \"wide\" { 35.0 }\n               else { 50.0 };\n    if !contact { rate = rate * 1.35; }\n    ((2.0 + pax.to_float() / rate) * 60.0).to_int()\n}"
+    },
+    {
+      "id": "fn-board_sec",
+      "name": "board_sec",
+      "code": "fn board_sec(body, pax, contact) {\n    // Boarding is slower than deplaning: hand baggage stowage and seat finding.\n    let rate = if body == \"regional\" { 11.0 }\n               else if body == \"narrow\" { 13.0 }\n               else if body == \"wide\" { 22.0 }\n               else { 30.0 };\n    if !contact { rate = rate * 1.2; }\n    ((4.0 + pax.to_float() / rate) * 60.0).to_int()\n}"
+    },
+    {
+      "id": "fn-bus_sec",
+      "name": "bus_sec",
+      "code": "fn bus_sec(pax, cap) {\n    // Apron bus transfer between the terminal and a remote stand. Two or three buses\n    // are dispatched to the same aircraft and run their loads concurrently, so the\n    // transfer costs a whole cycle per *wave* of buses, not per bus run.\n    let runs = (pax + cap - 1) / cap;\n    if runs < 1 { runs = 1; }\n    let parallel = if runs > 2 { 3 } else { 2 };\n    let waves = (runs + parallel - 1) / parallel;\n    (waves.to_float() * 7.0 * 60.0).to_int()\n}"
+    },
+    {
+      "id": "fn-prm_sec",
+      "name": "prm_sec",
+      "code": "fn prm_sec(contact) {\n    // One assisted passenger. At a contact stand an agent with an aisle/transit chair\n    // takes ~2 min; at a remote stand the ambulift has to be raised to the door sill\n    // and lowered again, ~4 min per passenger.\n    let per = if contact { 2.0 } else { 4.0 };\n    (per * 60.0).to_int()\n}"
+    },
+    {
+      "id": "fn-clean_sec",
+      "name": "clean_sec",
+      "code": "fn clean_sec(body, carrier_type) {\n    // Cabin cleaning. A low-cost turnaround runs a \"security/tidy\" clean by the crew\n    // and a small team; a full-service carrier does a deeper clean between rotations.\n    // Reported A319 full cleans run ~18 min, wide-bodies considerably longer.\n    let base = if body == \"regional\" { 300 }\n               else if body == \"narrow\" { 480 }\n               else if body == \"wide\" { 1200 }\n               else { 1800 };\n    let spread = if carrier_type == \"low\" { discrete(60, 300) } else { discrete(420, 900) };\n    base + spread\n}"
+    },
+    {
+      "id": "fn-cater_sec",
+      "name": "cater_sec",
+      "code": "fn cater_sec(body, sector_min) {\n    // Catering uplift at the galley doors, in parallel with deplaning. Long sectors\n    // carry full meal service and take considerably longer to load.\n    let base = if body == \"regional\" { 240 }\n               else if body == \"narrow\" { 420 }\n               else if body == \"wide\" { 1080 }\n               else { 1500 };\n    let extra = if sector_min > 300 { discrete(600, 1200) } else { discrete(60, 300) };\n    base + extra\n}"
+    },
+    {
+      "id": "fn-hold_kind",
+      "name": "hold_kind",
+      "code": "fn hold_kind(type_code, carrier_type) {\n    // Whether the hold takes containers at all is a property of the airframe, not of\n    // its size class. The 737 family has no containerised hold - the cross-section is\n    // too small for LD-type containers - so every bag goes in loose off a belt loader,\n    // and the same is true of the regional jets and turboprops. The A320 family *can*\n    // take the reduced-height LD3-45 (AKH) container and network carriers use it, while\n    // the low-cost operators bulk-load to avoid the container handling.\n    if type_code == \"A333\" || type_code == \"B789\" || type_code == \"A388\" { return \"container\"; }\n    if type_code == \"A320\" || type_code == \"A321\" {\n        return if carrier_type == \"low\" { \"bulk\" } else { \"container\" };\n    }\n    \"bulk\"\n}"
+    },
+    {
+      "id": "fn-uld_count",
+      "name": "uld_count",
+      "code": "fn uld_count(hold, body, pax) {\n    // Bulk-loaded aircraft carry no containers at all: the unit of handling is the\n    // individual bag, so there is nothing here to become a ULD object.\n    if hold == \"bulk\" { return 0; }\n    let base = if body == \"wide\" { 12 } else if body == \"superheavy\" { 22 } else { 3 };\n    base + pax / 60\n}"
+    },
+    {
+      "id": "fn-uld_kind",
+      "name": "uld_kind",
+      "code": "fn uld_kind(body, n) {\n    // The A320 family takes the reduced-height LD3-45, coded AKH. Wide-bodies take\n    // full-height LD3 (AKE) with pallets for the heavier freight.\n    if body == \"wide\" || body == \"superheavy\" {\n        if n % 4 == 0 { \"PMC\" } else { \"AKE\" }\n    } else { \"AKH\" }\n}"
+    },
+    {
+      "id": "fn-loader_fits",
+      "name": "loader_fits",
+      "code": "fn loader_fits(loader_kind, hold) {\n    // Loose bags come off a belt loader; containers need a high loader that lifts the\n    // whole ULD to the sill. Neither can do the other's job.\n    if hold == \"bulk\" { loader_kind == \"belt\" } else { loader_kind == \"container\" }\n}"
+    },
+    {
+      "id": "fn-hold_sec",
+      "name": "hold_sec",
+      "code": "fn hold_sec(hold, pax, ulds, loading) {\n    // A bulk hold is worked bag by bag off a belt loader, so it scales with the number\n    // of bags; a containerised hold moves a few big boxes with a high loader. Loading\n    // is slower than unloading in both cases - bags have to be stacked and secured.\n    if hold == \"bulk\" {\n        let per = if loading { 2.6 } else { 2.1 };\n        (180.0 + pax.to_float() * 1.3 * per).to_int()\n    } else {\n        let per = if loading { 115.0 } else { 95.0 };\n        (240.0 + ulds.to_float() * per).to_int()\n    }\n}"
+    },
+    {
+      "id": "fn-hash01",
+      "name": "hash01",
+      "code": "fn hash01(n) {\n    // Deterministic pseudo-random value in [0,1) from an integer. Weather has to be a\n    // function of *time*, not a fresh draw per flight: otherwise two aircraft pushing\n    // back a minute apart get their own private weather.\n    let x = (n * 1103515245 + 12345) & 2147483647;\n    x = (x ^ (x >> 16)) * 40503;\n    x = x & 2147483647;\n    (x % 100000).to_float() / 100000.0\n}"
+    },
+    {
+      "id": "fn-smooth_noise",
+      "name": "smooth_noise",
+      "code": "fn smooth_noise(pos, seed) {\n    // Value noise: pick a random value per whole unit of `pos` and interpolate between\n    // them with a smoothstep. The result is continuous and autocorrelated, so the signal\n    // drifts instead of jumping - which is what makes a cold spell a spell.\n    let i = pos.floor();\n    let f = pos - i;\n    let a = hash01(i.to_int() * 7919 + seed);\n    let b = hash01((i.to_int() + 1) * 7919 + seed);\n    let s = f * f * (3.0 - 2.0 * f);\n    a + (b - a) * s\n}"
+    },
+    {
+      "id": "fn-seasonal_mean_c",
+      "name": "seasonal_mean_c",
+      "code": "fn seasonal_mean_c(t) {\n    // Monthly mean temperatures for a continental Central-European climate.\n    // Index 0 is unused; month() returns 1-12.\n    let means = [1.5, 0.2, 2.0, 6.5, 12.0, 17.0, 20.5, 22.5, 22.0, 17.0, 11.5, 5.5, 1.5];\n    means[month(t)]\n}"
+    },
+    {
+      "id": "fn-diurnal_c",
+      "name": "diurnal_c",
+      "code": "fn diurnal_c(t) {\n    // Daily cycle: coldest shortly before sunrise, warmest mid-afternoon. This is what\n    // puts de-icing on the morning bank and leaves the afternoon departures alone.\n    let h = hour_of_day(t).to_float() + minute_of_hour(t).to_float() / 60.0;\n    4.2 * ((h - 15.0) * 0.2618).cos()\n}"
+    },
+    {
+      "id": "fn-temp_anomaly_c",
+      "name": "temp_anomaly_c",
+      "code": "fn temp_anomaly_c(t) {\n    // Departure from the seasonal norm: a slow term for air masses that sit over the\n    // region for the best part of a week, plus a faster day-scale term. Both are\n    // continuous in time, so the daily mean moves by about 1.5 K from one day to the\n    // next and never by twenty.\n    let d = t.to_float() / 86400000.0;\n    let slow = (smooth_noise(d / 5.5, 11) - 0.5) * 2.0;\n    let fast = (smooth_noise(d / 1.2, 29) - 0.5) * 2.0;\n    slow * 5.5 + fast * 3.2\n}"
+    },
+    {
+      "id": "fn-temp_c",
+      "name": "temp_c",
+      "code": "fn temp_c(t) {\n    // Outside air temperature at the airport, in degrees Celsius.\n    seasonal_mean_c(t) + diurnal_c(t) + temp_anomaly_c(t)\n}"
+    },
+    {
+      "id": "fn-precip_at",
+      "name": "precip_at",
+      "code": "fn precip_at(t) {\n    // Precipitation comes in episodes lasting hours, on its own continuous signal.\n    let d = t.to_float() / 86400000.0;\n    smooth_noise(d / 0.9, 71) > 0.68\n}"
+    },
+    {
+      "id": "fn-needs_deicing",
+      "name": "needs_deicing",
+      "code": "fn needs_deicing(t) {\n    // De-icing is a property of the weather at that moment, not of the individual\n    // flight: inside a frost or snow event essentially every departure is treated,\n    // outside one essentially none. Precipitation at or below freezing contaminates\n    // the wing; a damp, clear, hard-frost night deposits enough to need a spray too,\n    // while a dry cold snap leaves the aircraft clean.\n    let temp = temp_c(t);\n    if temp > 3.0 { return false; }\n    if precip_at(t) && temp <= 1.0 { return true; }\n    let d = t.to_float() / 86400000.0;\n    smooth_noise(d / 1.3, 137) > 0.55 && temp <= -2.0\n}"
+    },
+    {
+      "id": "fn-demand_weight",
+      "name": "demand_weight",
+      "code": "fn demand_weight(h) {\n    // Hourly *arrival* demand at a based-fleet airport. The 05:00-08:00 wave is a\n    // departure bank - aircraft that night-stopped leaving on their first rotation -\n    // so arrivals only build from mid-morning and peak late in the evening as the\n    // fleet comes home. 00:01-05:00 is the night ban; what little moves then is a\n    // permitted exception.\n    if h < 5 { 0.04 }\n    else if h < 6 { 0.15 }\n    else if h < 8 { 0.85 }\n    else if h < 11 { 1.35 }\n    else if h < 16 { 1.05 }\n    else if h < 20 { 1.30 }\n    else if h < 23 { 1.60 }\n    else { 1.05 }\n}"
+    },
+    {
+      "id": "fn-in_night_ban",
+      "name": "in_night_ban",
+      "code": "fn in_night_ban(t) {\n    // Budapest has banned scheduled movements between 00:01 and 05:00 since 2019.\n    hour_of_day(t) < 5\n}"
+    },
+    {
+      "id": "fn-curfew_delay",
+      "name": "curfew_delay",
+      "code": "fn curfew_delay(base) {\n    // A departure that would fall inside the night ban becomes a night stop: the\n    // aircraft waits on stand until the airport reopens. This is what produces the\n    // early-morning departure bank rather than aircraft trickling out at 02:00.\n    let due = current_time() + base;\n    if !in_night_ban(due) { return base; }\n    let midnight = due - hour_of_day(due) * 3600000\n                       - minute_of_hour(due) * 60000\n                       - second_of_minute(due) * 1000;\n    // Spread the backlog across the first hour so the whole night does not push back\n    // in the same second.\n    let open = midnight + 5 * 3600000 + discrete(0, 3600) * 1000;\n    open - current_time()\n}"
+    },
+    {
+      "id": "fn-interarrival_sec",
+      "name": "interarrival_sec",
+      "code": "fn interarrival_sec(t) {\n    // About 175 arrivals a day (350 movements), shaped by the hourly demand profile.\n    // The base interval is scaled by the profile's mean weight (0.933) so the weighted\n    // day sums to the target instead of falling short of it.\n    //\n    // The profile describes when aircraft *land*, but what is being scheduled here is\n    // when the flight plan is filed - one sector earlier. Evaluating the weight at the\n    // expected landing time instead of now is what puts the evening peak in the evening\n    // rather than after midnight.\n    let mean = 461.0 / demand_weight(hour_of_day(t + 125 * 60000));\n    let s = exponential(1.0 / mean).to_int();\n    if s < 45 { 45 } else { s }\n}"
+    },
+    {
+      "id": "fn-load_factor",
+      "name": "load_factor",
+      "code": "fn load_factor(t, carrier_type) {\n    // How full a flight is has a large systematic component - the airline's business\n    // model, the season, the day of the week, the time of day - and only a modest\n    // per-flight residual. Drawing the whole thing per flight, as a flat uniform, makes\n    // a wet Tuesday in February look exactly like a Saturday in August.\n    let base = if carrier_type == \"low\" { 0.905 } else { 0.820 };\n\n    // Leisure-driven seasonality: a July/August peak, a February trough.\n    // Index 0 unused; month() returns 1-12.\n    let seasonal = [0.0, -0.065, -0.075, -0.030, 0.000, 0.015, 0.038, 0.055, 0.050, 0.025, 0.000, -0.045, -0.015];\n    // Friday and Sunday carry the weekend traffic; midweek is thinner. day_of_week()\n    // returns 0 for Sunday.\n    let weekday = [0.020, -0.020, -0.035, -0.035, -0.005, 0.035, 0.010];\n    // First and last departures of the day are the ones travellers fill first.\n    let h = hour_of_day(t);\n    let daily = if h < 8 { 0.030 } else if h < 11 { 0.005 }\n                else if h < 16 { -0.030 } else if h < 20 { 0.010 } else { 0.030 };\n\n    // normal(mean, variance) - 0.003025 is a standard deviation of 5.5 points.\n    let lf = base + seasonal[month(t)] + weekday[day_of_week(t)] + daily + normal(0.0, 0.003025);\n    if lf > 0.99 { lf = 0.99; }\n    if lf < 0.42 { lf = 0.42; }\n    lf\n}"
+    },
+    {
+      "id": "fn-pick_weighted",
+      "name": "pick_weighted",
+      "code": "fn pick_weighted(items) {\n    // Weighted draw from an array of maps carrying a \"w\" weight.\n    let total = 0;\n    for it in items { total += it.w; }\n    let r = discrete(1, total);\n    let acc = 0;\n    for it in items {\n        acc += it.w;\n        if r <= acc { return it; }\n    }\n    items[items.len() - 1]\n}"
+    },
+    {
+      "id": "fn-airlines",
+      "name": "airlines",
+      "code": "fn airlines() {\n    // Fictitious carriers, as in the original Airport Ground Handling example.\n    [\n        #{ w: 22, name: \"BorealJet\",        carrierType: \"low\",  acronym: \"BJ\" },\n        #{ w: 14, name: \"EmberAir\",         carrierType: \"low\",  acronym: \"EA\" },\n        #{ w:  9, name: \"FableFly\",         carrierType: \"low\",  acronym: \"FF\" },\n        #{ w:  7, name: \"OrchidJet\",        carrierType: \"low\",  acronym: \"OJ\" },\n        #{ w:  6, name: \"QuartzAir\",        carrierType: \"low\",  acronym: \"QA\" },\n        #{ w: 10, name: \"AuroraSkies Air\",  carrierType: \"full\", acronym: \"AS\" },\n        #{ w:  8, name: \"Cobalt Wings\",     carrierType: \"full\", acronym: \"CW\" },\n        #{ w:  7, name: \"DawnLine Airways\", carrierType: \"full\", acronym: \"DL\" },\n        #{ w:  6, name: \"HorizonVale Air\",  carrierType: \"full\", acronym: \"HV\" },\n        #{ w:  5, name: \"LumenWings\",       carrierType: \"full\", acronym: \"LW\" },\n        #{ w:  4, name: \"SilverKite\",       carrierType: \"full\", acronym: \"SK\" },\n        #{ w:  2, name: \"Nimbus Coast\",     carrierType: \"full\", acronym: \"NC\" }\n    ]\n}"
+    },
+    {
+      "id": "fn-stations",
+      "name": "stations",
+      "code": "fn stations(schengen, long_haul) {\n    if long_haul {\n        return [\"Dubai\", \"Doha\", \"New York JFK\", \"Seoul Incheon\", \"Beijing\", \"Shanghai Pudong\", \"Toronto\"];\n    }\n    if schengen {\n        [\"Vienna\", \"Munich\", \"Frankfurt\", \"Paris CDG\", \"Amsterdam\", \"Milan Malpensa\", \"Madrid\",\n         \"Berlin\", \"Zurich\", \"Brussels\", \"Copenhagen\", \"Stockholm Arlanda\", \"Warsaw\", \"Prague\", \"Lisbon\"]\n    } else {\n        [\"London Luton\", \"London Gatwick\", \"Dublin\", \"Istanbul\", \"Belgrade\", \"Bucharest\",\n         \"Kyiv\", \"Tel Aviv\", \"Skopje\", \"Tirana\", \"Manchester\", \"Edinburgh\"]\n    }\n}"
+    },
+    {
+      "id": "fn-airline_of",
+      "name": "airline_of",
+      "code": "fn airline_of(name) {\n    // The operator is a property of the airframe, so callsign and carrier type are\n    // looked up from it rather than drawn again per leg.\n    for a in airlines() { if a.name == name { return a; } }\n    airlines()[0]\n}"
+    },
+    {
+      "id": "fn-make_flight",
+      "name": "make_flight",
+      "code": "fn make_flight(seq, dir, ac, schengen, long_haul) {\n    let al = airline_of(ac.airline);\n    // One scheduled flight leg. Load factors run high at a leisure-heavy airport;\n    // PRM demand is ~1.1% of passengers (ACI Europe reports ~1% and rising).\n    let sector = if long_haul { discrete(430, 700) } else { discrete(55, 195) };\n    let pax = (ac.seats.to_float() * load_factor(current_time(), al.carrierType)).to_int();\n    let prm = poisson(pax.to_float() * 0.011);\n    let sts = stations(schengen, long_haul);\n    #{\n        id: dir + \"-\" + seq,\n        callsign: al.acronym + to_string(discrete(100, 999)),\n        airline: al.name,\n        carrierType: al.carrierType,\n        direction: dir,\n        schengen: schengen,\n        station: sts[discrete(0, sts.len() - 1)],\n        pax: pax,\n        prm: prm,\n        sectorMin: sector,\n        aircraft: ac\n    }\n}"
+    }
+  ],
+  "uses": [],
+  "values": [],
+  "fusionSets": [],
+  "monitors": [
+    {
+      "id": "mon-tat",
+      "name": "Turnaround time (AIBT → AOBT)",
+      "type": "interval-duration",
+      "enabled": true,
+      "placeIds": [],
+      "transitionIds": [
+        "a-t-inblock",
+        "d-t-push-start"
+      ],
+      "config": {
+        "startTransitionId": "a-t-inblock",
+        "endTransitionId": "d-t-push-start",
+        "correlationKey": "id"
+      }
+    },
+    {
+      "id": "mon-stands",
+      "name": "Stands occupied",
+      "type": "marking-size",
+      "enabled": true,
+      "placeIds": [
+        "p-stands"
+      ],
+      "transitionIds": [],
+      "config": {}
+    },
+    {
+      "id": "mon-takeoffs",
+      "name": "Departures",
+      "type": "transition-count",
+      "enabled": true,
+      "placeIds": [],
+      "transitionIds": [
+        "d-t-takeoff"
+      ],
+      "config": {}
+    },
+    {
+      "id": "mon-fuel-queue",
+      "name": "Aircraft waiting for fuel",
+      "type": "marking-size",
+      "enabled": true,
+      "placeIds": [
+        "p-fuel-in"
+      ],
+      "transitionIds": [],
+      "config": {}
+    },
+    {
+      "id": "mon-temp",
+      "name": "Outside air temperature (°C)",
+      "type": "data-collector",
+      "enabled": true,
+      "placeIds": [],
+      "transitionIds": [],
+      "config": {},
+      "observationScript": "temp_c(current_time())"
+    },
+    {
+      "id": "mon-deice",
+      "name": "De-icing operations",
+      "type": "transition-count",
+      "enabled": true,
+      "placeIds": [],
+      "transitionIds": [
+        "d-t-deice-start"
+      ],
+      "config": {}
+    }
+  ],
+  "simulationSettings": {
+    "stepsPerRun": 500,
+    "animationDelayMs": 60,
+    "simulationEpoch": "2026-01-15T06:00:00.000Z",
+    "endTimeMs": null,
+    "keepAwakeWhileRunning": true
+  },
+  "simulationEpoch": "2026-01-15T06:00:00.000Z",
+  "viewSettings": {
+    "showMarkingDisplay": false,
+    "showDeclareLayer": true
+  }
+}

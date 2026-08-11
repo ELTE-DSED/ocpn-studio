@@ -105,14 +105,20 @@ const initialPetriNet: PetriNet = {
   selectedElement: null,
 };
 
-// --- Undo batching state (module-level, used by handleSet) ---
+// --- Undo batching state (module-level, used by pauseUndo/resumeUndo) ---
 let _undoBatchDepth = 0;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _undoBatchFirstState: any = undefined;
-let _undoBatchReplace: boolean | undefined;
-// Reference to the real handleSet so endBatch can flush
+// The partialized state from just before the outermost pauseUndo(), captured by hand
+// because undo tracking is switched off for the duration of the batch (see pauseUndo).
+let _undoBatchFirstState: UndoState | undefined = undefined;
+// Reference to the real handleSet so resumeUndo can flush
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _realHandleSet: ((state: any, replace: any) => void) | undefined;
+
+// --- Validation gating (module-level, used by pauseValidation/resumeValidation) ---
+let _validationPausedDepth = 0;
+// Set once the auto-revalidation subscriber below is installed, so resumeValidation can
+// run the check that was skipped while paused.
+let _revalidateNow: (() => void) | undefined;
 
 // Helper to strip transient fields from petri nets for undo tracking
 const stripTransientPetriNetFields = (petriNetsById: Record<string, PetriNet>) => {
@@ -139,6 +145,43 @@ const stripTransientPetriNetFields = (petriNetsById: Record<string, PetriNet>) =
   }
   return result;
 };
+
+/** The slice of the store that undo/redo tracks. */
+const partializeForUndo = (state: StoreState) => ({
+  petriNetsById: state.petriNetsById,
+  petriNetOrder: state.petriNetOrder,
+  activePetriNetId: state.activePetriNetId,
+  colorSets: state.colorSets,
+  variables: state.variables,
+  priorities: state.priorities,
+  functions: state.functions,
+  uses: state.uses,
+  values: state.values,
+  fusionSets: state.fusionSets,
+  monitors: state.monitors,
+});
+
+type UndoState = ReturnType<typeof partializeForUndo>;
+
+/**
+ * Serialised form of the tracked slice, used to tell a real change from a no-op
+ * (a selection change, a `measured` event from React Flow, an opened-and-cancelled
+ * dialog). Deliberately not called per store write — see pauseUndo.
+ */
+const undoSnapshot = (state: UndoState): string =>
+  JSON.stringify({
+    petriNetsById: stripTransientPetriNetFields(state.petriNetsById),
+    petriNetOrder: state.petriNetOrder,
+    activePetriNetId: state.activePetriNetId,
+    colorSets: state.colorSets,
+    variables: state.variables,
+    priorities: state.priorities,
+    functions: state.functions,
+    uses: state.uses,
+    values: state.values,
+    fusionSets: state.fusionSets,
+    monitors: state.monitors,
+  });
 
 // this is our useStore hook that we can use in our components to get parts of the store and call actions
 const useStore = create<StoreState>()(temporal((set) => ({
@@ -416,6 +459,37 @@ const useStore = create<StoreState>()(temporal((set) => ({
         }
       }
       if (!found) return state;
+      return { petriNetsById: updatedNetsById };
+    });
+  },
+  updateNodeMarkings: (markings: Map<string, unknown[]>) => {
+    if (markings.size === 0) return;
+    set((state) => {
+      const updatedNetsById = { ...state.petriNetsById };
+      let changed = false;
+      for (const [netId, net] of Object.entries(state.petriNetsById)) {
+        // Cheap rejection first: most nets hold none of the places in a given batch, and
+        // rebuilding their node array anyway would defeat the point of batching.
+        if (!net.nodes.some((n) => markings.has(n.id))) continue;
+        const sel = net.selectedElement;
+        // Same reason as in updateNodeMarking: selectedElement holds its own snapshot of
+        // the node, taken at selection time, so the Properties panel would otherwise show
+        // a stale marking for a place that stayed selected across the batch.
+        const selMarking = sel?.type === 'node' ? markings.get(sel.element.id) : undefined;
+        updatedNetsById[netId] = {
+          ...net,
+          nodes: net.nodes.map((node) => {
+            const marking = markings.get(node.id);
+            return marking === undefined ? node : { ...node, data: { ...node.data, marking } };
+          }),
+          selectedElement:
+            selMarking !== undefined && sel?.type === 'node'
+              ? { ...sel, element: { ...sel.element, data: { ...sel.element.data, marking: selMarking } } }
+              : sel,
+        };
+        changed = true;
+      }
+      if (!changed) return state;
       return { petriNetsById: updatedNetsById };
     });
   },
@@ -1511,66 +1585,21 @@ const useStore = create<StoreState>()(temporal((set) => ({
 }),
   {
     handleSet: (handleSet) => {
-      // Capture the real handleSet so endBatch can flush
+      // Capture the real handleSet so resumeUndo can flush a batch's single entry
       _realHandleSet = handleSet;
-      // Flag-based batching: when _undoBatchDepth > 0, we hold the
-      // first pastState and only push it when the batch ends.
+      // Undo tracking is switched off outright for the duration of a batch (see
+      // pauseUndo), so this is not normally reached during one. The guard is a
+      // belt-and-braces against a set that slips through anyway, which would otherwise
+      // record an intermediate state as its own undo entry.
       return (pastState, replace) => {
-        if (_undoBatchDepth > 0) {
-          // Inside a batch — capture the first "before" state only
-          if (!_undoBatchFirstState) {
-            _undoBatchFirstState = pastState;
-            _undoBatchReplace = replace;
-          }
-          // Discard intermediate states
-          return;
-        }
-        // Not in a batch — record normally
+        if (_undoBatchDepth > 0) return;
         handleSet(pastState, replace);
       };
     },
-    partialize: (state) => ({
-      petriNetsById: state.petriNetsById,
-      petriNetOrder: state.petriNetOrder,
-      activePetriNetId: state.activePetriNetId,
-      colorSets: state.colorSets,
-      variables: state.variables,
-      priorities: state.priorities,
-      functions: state.functions,
-      uses: state.uses,
-      values: state.values,
-      fusionSets: state.fusionSets,
-      monitors: state.monitors,
-    }),
-    equality: (pastState, currentState) => {
-      // Compare serialized snapshots to avoid recording no-op changes
-      // (e.g. selection changes, node measured events)
-      return JSON.stringify({
-        petriNetsById: stripTransientPetriNetFields(pastState.petriNetsById as Record<string, PetriNet>),
-        petriNetOrder: pastState.petriNetOrder,
-        activePetriNetId: pastState.activePetriNetId,
-        colorSets: pastState.colorSets,
-        variables: pastState.variables,
-        priorities: pastState.priorities,
-        functions: pastState.functions,
-        uses: pastState.uses,
-        values: pastState.values,
-        fusionSets: pastState.fusionSets,
-        monitors: pastState.monitors,
-      }) === JSON.stringify({
-        petriNetsById: stripTransientPetriNetFields(currentState.petriNetsById as Record<string, PetriNet>),
-        petriNetOrder: currentState.petriNetOrder,
-        activePetriNetId: currentState.activePetriNetId,
-        colorSets: currentState.colorSets,
-        variables: currentState.variables,
-        priorities: currentState.priorities,
-        functions: currentState.functions,
-        uses: currentState.uses,
-        values: currentState.values,
-        fusionSets: currentState.fusionSets,
-        monitors: currentState.monitors,
-      });
-    },
+    partialize: partializeForUndo,
+    // Compare serialized snapshots to avoid recording no-op changes
+    // (e.g. selection changes, node measured events)
+    equality: (pastState, currentState) => undoSnapshot(pastState) === undoSnapshot(currentState),
     limit: 100,
   },
 ));
@@ -1581,7 +1610,7 @@ export default useStore;
 // Re-runs validation whenever model-relevant state changes.
 {
   let prevFingerprint = '';
-  useStore.subscribe((state) => {
+  const revalidate = (state: StoreState) => {
     // Build a lightweight fingerprint of validation-relevant fields only
     const fp = `${Object.keys(state.petriNetsById).length}:` +
       Object.values(state.petriNetsById).map(pn =>
@@ -1616,6 +1645,15 @@ export default useStore;
         useStore.setState({ validationErrors: errors });
       }
     }
+  };
+  _revalidateNow = () => revalidate(useStore.getState());
+  useStore.subscribe((state) => {
+    // Building the fingerprint walks every node and edge of every net. A simulation run
+    // writes to the store several times per fired transition and changes only markings,
+    // which the fingerprint does not include — so the whole walk is skipped for the
+    // duration of a run and made up for once, when validation resumes.
+    if (_validationPausedDepth > 0) return;
+    revalidate(state);
   });
   // Run initial validation
   const initState = useStore.getState();
@@ -1664,8 +1702,22 @@ export const isStoreDirty = (): boolean => {
 /**
  * Begin an undo batch. All state changes until the matching `resumeUndo()`
  * are collapsed into a single undo entry. Nestable (e.g., dialog inside drag).
+ *
+ * The batch switches zundo's tracking off rather than merely discarding the entries it
+ * produces. While tracking is on, zundo runs `partialize` *and* `equality` on every
+ * single store write — and `equality` serialises the whole model, markings included.
+ * A simulation run writes markings several times per fired transition, so leaving
+ * tracking on and throwing the results away cost a handful of full-model
+ * `JSON.stringify` calls per step: the dominant term in both a long run's CPU time and
+ * its allocation rate.
  */
 export const pauseUndo = () => {
+  if (_undoBatchDepth === 0) {
+    // Tracking is about to go off, so capture the "before" state by hand — this is what
+    // zundo would otherwise have handed to handleSet on the batch's first write.
+    _undoBatchFirstState = partializeForUndo(useStore.getState());
+    useStore.temporal.getState().pause();
+  }
   _undoBatchDepth++;
 };
 
@@ -1676,10 +1728,35 @@ export const pauseUndo = () => {
 export const resumeUndo = () => {
   if (_undoBatchDepth <= 0) return;
   _undoBatchDepth--;
-  if (_undoBatchDepth === 0 && _undoBatchFirstState !== undefined && _realHandleSet) {
-    // Flush: push the pre-batch state onto the undo stack
-    _realHandleSet(_undoBatchFirstState, _undoBatchReplace as Parameters<typeof _realHandleSet>[1]);
-    _undoBatchFirstState = undefined;
-    _undoBatchReplace = undefined;
-  }
+  if (_undoBatchDepth > 0) return;
+
+  useStore.temporal.getState().resume();
+  const pastState = _undoBatchFirstState;
+  _undoBatchFirstState = undefined;
+  if (pastState === undefined || !_realHandleSet) return;
+
+  // zundo's own equality check never ran for the writes inside the batch, so do it once
+  // here: a batch that changed nothing (an opened-and-cancelled dialog, a drag that
+  // ended where it started) must not leave an undo entry behind.
+  if (undoSnapshot(pastState) === undoSnapshot(partializeForUndo(useStore.getState()))) return;
+
+  // Flush: push the pre-batch state onto the undo stack
+  _realHandleSet(pastState, undefined);
+};
+
+/**
+ * Suspend the auto-revalidation subscriber. It fingerprints every node and edge of every
+ * net on each store write, which during a simulation run is pure overhead: a run only
+ * changes markings, and markings are not part of the fingerprint. Nestable; the check
+ * that was skipped runs once when the outermost pause is lifted.
+ */
+export const pauseValidation = () => {
+  _validationPausedDepth++;
+};
+
+/** Resume auto-revalidation, re-running the check once if this closes the outermost pause. */
+export const resumeValidation = () => {
+  if (_validationPausedDepth <= 0) return;
+  _validationPausedDepth--;
+  if (_validationPausedDepth === 0) _revalidateNow?.();
 };

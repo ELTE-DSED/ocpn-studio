@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Upload, FileUp, Plane, Package } from "lucide-react"
+import { Upload, FileUp, Plane, PlaneTakeoff, Package } from "lucide-react"
 import { toast } from "sonner"
 import * as fsa from "@/utils/fileSystemAccess"
 
@@ -19,7 +19,8 @@ import * as fsa from "@/utils/fileSystemAccess"
  * so adding one is a matter of dropping the .ocpn in there and adding a row here.
  */
 const EXAMPLES = [
-  { file: "airport.ocpn", label: "Airport Ground Handling", icon: Plane },
+  { file: "airport.ocpn", label: "Airport Ground Handling (Simple)", icon: Plane },
+  { file: "airport-extended.ocpn", label: "Airport Ground Handling (Extended)", icon: PlaneTakeoff },
   { file: "order-management.ocpn", label: "Order Management", icon: Package },
 ] as const
 
@@ -165,12 +166,11 @@ export function OpenDialog({ open, onOpenChange, onFileLoaded }: OpenDialogProps
             </Button>
           </div>
         </div>
-        {/* The label sits on its own line rather than inline with the first example: with the
-            label taking up the start of the row, a wrapped second example lands under the
-            label instead of under the example above it, and the column reads as ragged. */}
+        {/* One example per row: the names are long enough that a two-column grid truncates
+            them, and a list stays readable however many examples get added. */}
         <div className="space-y-1.5 text-sm">
           <span className="text-muted-foreground">Or try an example:</span>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          <div className="flex flex-col items-start gap-1">
             {EXAMPLES.map(({ file, label, icon: Icon }) => (
               <Button
                 key={file}
@@ -180,9 +180,7 @@ export function OpenDialog({ open, onOpenChange, onFileLoaded }: OpenDialogProps
                 disabled={loadingExample !== null}
               >
                 <Icon className="mr-1.5 h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">
-                  {loadingExample === file ? `Loading ${label}\u2026` : label}
-                </span>
+                <span>{loadingExample === file ? `Loading ${label}\u2026` : label}</span>
               </Button>
             ))}
           </div>

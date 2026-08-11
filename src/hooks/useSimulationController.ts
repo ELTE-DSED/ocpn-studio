@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import useStore, { pauseUndo, resumeUndo } from '@/stores/store';
+import useStore, { pauseUndo, resumeUndo, pauseValidation, resumeValidation } from '@/stores/store';
 import init, { WasmSimulator, type InitOutput } from '@rwth-pads/cpnsim';
 import { PetriNetData, convertToJSON } from '@/utils/FileOperations';
 import type { SimulationEvent } from '@/components/EventLog'; // Import SimulationEvent
@@ -567,6 +567,7 @@ export function useSimulationController() {
 
   // Get necessary actions/state selectors from Zustand store
   const updateNodeMarking = useStore((state) => state.updateNodeMarking);
+  const updateNodeMarkings = useStore((state) => state.updateNodeMarkings);
   const applyInitialMarkings = useStore((state) => state.applyInitialMarkings);
 
   // Helper function to find a node by ID across all Petri nets in the store
@@ -580,6 +581,59 @@ export function useSimulationController() {
     }
     return undefined; // Return undefined if not found
   }, []); // No dependencies, relies on getState
+
+  // During a chunked run, marking changes are staged here instead of going straight into
+  // the store. Every store write rebuilds the owning net's node array, runs the undo
+  // middleware over it and re-renders each subscribed place — and one fired transition
+  // touches one place per arc, so a chunk of 250 steps would otherwise be ~800 writes.
+  // Non-null means staging is active; flushed once per chunk, so the canvas still
+  // visibly advances while the run proceeds.
+  const pendingMarkingsRef = useRef<Map<string, unknown[]> | null>(null);
+
+  /** A place's current marking: the staged value during a run, the store's otherwise. */
+  const readMarking = useCallback((nodeId: string): unknown[] => {
+    const staged = pendingMarkingsRef.current?.get(nodeId);
+    if (staged) return staged;
+    // Marking in store should ideally be an array already
+    const markingSource = findNodeById(nodeId)?.data?.marking;
+    if (Array.isArray(markingSource)) return markingSource;
+    // Handle single number marking
+    if (typeof markingSource === 'number') return [markingSource];
+    if (typeof markingSource === 'string' && markingSource.trim() !== '') {
+      // Fallback: try parsing if it's a string
+      try {
+        const parsed = JSON.parse(markingSource);
+        return Array.isArray(parsed) ? parsed : [parsed];
+      } catch (error) {
+        console.error(`Error reading/parsing marking for node ${nodeId}:`, markingSource, error);
+      }
+    }
+    return [];
+  }, [findNodeById]);
+
+  /** Write a place's marking — staged during a run, straight to the store otherwise. */
+  const writeMarking = useCallback((nodeId: string, marking: unknown[]) => {
+    if (pendingMarkingsRef.current) pendingMarkingsRef.current.set(nodeId, marking);
+    else updateNodeMarking(nodeId, marking);
+  }, [updateNodeMarking]);
+
+  /** Apply everything staged since the last flush as a single store write. */
+  const flushPendingMarkings = useCallback(() => {
+    const pending = pendingMarkingsRef.current;
+    if (!pending || pending.size === 0) return;
+    pendingMarkingsRef.current = new Map();
+    // Guard: this is a simulation update, not a model edit. Without it the
+    // auto-invalidation subscriber would see the write and discard the simulator
+    // mid-run. Restored rather than cleared, since chunks flush from inside the
+    // guarded region as well.
+    const wasUpdating = isSimulationUpdatingRef.current;
+    isSimulationUpdatingRef.current = true;
+    try {
+      updateNodeMarkings(pending);
+    } finally {
+      isSimulationUpdatingRef.current = wasUpdating;
+    }
+  }, [updateNodeMarkings]);
 
   // Callback for the WASM event listener
   // Stable callback: Dependencies are stable functions/setters
@@ -597,12 +651,9 @@ export function useSimulationController() {
       const portIds = socketToPortMapRef.current.get(nodeId);
       if (portIds && portIds.length > 0) {
         // Get the latest marking from the socket place
-        const socketNode = findNodeById(nodeId);
-        const marking = socketNode?.data?.marking;
-        if (Array.isArray(marking)) {
-          for (const portId of portIds) {
-            updateNodeMarking(portId, [...marking]);
-          }
+        const marking = readMarking(nodeId);
+        for (const portId of portIds) {
+          writeMarking(portId, [...marking]);
         }
       }
     };
@@ -612,28 +663,7 @@ export function useSimulationController() {
       eventData.consumed.forEach((tokens: number[], nodeId: string) => {
         const node = findNodeById(nodeId); // Use helper
         if (node && node.type === 'place') {
-          let currentMarking: number[] = [];
-          try {
-            // Get the latest marking directly from the store state for accuracy
-            const latestNodeState = findNodeById(nodeId); // Use helper
-            const markingSource = latestNodeState?.data?.marking;
-            // Marking in store should ideally be an array already
-            if (Array.isArray(markingSource)) {
-              currentMarking = markingSource;
-            } else if (typeof markingSource === 'number') {
-              // Handle single number marking
-              currentMarking = [markingSource];
-            } else if (typeof markingSource === 'string' && markingSource.trim() !== '') {
-              // Fallback: try parsing if it's a string
-              const parsedMarking = JSON.parse(markingSource);
-              currentMarking = Array.isArray(parsedMarking) ? parsedMarking : [parsedMarking];
-            }
-          } catch (error) {
-            console.error(`Error reading/parsing marking for node ${nodeId}:`, node.data.marking, error);
-            currentMarking = [];
-          }
-
-          const updatedMarking = [...currentMarking]; // Clone to modify
+          const updatedMarking = [...readMarking(nodeId)]; // Clone to modify
           tokens.forEach((token: number) => {
             const tokenString = tokenToString(token); // Compare by normalized string representation
             const index = updatedMarking.findIndex(mToken => tokenToString(mToken) === tokenString);
@@ -644,8 +674,8 @@ export function useSimulationController() {
               console.warn(`Token not found for removal in node ${nodeId}:`, token, updatedMarking);
             }
           });
-          // Update the store with the new marking (which should be an array)
-          updateNodeMarking(nodeId, updatedMarking);
+          // Record the new marking (which should be an array)
+          writeMarking(nodeId, updatedMarking);
           syncPortPlaces(nodeId);
         } else {
           // Log if the node wasn't found or wasn't a place
@@ -661,30 +691,11 @@ export function useSimulationController() {
       eventData.produced.forEach((tokens: number[], nodeId: string) => {
         const node = findNodeById(nodeId); // Use helper
         if (node && node.type === 'place') {
-          let currentMarking: number[] = [];
-           try {
-             // Get the latest marking directly from the store state
-            const latestNodeState = findNodeById(nodeId); // Use helper
-            const markingSource = latestNodeState?.data?.marking;
-             if (Array.isArray(markingSource)) {
-              currentMarking = markingSource;
-            } else if (typeof markingSource === 'number') {
-              // Handle single number marking
-              currentMarking = [markingSource];
-            } else if (typeof markingSource === 'string' && markingSource.trim() !== '') {
-              const parsedMarking = JSON.parse(markingSource);
-              currentMarking = Array.isArray(parsedMarking) ? parsedMarking : [parsedMarking];
-            }
-          } catch (error) {
-            console.error(`Error reading/parsing marking for node ${nodeId}:`, node.data.marking, error);
-            currentMarking = [];
-          }
-
           // Add produced tokens to the cloned marking (normalize Map objects to plain objects)
           const normalizedTokens = tokens.map(t => normalizeToken(t));
-          const updatedMarking = [...currentMarking, ...normalizedTokens];
-          // Update the store
-          updateNodeMarking(nodeId, updatedMarking);
+          const updatedMarking = [...readMarking(nodeId), ...normalizedTokens];
+          // Record the new marking
+          writeMarking(nodeId, updatedMarking);
           syncPortPlaces(nodeId);
         } else {
            console.warn(`Place node not found or invalid for produced event: ${nodeId}`);
@@ -766,7 +777,7 @@ export function useSimulationController() {
     // so calling getMonitorResults() here would cause "recursive use of an object".
 
   // Keep dependencies stable: only include functions/setters
-  }, [updateNodeMarking, findNodeById, setStepCounter, setEvents, setSimulationTime]);
+  }, [readMarking, writeMarking, findNodeById, setStepCounter, setEvents, setSimulationTime]);
 
   // Function to initialize or re-initialize the WASM simulator
   async function _initializeWasm() {
@@ -1296,6 +1307,8 @@ export function useSimulationController() {
     setRunning(true);
     stopRequestedRef.current = false;
     pauseUndo();
+    // A run changes nothing validation looks at — see pauseValidation.
+    pauseValidation();
     setRunProgress({ phase: 'firing', current: 0, total: steps, stepsPerSecond: 0 });
 
     // Wait for a painted frame so the disabled buttons and progress readout are on screen
@@ -1313,6 +1326,7 @@ export function useSimulationController() {
 
         if (typeof simulator.runMultipleSteps === 'function') {
           eventBufferRef.current = [];
+          pendingMarkingsRef.current = new Map();
           const runStartedAt = performance.now();
           let lastFlushAt = runStartedAt;
           let lastPaintAt = runStartedAt;
@@ -1360,6 +1374,10 @@ export function useSimulationController() {
               } finally {
                 isSimulationUpdatingRef.current = false;
               }
+
+              // Fold the chunk's staged marking changes into the store as one write, so
+              // the canvas is consistent before the yield below lets React render.
+              flushPendingMarkings();
 
               const chunkElapsed = performance.now() - chunkStartedAt;
               chunkSteps = nextChunkSize(requested, chunkElapsed);
@@ -1410,6 +1428,8 @@ export function useSimulationController() {
           await yieldToBrowser();
           flushEventBuffer();
           eventBufferRef.current = null;
+          flushPendingMarkings();
+          pendingMarkingsRef.current = null;
           // Fetch monitor and Declare constraint results after batch execution
           _fetchMonitorResults();
           _fetchDeclareResults();
@@ -1447,13 +1467,17 @@ export function useSimulationController() {
         }
       }
     } finally {
-      // Never strand buffered events: if anything above threw past the inner handler,
-      // the log would otherwise silently lose the steps that did run.
+      // Never strand buffered events or staged markings: if anything above threw past the
+      // inner handler, the log would otherwise silently lose the steps that did run and
+      // the canvas would show a marking the simulator has already moved on from.
       flushEventBuffer();
       eventBufferRef.current = null;
+      flushPendingMarkings();
+      pendingMarkingsRef.current = null;
       setRunProgress(null);
       setRunning(false);
       resumeUndo();
+      resumeValidation();
     }
   };
 
@@ -1477,6 +1501,8 @@ export function useSimulationController() {
     setRunning(true);
     stopRequestedRef.current = false;
     pauseUndo();
+    // A run changes nothing validation looks at — see pauseValidation.
+    pauseValidation();
 
     // Initialize before reading the clock: `simulationTime` is React state that can still
     // hold the last run's value when the simulator behind it has been thrown away (a model
@@ -1491,6 +1517,7 @@ export function useSimulationController() {
     if (endTimeMs !== null && endTimeMs <= startTime) {
       setRunning(false);
       resumeUndo();
+      resumeValidation();
       const epoch = useStore.getState().simulationEpoch;
       toast.info('Nothing to run', {
         description: `The simulation is already at ${formatSimulationTime(startTime, epoch ? new Date(epoch) : null)} — its end time is not in the future.`,
@@ -1565,6 +1592,7 @@ export function useSimulationController() {
       }
 
       eventBufferRef.current = [];
+      pendingMarkingsRef.current = new Map();
       const runStartedAt = performance.now();
       let lastFlushAt = runStartedAt;
       let lastPaintAt = runStartedAt;
@@ -1611,6 +1639,10 @@ export function useSimulationController() {
             isSimulationUpdatingRef.current = false;
           }
 
+          // Fold the chunk's staged marking changes into the store as one write, so the
+          // canvas is consistent before the yield below lets React render.
+          flushPendingMarkings();
+
           const chunkElapsed = performance.now() - chunkStartedAt;
           chunkSteps = nextChunkSize(chunkSteps, chunkElapsed);
 
@@ -1655,6 +1687,8 @@ export function useSimulationController() {
       await yieldToBrowser();
       flushEventBuffer();
       eventBufferRef.current = null;
+      flushPendingMarkings();
+      pendingMarkingsRef.current = null;
       _fetchMonitorResults();
       _fetchDeclareResults();
       _fetchBlockedTransitions();
@@ -1664,13 +1698,17 @@ export function useSimulationController() {
       }
       _checkDeadlockForUnresolvedConstraints();
     } finally {
-      // Never strand buffered events: if anything above threw past the inner handler,
-      // the log would otherwise silently lose the steps that did run.
+      // Never strand buffered events or staged markings: if anything above threw past the
+      // inner handler, the log would otherwise silently lose the steps that did run and
+      // the canvas would show a marking the simulator has already moved on from.
       flushEventBuffer();
       eventBufferRef.current = null;
+      flushPendingMarkings();
+      pendingMarkingsRef.current = null;
       setRunProgress(null);
       setRunning(false);
       resumeUndo();
+      resumeValidation();
       await wakeLock?.release();
     }
   };

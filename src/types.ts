@@ -349,6 +349,13 @@ export type AppActions = {
   addEdge: (petriNetId: string, edge: Edge) => void;
   updateNode: (petriNetId: string, node: Node) => void;
   updateNodeMarking: (id: string, newMarking: unknown[]) => void;
+  /**
+   * Apply many places' markings in a single store write. A chunked simulation run stages
+   * its marking changes and flushes them through here once per chunk: written one at a
+   * time, each place would rebuild its net's node array and re-render every subscribed
+   * node, several times per fired transition.
+   */
+  updateNodeMarkings: (markings: Map<string, unknown[]>) => void;
   updateNodeData: (petriNetId: string, id: string, newData: PlaceNodeData | TransitionNodeData | AuxTextNodeData) => void;
   updateEdgeData: (petriNetId: string, id: string, newData: Record<string, unknown>) => void;
   updateEdgeLabel: (petriNetId: string, id: string, newLabel: string) => void;

@@ -9,6 +9,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Upload } from 'lucide-react';
 import useStore from '@/stores/store';
+import type { MarkingColumn } from '@/utils/markingColumns';
+import {
+  deriveMarkingColumns,
+  getAtPath,
+  setAtPath,
+  coerceCellValue,
+  formatCellValue,
+  createDefaultValue,
+} from '@/utils/markingColumns';
 
 export interface TimedToken {
   value: unknown;
@@ -25,8 +34,6 @@ interface TimedMarkingDialogProps {
   onOpenChange: (open: boolean) => void;
   colorSetName: string;
   colorSetType: 'int' | 'bool' | 'string' | 'unit' | 'other';
-  /** Record attributes for record-type color sets */
-  recordAttributes?: RecordAttribute[];
   initialData: TimedToken[];
   onSave: (tokens: TimedToken[]) => void;
   /** Dialog title prefix — defaults to "Edit Timed Marking" (the original, model-editing
@@ -88,33 +95,6 @@ function datetimeToMs(datetime: string, epoch: Date): number {
 }
 
 // Parse value based on attribute type
-function parseValue(value: string, type: string): string | number | boolean {
-  const upperType = type.toUpperCase();
-  if (upperType === 'INT') {
-    const parsed = parseInt(value, 10);
-    return isNaN(parsed) ? 0 : parsed;
-  } else if (upperType === 'REAL') {
-    const parsed = parseFloat(value);
-    return isNaN(parsed) ? 0.0 : parsed;
-  } else if (upperType === 'BOOL') {
-    return value.toLowerCase() === 'true';
-  }
-  return value;
-}
-
-// Create a default record value from attributes
-function createDefaultRecord(attributes: RecordAttribute[]): Record<string, unknown> {
-  const record: Record<string, unknown> = {};
-  attributes.forEach((attr) => {
-    const upperType = attr.type.toUpperCase();
-    if (upperType === 'INT') record[attr.name] = 0;
-    else if (upperType === 'REAL') record[attr.name] = 0.0;
-    else if (upperType === 'BOOL') record[attr.name] = false;
-    else record[attr.name] = '';
-  });
-  return record;
-}
-
 // === Simple row editor for non-record types ===
 
 function TokenEditorRow({ token, index, colorSetType, epoch, onChange, onRemove }: TokenEditorRowProps) {
@@ -395,7 +375,6 @@ export function TimedMarkingDialog({
   onOpenChange,
   colorSetName,
   colorSetType,
-  recordAttributes,
   initialData,
   onSave,
   titleLabel = "Edit Timed Marking",
@@ -408,8 +387,17 @@ export function TimedMarkingDialog({
   const [jsonError, setJsonError] = useState<string | null>(null);
   const simulationEpoch = useStore((state) => state.simulationEpoch);
   const epoch = simulationEpoch ? new Date(simulationEpoch) : null;
+  const colorSets = useStore((state) => state.colorSets);
 
-  const isRecordType = recordAttributes && recordAttributes.length > 0;
+  // Columns come from the colour set's own definition rather than the `recordAttributes`
+  // prop: that prop is built by a caller that still carries hardcoded demo attributes for a
+  // couple of names, and it covers records only, so a product like
+  // `colset Catalog = product Product * INT` never got a table at all.
+  const columns = useMemo(
+    () => deriveMarkingColumns(colorSetName, colorSets),
+    [colorSetName, colorSets]
+  );
+  const isTabular = !!columns && columns.length > 0;
 
   /* eslint-disable react-hooks/set-state-in-effect -- Dialog data reset on open */
   useEffect(() => {
@@ -436,8 +424,8 @@ export function TimedMarkingDialog({
 
   const handleAddToken = () => {
     let defaultValue: unknown;
-    if (isRecordType) {
-      defaultValue = createDefaultRecord(recordAttributes);
+    if (isTabular) {
+      defaultValue = createDefaultValue(columns!);
     } else {
       defaultValue = colorSetType === 'int' ? 0 :
         colorSetType === 'bool' ? true :
@@ -463,12 +451,15 @@ export function TimedMarkingDialog({
     if (currentPage > newTotalPages) setCurrentPage(newTotalPages);
   };
 
-  const handleRecordFieldChange = (tokenIndex: number, fieldName: string, fieldType: string, rawValue: string) => {
+  const handleCellChange = (tokenIndex: number, column: MarkingColumn, rawValue: string) => {
     const newTokens = [...tokens];
-    const currentValue = newTokens[tokenIndex].value as Record<string, unknown>;
     newTokens[tokenIndex] = {
       ...newTokens[tokenIndex],
-      value: { ...currentValue, [fieldName]: parseValue(rawValue, fieldType) },
+      value: setAtPath(
+        newTokens[tokenIndex].value,
+        column.path,
+        coerceCellValue(rawValue, column.type, column.kind)
+      ),
     };
     setTokens(newTokens);
   };
@@ -486,8 +477,8 @@ export function TimedMarkingDialog({
 
   // CSV template download (includes Timestamp column)
   const generateCsvTemplate = () => {
-    if (!isRecordType) return;
-    const headers = [...recordAttributes.map((attr) => attr.name), 'Timestamp'].join(',');
+    if (!isTabular) return;
+    const headers = [...columns!.map((column) => column.label), 'Timestamp'].join(',');
     const csvContent = `data:text/csv;charset=utf-8,${headers}\n`;
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
@@ -519,8 +510,8 @@ export function TimedMarkingDialog({
         }
       } catch {
         // Try CSV
-        if (!isRecordType) {
-          setJsonError('Non-record types only support JSON import');
+        if (!isTabular) {
+          setJsonError('Only record and product colour sets support CSV import');
           return;
         }
         try {
@@ -533,13 +524,19 @@ export function TimedMarkingDialog({
           for (let i = 1; i < lines.length; i++) {
             if (!lines[i].trim()) continue;
             const values = lines[i].split(',').map((v) => v.trim());
-            const record: Record<string, unknown> = {};
+            // Rebuild through the column paths, so a flattened product round-trips back into
+            // its nested shape rather than into a flat object of dotted keys.
+            let value: unknown = createDefaultValue(columns!);
 
             fieldHeaders.forEach((header) => {
               const colIdx = headers.indexOf(header);
-              const attr = recordAttributes.find((a) => a.name === header);
-              if (attr && colIdx >= 0 && colIdx < values.length) {
-                record[header] = parseValue(values[colIdx], attr.type);
+              const column = columns!.find((c) => c.label === header);
+              if (column && colIdx >= 0 && colIdx < values.length) {
+                value = setAtPath(
+                  value,
+                  column.path,
+                  coerceCellValue(values[colIdx], column.type, column.kind)
+                );
               }
             });
 
@@ -547,7 +544,7 @@ export function TimedMarkingDialog({
               ? (parseInt(values[tsIndex], 10) || 0)
               : 0;
 
-            parsedTokens.push({ value: record, timestamp });
+            parsedTokens.push({ value, timestamp });
           }
 
           setTokens(parsedTokens);
@@ -610,14 +607,14 @@ export function TimedMarkingDialog({
     />
   ) : null;
 
-  const renderRecordTable = () => (
+  const renderColumnTable = () => (
     <div>
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              {recordAttributes!.map((attr) => (
-                <TableHead key={attr.name}>{attr.name}</TableHead>
+              {columns!.map((column) => (
+                <TableHead key={column.label} className="whitespace-nowrap">{column.label}</TableHead>
               ))}
               <TableHead className="min-w-[160px]">Timestamp</TableHead>
               <TableHead className="w-[50px]"></TableHead>
@@ -626,22 +623,23 @@ export function TimedMarkingDialog({
           <TableBody>
             {paginatedTokens.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={recordAttributes!.length + 2} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={columns!.length + 2} className="text-center text-muted-foreground py-8">
                   No tokens. Click &quot;Add Token&quot; to add one.
                 </TableCell>
               </TableRow>
             ) : (
               paginatedTokens.map((token, pageIdx) => {
                 const idx = globalIndex(pageIdx);
-                const record = (token.value || {}) as Record<string, unknown>;
                 return (
                   <TableRow key={idx}>
-                    {recordAttributes!.map((attr) => (
-                      <TableCell key={attr.name} className="p-1">
+                    {columns!.map((column) => (
+                      <TableCell key={column.label} className="p-1">
                         <Input
-                          value={record[attr.name]?.toString() ?? ''}
-                          onChange={(e) => handleRecordFieldChange(idx, attr.name, attr.type, e.target.value)}
-                          className="h-7 text-xs"
+                          value={formatCellValue(getAtPath(token.value, column.path), column.kind)}
+                          onChange={(e) => handleCellChange(idx, column, e.target.value)}
+                          className={column.kind === 'json'
+                            ? 'h-7 text-xs font-mono min-w-[180px]'
+                            : 'h-7 text-xs'}
                         />
                       </TableCell>
                     ))}
@@ -692,7 +690,7 @@ export function TimedMarkingDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={isRecordType ? 'max-w-[90vw] sm:max-w-[90vw] xl:max-w-6xl' : 'max-w-3xl sm:max-w-3xl'}>
+      <DialogContent className={isTabular ? 'max-w-[90vw] sm:max-w-[90vw] xl:max-w-6xl' : 'max-w-3xl sm:max-w-3xl'}>
         <DialogHeader>
           <DialogTitle>{titleLabel} for {colorSetName}</DialogTitle>
         </DialogHeader>
@@ -704,7 +702,7 @@ export function TimedMarkingDialog({
               {epoch && <span className="ml-2">(Epoch: {epoch.toLocaleString()})</span>}
             </div>
             <div className="flex items-center gap-2">
-              {isRecordType && (
+              {isTabular && (
                 <Button variant="outline" size="sm" onClick={generateCsvTemplate}>
                   <Download className="h-4 w-4 mr-1" />
                   CSV Template
@@ -734,7 +732,7 @@ export function TimedMarkingDialog({
               <TabsTrigger value="json">JSON Editor</TabsTrigger>
             </TabsList>
             <TabsContent value="visual" className="space-y-2">
-              {isRecordType ? renderRecordTable() : renderSimpleList()}
+              {isTabular ? renderColumnTable() : renderSimpleList()}
             </TabsContent>
             <TabsContent value="json">
               <div className="space-y-2">

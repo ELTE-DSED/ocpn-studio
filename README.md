@@ -20,7 +20,7 @@
 - **OCEL 2.0 export** — Export simulated event logs in the OCEL 2.0 standard format for process mining. Mark individual transitions as scaffolding rather than business events and they stay out of the log; by default a transition is included when it is connected to an object place
 - **File format support** — Open and save `.ocpn` (native JSON), `.cpn` (CPN Tools XML), `.pnml` (PNML, partial support), and `.json` (CPNPy) files
 - **Auto-layout** — Arrange nets automatically using Dagre, ELK, or our own Sugiyama-based layouting algorithm developed in our research
-- **Built-in examples** — Get started instantly with the Airport Ground Handling process example via the **Open** button
+- **Built-in examples** — Get started instantly via the **Open** button: a compact Airport Ground Handling process, an Order Management process, and an extended airport model — a BUD-scale fictitious hub whose turnaround follows the [A-CDM](https://skybrary.aero/articles/airport-collaborative-decision-making-cdm) milestones (M1 flight plan filed through M16 take-off) across six hierarchical pages, with taxiway segments, Schengen/non-Schengen contact and remote stands, hydrant and tanker refuelling, and passengers with reduced mobility as first-class objects
 - **AI assistant** — Optional AI-powered sidebar for modeling guidance (OpenAI API key required)
 
 ## Getting Started
