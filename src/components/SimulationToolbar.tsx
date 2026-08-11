@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { SimulationContext } from '@/context/useSimulationContextHook';
 import { useRunProgress, type RunProgress } from '@/hooks/useRunProgress';
 import useStore from '@/stores/store';
-import { formatSimulationTime } from '@/utils/timeFormat';
+import { formatSimulationTime, formatDuration } from '@/utils/timeFormat';
 
 type RunMode = 'animated' | 'fast' | 'untilTime' | null;
 
@@ -334,6 +334,11 @@ export function SimulationToolbar() {
             <span className="text-muted-foreground tabular-nums whitespace-nowrap shrink-0">
               {progress.countsLabel ?? `${progress.current}/${progress.total}`}
               {progress.stepsPerSecond > 0 && ` · ${Math.round(progress.stepsPerSecond)}/s`}
+              {/* Only while still firing: during the wrap-up pass the bar sits at 100% and a
+                  countdown to a moment already reached would be nonsense. The tilde is doing
+                  real work — this is an extrapolation, not a deadline. */}
+              {progress.phase === 'firing' && progress.etaMs !== undefined &&
+                ` · ~${formatDuration(progress.etaMs)} left`}
             </span>
           </div>
           <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-muted">

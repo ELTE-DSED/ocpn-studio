@@ -31,6 +31,13 @@ export interface RunProgress {
    * has a distance to it. The bar animates rather than filling.
    */
   indeterminate?: boolean;
+  /**
+   * Estimated wall-clock milliseconds until the run finishes, already smoothed and rounded
+   * by the ETA estimator. Absent whenever no honest estimate exists: an open-ended run, the
+   * opening seconds before there is a rate to extrapolate from, or a stall where model time
+   * has stopped advancing.
+   */
+  etaMs?: number;
 }
 
 // Deliberately NOT React context and NOT the zustand store. Progress ticks several times

@@ -6,6 +6,7 @@ import type { SimulationEvent } from '@/components/EventLog'; // Import Simulati
 import { v4 as uuidv4 } from 'uuid'; // For generating unique event IDs
 import { type SimulationConfig, DEFAULT_SIMULATION_CONFIG } from '@/context/useSimulationContextHook';
 import { setRunProgress, patchRunProgress, type RunProgress } from '@/hooks/useRunProgress';
+import { createEtaEstimator } from '@/utils/etaEstimator';
 import { applyDebugLoggingToWasm, isDebugLoggingEnabled } from '@/utils/debugLogging';
 import { formatDuration, formatSimulationTime } from '@/utils/timeFormat';
 import { requestWakeLock, type WakeLockHandle } from '@/utils/wakeLock';
@@ -1499,7 +1500,15 @@ export function useSimulationController() {
     }
 
     const timeSpan = endTimeMs !== null ? endTimeMs - startTime : 0;
-    const progressFor = (current: number, stepsPerSecond: number, steps: number): RunProgress =>
+    // Only a bounded run has a distance left to run, so only that branch carries an ETA.
+    const etaEstimator = endTimeMs !== null ? createEtaEstimator(timeSpan) : null;
+
+    const progressFor = (
+      current: number,
+      stepsPerSecond: number,
+      steps: number,
+      etaMs?: number,
+    ): RunProgress =>
       endTimeMs !== null
         ? {
             phase: 'firing',
@@ -1508,6 +1517,7 @@ export function useSimulationController() {
             stepsPerSecond,
             lastTransitionName: lastFiredTransitionNameRef.current,
             countsLabel: `${formatDuration(current - startTime)} / ${formatDuration(timeSpan)}`,
+            etaMs,
           }
         : {
             phase: 'firing',
@@ -1604,11 +1614,17 @@ export function useSimulationController() {
           const chunkElapsed = performance.now() - chunkStartedAt;
           chunkSteps = nextChunkSize(chunkSteps, chunkElapsed);
 
-          const runElapsedSec = (performance.now() - runStartedAt) / 1000;
+          const runElapsedMs = performance.now() - runStartedAt;
+          const runElapsedSec = runElapsedMs / 1000;
           setRunProgress(progressFor(
             currentTime,
             runElapsedSec > 0 ? executed / runElapsedSec : 0,
             executed,
+            etaEstimator?.update(
+              Math.min(currentTime - startTime, timeSpan),
+              executed,
+              runElapsedMs,
+            ),
           ));
 
           if (finished) break;
