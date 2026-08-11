@@ -1,0 +1,2452 @@
+{
+  "ocpnName": "Order Management",
+  "metadata": {
+    "name": "Order Management",
+    "description": "This process describes the management of customer orders within a company, comprising both the registration and payment of incoming orders, as well as the process of packing and shipping these orders. For these tasks, our company deploys staff in their sales, warehousing, and shipment departments.\n\nThe model is a port of the Order Management log generated with CPN Tools, which itself extends an earlier legacy log.",
+    "authors": [
+      "István Koren",
+      "Benedikt Knopp",
+      "Wil van der Aalst"
+    ],
+    "url": "https://ocel-standard.org/event-logs/simulations/order-management/",
+    "version": "1.0",
+    "license": "MIT",
+    "created": "2026-08-11T12:07:49.747Z",
+    "modified": "2026-08-11T12:56:41.281Z",
+    "generator": "OCPN Studio 0.8.1"
+  },
+  "petriNets": [
+    {
+      "id": "order-management",
+      "name": "Order Management",
+      "places": [
+        {
+          "id": "p-sales",
+          "name": "Sales staff",
+          "colorSet": "Employee",
+          "initialMarking": "[{\"id\": \"Wil van der Aalst\", \"role\": \"Sales\"}, {\"id\": \"Christine von Dobbert\", \"role\": \"Sales\"}, {\"id\": \"Jan Niklas Adams\", \"role\": \"Sales\"}, {\"id\": \"Mara Nitschke\", \"role\": \"Sales\"}, {\"id\": \"Istvan Koren\", \"role\": \"Sales\"}]",
+          "marking": [
+            {
+              "id": "Wil van der Aalst",
+              "role": "Sales"
+            },
+            {
+              "id": "Christine von Dobbert",
+              "role": "Sales"
+            },
+            {
+              "id": "Jan Niklas Adams",
+              "role": "Sales"
+            },
+            {
+              "id": "Mara Nitschke",
+              "role": "Sales"
+            },
+            {
+              "id": "Istvan Koren",
+              "role": "Sales"
+            }
+          ],
+          "position": {
+            "x": 105,
+            "y": -524.4315927425196
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 18.321066959372015,
+            "y": 24.1739149785529
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-wh",
+          "name": "Warehouse staff",
+          "colorSet": "Employee",
+          "initialMarking": "[{\"id\": \"Benedikt Knopp\", \"role\": \"Warehousing\"}, {\"id\": \"Christopher Schwanen\", \"role\": \"Warehousing\"}, {\"id\": \"Leah Tacke genannt Unterberg\", \"role\": \"Warehousing\"}, {\"id\": \"Detlef Wetzeler\", \"role\": \"Warehousing\"}, {\"id\": \"Marco Pegoraro\", \"role\": \"Warehousing\"}, {\"id\": \"Nina Graves\", \"role\": \"Warehousing\"}, {\"id\": \"Mahsa Bafrani\", \"role\": \"Warehousing\"}]",
+          "marking": [
+            {
+              "id": "Benedikt Knopp",
+              "role": "Warehousing"
+            },
+            {
+              "id": "Christopher Schwanen",
+              "role": "Warehousing"
+            },
+            {
+              "id": "Leah Tacke genannt Unterberg",
+              "role": "Warehousing"
+            },
+            {
+              "id": "Detlef Wetzeler",
+              "role": "Warehousing"
+            },
+            {
+              "id": "Marco Pegoraro",
+              "role": "Warehousing"
+            },
+            {
+              "id": "Nina Graves",
+              "role": "Warehousing"
+            },
+            {
+              "id": "Mahsa Bafrani",
+              "role": "Warehousing"
+            }
+          ],
+          "position": {
+            "x": 894.6427143488022,
+            "y": 188.67224229119455
+          },
+          "size": {
+            "width": 85,
+            "height": 46
+          },
+          "colorSetOffset": {
+            "x": 15.261831408364129,
+            "y": 22.790534873308697
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-shp",
+          "name": "Shipping staff",
+          "colorSet": "Employee",
+          "initialMarking": "[{\"id\": \"Alessandro Berti\", \"role\": \"Shipment\"}, {\"id\": \"Eduardo Goulart Rocha\", \"role\": \"Shipment\"}, {\"id\": \"Majid Rafiei\", \"role\": \"Shipment\"}, {\"id\": \"Viki Peeva\", \"role\": \"Shipment\"}, {\"id\": \"Yisong Zhang\", \"role\": \"Shipment\"}, {\"id\": \"Gyunam Park\", \"role\": \"Shipment\"}]",
+          "marking": [
+            {
+              "id": "Alessandro Berti",
+              "role": "Shipment"
+            },
+            {
+              "id": "Eduardo Goulart Rocha",
+              "role": "Shipment"
+            },
+            {
+              "id": "Majid Rafiei",
+              "role": "Shipment"
+            },
+            {
+              "id": "Viki Peeva",
+              "role": "Shipment"
+            },
+            {
+              "id": "Yisong Zhang",
+              "role": "Shipment"
+            },
+            {
+              "id": "Gyunam Park",
+              "role": "Shipment"
+            }
+          ],
+          "position": {
+            "x": 655.6092549307139,
+            "y": -101.6339593859669
+          },
+          "size": {
+            "width": 70,
+            "height": 43
+          },
+          "colorSetOffset": {
+            "x": 31.31261018576697,
+            "y": 19.253537059935315
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-cust",
+          "name": "Customers",
+          "colorSet": "Customer",
+          "initialMarking": "[{\"id\": \"Nordica Systems GmbH\", \"primary\": \"Wil van der Aalst\", \"secondary\": \"Istvan Koren\"}, {\"id\": \"AlpenTech Innovations AG\", \"primary\": \"Wil van der Aalst\", \"secondary\": \"Istvan Koren\"}, {\"id\": \"Baltic Wave Energies Ltd.\", \"primary\": \"Wil van der Aalst\", \"secondary\": \"Christine von Dobbert\"}, {\"id\": \"Mediterranea Luxury Cruises S.p.A.\", \"primary\": \"Wil van der Aalst\", \"secondary\": \"Christine von Dobbert\"}, {\"id\": \"Pantheon Art Gallery Kft.\", \"primary\": \"Istvan Koren\", \"secondary\": \"Christine von Dobbert\"}, {\"id\": \"Riviera Robotics SAS\", \"primary\": \"Istvan Koren\", \"secondary\": \"Christine von Dobbert\"}, {\"id\": \"Celtica Green Farms Oy\", \"primary\": \"Istvan Koren\", \"secondary\": \"Mara Nitschke\"}, {\"id\": \"Balkan Minerals d.o.o.\", \"primary\": \"Christine von Dobbert\", \"secondary\": \"Mara Nitschke\"}, {\"id\": \"Iberian Sun Solaridades SA\", \"primary\": \"Christine von Dobbert\", \"secondary\": \"Mara Nitschke\"}, {\"id\": \"Danube Pharmaceuticals BV\", \"primary\": \"Christine von Dobbert\", \"secondary\": \"Mara Nitschke\"}, {\"id\": \"SwissPeak Timepieces AG\", \"primary\": \"Christine von Dobbert\", \"secondary\": \"Jan Niklas Adams\"}, {\"id\": \"Carpathian Financial Services plc\", \"primary\": \"Jan Niklas Adams\", \"secondary\": \"Istvan Koren\"}, {\"id\": \"Vesta Fashion House GmbH\", \"primary\": \"Jan Niklas Adams\", \"secondary\": \"Istvan Koren\"}, {\"id\": \"Eastern Oak Insurance Zrt.\", \"primary\": \"Mara Nitschke\", \"secondary\": \"Istvan Koren\"}, {\"id\": \"Golden Fleece Textiles S.A.R.L.\", \"primary\": \"Mara Nitschke\", \"secondary\": \"Jan Niklas Adams\"}]",
+          "marking": [
+            {
+              "id": "Nordica Systems GmbH",
+              "primary": "Wil van der Aalst",
+              "secondary": "Istvan Koren"
+            },
+            {
+              "id": "AlpenTech Innovations AG",
+              "primary": "Wil van der Aalst",
+              "secondary": "Istvan Koren"
+            },
+            {
+              "id": "Baltic Wave Energies Ltd.",
+              "primary": "Wil van der Aalst",
+              "secondary": "Christine von Dobbert"
+            },
+            {
+              "id": "Mediterranea Luxury Cruises S.p.A.",
+              "primary": "Wil van der Aalst",
+              "secondary": "Christine von Dobbert"
+            },
+            {
+              "id": "Pantheon Art Gallery Kft.",
+              "primary": "Istvan Koren",
+              "secondary": "Christine von Dobbert"
+            },
+            {
+              "id": "Riviera Robotics SAS",
+              "primary": "Istvan Koren",
+              "secondary": "Christine von Dobbert"
+            },
+            {
+              "id": "Celtica Green Farms Oy",
+              "primary": "Istvan Koren",
+              "secondary": "Mara Nitschke"
+            },
+            {
+              "id": "Balkan Minerals d.o.o.",
+              "primary": "Christine von Dobbert",
+              "secondary": "Mara Nitschke"
+            },
+            {
+              "id": "Iberian Sun Solaridades SA",
+              "primary": "Christine von Dobbert",
+              "secondary": "Mara Nitschke"
+            },
+            {
+              "id": "Danube Pharmaceuticals BV",
+              "primary": "Christine von Dobbert",
+              "secondary": "Mara Nitschke"
+            },
+            {
+              "id": "SwissPeak Timepieces AG",
+              "primary": "Christine von Dobbert",
+              "secondary": "Jan Niklas Adams"
+            },
+            {
+              "id": "Carpathian Financial Services plc",
+              "primary": "Jan Niklas Adams",
+              "secondary": "Istvan Koren"
+            },
+            {
+              "id": "Vesta Fashion House GmbH",
+              "primary": "Jan Niklas Adams",
+              "secondary": "Istvan Koren"
+            },
+            {
+              "id": "Eastern Oak Insurance Zrt.",
+              "primary": "Mara Nitschke",
+              "secondary": "Istvan Koren"
+            },
+            {
+              "id": "Golden Fleece Textiles S.A.R.L.",
+              "primary": "Mara Nitschke",
+              "secondary": "Jan Niklas Adams"
+            }
+          ],
+          "position": {
+            "x": 376.41134757000685,
+            "y": -725.6331750253271
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 24.464926601525836,
+            "y": 19.65758840243295
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-catalog",
+          "name": "Products",
+          "colorSet": "Catalog",
+          "initialMarking": "[[{\"id\": \"iPhone 11 Pro\", \"weight\": 0.188, \"price\": 1149.0}, 0], [{\"id\": \"iPhone 11\", \"weight\": 0.166, \"price\": 799.0}, 0], [{\"id\": \"iPhone X\", \"weight\": 0.172, \"price\": 699.0}, 0], [{\"id\": \"iPhone 8\", \"weight\": 0.21, \"price\": 529.0}, 0], [{\"id\": \"iPad Pro\", \"weight\": 0.483, \"price\": 1099.0}, 0], [{\"id\": \"iPad Air\", \"weight\": 0.44, \"price\": 476.0}, 0], [{\"id\": \"iPad\", \"weight\": 0.483, \"price\": 495.0}, 0], [{\"id\": \"iPad mini\", \"weight\": 0.28, \"price\": 449.0}, 0], [{\"id\": \"MacBook Air\", \"weight\": 1.25, \"price\": 2200.0}, 0], [{\"id\": \"MacBook Pro\", \"weight\": 1.37, \"price\": 2500.0}, 0], [{\"id\": \"Echo Show 5\", \"weight\": 0.88, \"price\": 89.99}, 0], [{\"id\": \"Echo Show 8\", \"weight\": 0.98, \"price\": 129.99}, 0], [{\"id\": \"Echo Dot\", \"weight\": 0.38, \"price\": 29.99}, 0], [{\"id\": \"Echo\", \"weight\": 0.78, \"price\": 99.99}, 0], [{\"id\": \"Echo Plus\", \"weight\": 1.28, \"price\": 149.99}, 0], [{\"id\": \"Echo Studio\", \"weight\": 1.48, \"price\": 199.99}, 0], [{\"id\": \"Fire Stick\", \"weight\": 0.2, \"price\": 39.99}, 0], [{\"id\": \"Fire Stick 4K\", \"weight\": 0.28, \"price\": 89.99}, 0], [{\"id\": \"Kindle\", \"weight\": 0.483, \"price\": 79.99}, 0], [{\"id\": \"Kindle Paperwhite\", \"weight\": 0.495, \"price\": 129.0}, 0]]",
+          "marking": [
+            [
+              {
+                "id": "iPhone 11 Pro",
+                "price": 1149,
+                "weight": 0.188
+              },
+              0
+            ],
+            [
+              {
+                "id": "iPhone 11",
+                "price": 799,
+                "weight": 0.166
+              },
+              0
+            ],
+            [
+              {
+                "id": "iPhone X",
+                "price": 699,
+                "weight": 0.172
+              },
+              0
+            ],
+            [
+              {
+                "id": "iPhone 8",
+                "price": 529,
+                "weight": 0.21
+              },
+              0
+            ],
+            [
+              {
+                "id": "iPad Pro",
+                "price": 1099,
+                "weight": 0.483
+              },
+              0
+            ],
+            [
+              {
+                "id": "iPad Air",
+                "price": 476,
+                "weight": 0.44
+              },
+              0
+            ],
+            [
+              {
+                "id": "iPad",
+                "price": 495,
+                "weight": 0.483
+              },
+              0
+            ],
+            [
+              {
+                "id": "iPad mini",
+                "price": 449,
+                "weight": 0.28
+              },
+              0
+            ],
+            [
+              {
+                "id": "MacBook Air",
+                "price": 2200,
+                "weight": 1.25
+              },
+              0
+            ],
+            [
+              {
+                "id": "MacBook Pro",
+                "price": 2500,
+                "weight": 1.37
+              },
+              0
+            ],
+            [
+              {
+                "id": "Echo Show 5",
+                "price": 89.99,
+                "weight": 0.88
+              },
+              0
+            ],
+            [
+              {
+                "id": "Echo Show 8",
+                "price": 129.99,
+                "weight": 0.98
+              },
+              0
+            ],
+            [
+              {
+                "id": "Echo Dot",
+                "price": 29.99,
+                "weight": 0.38
+              },
+              0
+            ],
+            [
+              {
+                "id": "Echo",
+                "price": 99.99,
+                "weight": 0.78
+              },
+              0
+            ],
+            [
+              {
+                "id": "Echo Plus",
+                "price": 149.99,
+                "weight": 1.28
+              },
+              0
+            ],
+            [
+              {
+                "id": "Echo Studio",
+                "price": 199.99,
+                "weight": 1.48
+              },
+              0
+            ],
+            [
+              {
+                "id": "Fire Stick",
+                "price": 39.99,
+                "weight": 0.2
+              },
+              0
+            ],
+            [
+              {
+                "id": "Fire Stick 4K",
+                "price": 89.99,
+                "weight": 0.28
+              },
+              0
+            ],
+            [
+              {
+                "id": "Kindle",
+                "price": 79.99,
+                "weight": 0.483
+              },
+              0
+            ],
+            [
+              {
+                "id": "Kindle Paperwhite",
+                "price": 129,
+                "weight": 0.495
+              },
+              0
+            ]
+          ],
+          "position": {
+            "x": -144.92310088823209,
+            "y": -1052.167013460047
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 17.80794569209755,
+            "y": 24.31523258474147
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-ids",
+          "name": "next id",
+          "colorSet": "INT",
+          "initialMarking": "[1]",
+          "marking": [
+            1
+          ],
+          "position": {
+            "x": 765,
+            "y": -827.3311030835223
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-left",
+          "name": "orders left",
+          "colorSet": "INT",
+          "initialMarking": "[2000]",
+          "marking": [
+            2000
+          ],
+          "position": {
+            "x": 259.5061230305218,
+            "y": -532.6077209049474
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-arrival",
+          "name": "arrival",
+          "colorSet": "UNIT",
+          "initialMarking": "[timed((), 28800000)]",
+          "marking": [
+            null
+          ],
+          "position": {
+            "x": 375.68227841534474,
+            "y": -488.46934067764096
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-build",
+          "name": "building",
+          "colorSet": "Draft",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": -144.92310088823209,
+            "y": -616
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 15.977004070850887,
+            "y": 24.348663952766074
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-confirm",
+          "name": "to confirm",
+          "colorSet": "Order",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": -24.02299592914911,
+            "y": -420
+          },
+          "size": {
+            "width": 75,
+            "height": 40
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-fulfil",
+          "name": "to fulfil",
+          "colorSet": "Order",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": -135.6095474017627,
+            "y": -194
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 19.153842730252563,
+            "y": 21.67558766591126
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-topay",
+          "name": "to pay",
+          "colorSet": "Order",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 105,
+            "y": -160
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 16.088160934887874,
+            "y": 22.298820314562203
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-payok",
+          "name": "pay due",
+          "colorSet": "Order",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 350,
+            "y": -280.4221088452156
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 19.910142183423634,
+            "y": 25.044928908288185
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-paylate",
+          "name": "pay overdue",
+          "colorSet": "Order",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 350,
+            "y": -40
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-paid",
+          "name": "paid",
+          "colorSet": "Order",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 646.2451874236039,
+            "y": -280.4221088452156
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 22.62516157207231,
+            "y": 21.424903056756612
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-topick",
+          "name": "to pick",
+          "colorSet": "Item",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 220,
+            "y": 531.316160821222
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-instock",
+          "name": "in stock",
+          "colorSet": "Item",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 220,
+            "y": 191.67224229119455
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 15.136167929695802,
+            "y": 24.404682449212938
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-nostock",
+          "name": "out of stock",
+          "colorSet": "Item",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 480,
+            "y": 330
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 12.209465126691303,
+            "y": 22.790534873308697
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-reorder",
+          "name": "reordering",
+          "colorSet": "Item",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 779.8840285109619,
+            "y": 330
+          },
+          "size": {
+            "width": 68,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 24.99428761376593,
+            "y": 12.820368631429702
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-await",
+          "name": "awaiting",
+          "colorSet": "OrderCount",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 598.0479292512699,
+            "y": 42
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 17.60517317591698,
+            "y": 21.101179071644488
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-toship",
+          "name": "to ship",
+          "colorSet": "Package",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 897.3752580685547,
+            "y": 42
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 12.30747446522623,
+            "y": 28.484278224291998
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-transit",
+          "name": "in transit",
+          "colorSet": "Package",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1228,
+            "y": 42
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 12.30747446522623,
+            "y": 24.864432793343106
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-delok",
+          "name": "delivery due",
+          "colorSet": "Package",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1761.184325650507,
+            "y": 42
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-delfail",
+          "name": "delivery failed",
+          "colorSet": "Package",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 1472.8794394598779,
+            "y": 172
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-done",
+          "name": "delivered",
+          "colorSet": "Package",
+          "initialMarking": "",
+          "marking": [],
+          "position": {
+            "x": 2066.546007270873,
+            "y": 42
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 16.860342707675876,
+            "y": 22.538007563891746
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-infl",
+          "name": "inflation",
+          "colorSet": "Inflation",
+          "initialMarking": "[[0, 0.0, 0.0]]",
+          "marking": [
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "position": {
+            "x": 261.63087962117055,
+            "y": -1052.167013460047
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 7.1900410128882335,
+            "y": 26.01244873388971
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        },
+        {
+          "id": "p-inflclk",
+          "name": "inflation clock",
+          "colorSet": "UNIT",
+          "initialMarking": "[timed((), 28800000)]",
+          "marking": [
+            null
+          ],
+          "position": {
+            "x": 675.1091959351028,
+            "y": -1052.167013460047
+          },
+          "size": {
+            "width": 60,
+            "height": 40
+          },
+          "colorSetOffset": {
+            "x": 15.278837152387496,
+            "y": 26.01244873388971
+          },
+          "markingOffset": {
+            "x": -10,
+            "y": -46
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "t-start",
+          "name": "start order",
+          "guard": "k > 0",
+          "time": "",
+          "priority": "P_NORMAL",
+          "codeSegment": "let nitems = poisson(2.829) + 1;",
+          "position": {
+            "x": 360.68227841534474,
+            "y": -618
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": false
+        },
+        {
+          "id": "t-add",
+          "name": "add item",
+          "guard": "n > 0",
+          "time": "",
+          "priority": "P_HIGH",
+          "codeSegment": "let it = #{id: \"i-\" + ct, product: prod.id, weight: prod.weight, price: prod.price, order: oid};",
+          "position": {
+            "x": -159.92310088823209,
+            "y": -829.3311030835223
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": false
+        },
+        {
+          "id": "t-place",
+          "name": "place order",
+          "guard": "n == 0",
+          "time": "",
+          "priority": "P_NORMAL",
+          "codeSegment": "let tp = 0.0;\nfor x in its { tp += x.price; }\nlet ord = #{id: oid, items: its, customer: cid, price: (tp * 100.0).round() / 100.0};",
+          "position": {
+            "x": -159.92310088823209,
+            "y": -422
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "t-confirm",
+          "name": "confirm order",
+          "guard": "",
+          "time": "",
+          "priority": "P_NORMAL",
+          "codeSegment": "",
+          "position": {
+            "x": 90,
+            "y": -420
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "t-paycheck",
+          "name": "check payment",
+          "guard": "",
+          "time": "",
+          "priority": "P_HIGH",
+          "codeSegment": "let ok = bernoulli(0.78) == 1;",
+          "position": {
+            "x": 335,
+            "y": -162
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": false
+        },
+        {
+          "id": "t-pay",
+          "name": "pay order",
+          "guard": "",
+          "time": "",
+          "priority": "P_NORMAL",
+          "codeSegment": "",
+          "position": {
+            "x": 486.3799741484685,
+            "y": -282.4221088452156
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "t-remind",
+          "name": "payment reminder",
+          "guard": "",
+          "time": "",
+          "priority": "P_NORMAL",
+          "codeSegment": "",
+          "position": {
+            "x": 89.99999999999999,
+            "y": -42
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "t-explode",
+          "name": "explode order",
+          "guard": "",
+          "time": "",
+          "priority": "P_HIGH",
+          "codeSegment": "",
+          "position": {
+            "x": -150.6095474017627,
+            "y": 40
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": false
+        },
+        {
+          "id": "t-stockcheck",
+          "name": "check stock",
+          "guard": "",
+          "time": "",
+          "priority": "P_HIGH",
+          "codeSegment": "let ok = bernoulli(0.832) == 1;",
+          "position": {
+            "x": 205,
+            "y": 328
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": false
+        },
+        {
+          "id": "t-pick",
+          "name": "pick item",
+          "guard": "item.order == ord.id",
+          "time": "",
+          "priority": "P_NORMAL",
+          "codeSegment": "",
+          "position": {
+            "x": 583.0479292512699,
+            "y": 189.67224229119455
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "t-oos",
+          "name": "item out of stock",
+          "guard": "",
+          "time": "",
+          "priority": "P_NORMAL",
+          "codeSegment": "",
+          "position": {
+            "x": 620.7557599641582,
+            "y": 328
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "t-reorder",
+          "name": "reorder item",
+          "guard": "",
+          "time": "",
+          "priority": "P_NORMAL",
+          "codeSegment": "",
+          "position": {
+            "x": 892.1427143488022,
+            "y": 328
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "t-pack",
+          "name": "create package",
+          "guard": "n == 0",
+          "time": "",
+          "priority": "P_NORMAL",
+          "codeSegment": "let tw = 0.0;\nfor x in ord.items { tw += x.weight; }\nlet pkg = #{id: \"p-\" + ct, items: ord.items, weight: (tw * 1000.0).round() / 1000.0, shipper: shp.id};",
+          "position": {
+            "x": 750,
+            "y": 40
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "t-send",
+          "name": "send package",
+          "guard": "",
+          "time": "",
+          "priority": "P_NORMAL",
+          "codeSegment": "",
+          "position": {
+            "x": 1010,
+            "y": 40
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "t-delcheck",
+          "name": "check delivery",
+          "guard": "",
+          "time": "",
+          "priority": "P_HIGH",
+          "codeSegment": "let ok = bernoulli(0.784) == 1;",
+          "position": {
+            "x": 1457.8794394598779,
+            "y": 40
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": false
+        },
+        {
+          "id": "t-deliver",
+          "name": "package delivered",
+          "guard": "",
+          "time": "",
+          "priority": "P_NORMAL",
+          "codeSegment": "",
+          "position": {
+            "x": 1906.3048861906288,
+            "y": 40
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "t-fail",
+          "name": "failed delivery",
+          "guard": "",
+          "time": "",
+          "priority": "P_NORMAL",
+          "codeSegment": "",
+          "position": {
+            "x": 1213,
+            "y": 170
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": true
+        },
+        {
+          "id": "t-infl",
+          "name": "inflation event",
+          "guard": "c < 15.0",
+          "time": "",
+          "priority": "P_NORMAL",
+          "codeSegment": "let nd = (uniform(1.0, 6.0) * 100.0).round() / 100.0;",
+          "position": {
+            "x": 504.74766393742993,
+            "y": -1054.167013460047
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": false
+        },
+        {
+          "id": "t-price",
+          "name": "update price",
+          "guard": "r0 < r",
+          "time": "",
+          "priority": "P_NORMAL",
+          "codeSegment": "let np = (prod.price * (1.0 + d / 100.0) * 100.0).round() / 100.0;\nlet prod2 = #{id: prod.id, weight: prod.weight, price: np};",
+          "position": {
+            "x": 68.0333647337339,
+            "y": -1054.167013460047
+          },
+          "size": {
+            "width": 90,
+            "height": 44
+          },
+          "includeInOcel": false
+        }
+      ],
+      "arcs": [
+        {
+          "id": "a-p-arrival-t-start-0",
+          "source": "p-arrival",
+          "target": "t-start",
+          "inscription": "u",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": -21.678856174099344,
+            "y": 3.6972721474387034
+          }
+        },
+        {
+          "id": "a-t-start-p-arrival-1",
+          "source": "t-start",
+          "target": "p-arrival",
+          "inscription": "u",
+          "delay": "shift_delay(delay_sec(exponential(1.0 / 3740.0).to_int()), 8, 20)",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 30.995788054538465,
+            "y": 14.70644170084406
+          }
+        },
+        {
+          "id": "a-p-left-t-start-2",
+          "source": "p-left",
+          "target": "t-start",
+          "inscription": "k",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": -4.163878854402731,
+            "y": 9.160533479686007
+          }
+        },
+        {
+          "id": "a-t-start-p-left-3",
+          "source": "t-start",
+          "target": "p-left",
+          "inscription": "k - 1",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 12.234800519407564,
+            "y": 31.645479293460756
+          }
+        },
+        {
+          "id": "a-p-ids-t-start-4",
+          "source": "p-ids",
+          "target": "t-start",
+          "inscription": "ct",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "a-t-start-p-ids-5",
+          "source": "t-start",
+          "target": "p-ids",
+          "inscription": "ct + 1",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "a-p-cust-t-start-6",
+          "source": "p-cust",
+          "target": "t-start",
+          "inscription": "cust",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 26.538225466061924,
+            "y": 11.610473641402091
+          }
+        },
+        {
+          "id": "a-t-start-p-cust-7",
+          "source": "t-start",
+          "target": "p-cust",
+          "inscription": "cust",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": -1.2439793187216495,
+            "y": 0
+          }
+        },
+        {
+          "id": "a-t-start-p-build-8",
+          "source": "t-start",
+          "target": "p-build",
+          "inscription": "[\"o-\" + ct, [], cust.id, nitems]",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": -7.8680797750126885,
+            "y": 6.482482463606587
+          }
+        },
+        {
+          "id": "a-p-build-t-add-9",
+          "source": "p-build",
+          "target": "t-add",
+          "inscription": "[oid, its, cid, n]",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": -66.35587482317021,
+            "y": -7.653198570127637
+          }
+        },
+        {
+          "id": "a-t-add-p-build-10",
+          "source": "t-add",
+          "target": "p-build",
+          "inscription": "[oid, its + [it], cid, n - 1]",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 99.18370195451885,
+            "y": 28.75161040031231
+          }
+        },
+        {
+          "id": "a-p-catalog-t-add-11",
+          "source": "p-catalog",
+          "target": "t-add",
+          "inscription": "[prod, r0]",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 46.66979418560686,
+            "y": 18.26623139298307
+          }
+        },
+        {
+          "id": "a-t-add-p-catalog-12",
+          "source": "t-add",
+          "target": "p-catalog",
+          "inscription": "[prod, r0]",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": -43.3043400857884,
+            "y": -14.157188104969284
+          }
+        },
+        {
+          "id": "a-p-ids-t-add-13",
+          "source": "p-ids",
+          "target": "t-add",
+          "inscription": "ct",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": -15.827016550362886,
+            "y": 27.885695826829846
+          }
+        },
+        {
+          "id": "a-t-add-p-ids-14",
+          "source": "t-add",
+          "target": "p-ids",
+          "inscription": "ct + 1",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": -66.85057071038753,
+            "y": 7.786794214639912
+          }
+        },
+        {
+          "id": "a-p-build-t-place-15",
+          "source": "p-build",
+          "target": "t-place",
+          "inscription": "[oid, its, cid, n]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "order",
+          "labelOffset": {
+            "x": 68.34607296975102,
+            "y": 15.089392733581393
+          }
+        },
+        {
+          "id": "a-t-place-p-confirm-16",
+          "source": "t-place",
+          "target": "p-confirm",
+          "inscription": "ord",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "order"
+        },
+        {
+          "id": "a-p-confirm-t-confirm-17",
+          "source": "p-confirm",
+          "target": "t-confirm",
+          "inscription": "ord",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "order"
+        },
+        {
+          "id": "a-t-confirm-p-fulfil-18",
+          "source": "t-confirm",
+          "target": "p-fulfil",
+          "inscription": "ord",
+          "delay": "shift_delay(delay_hours(exponential(1.0 / 20.0).to_int()), 8, 17)",
+          "isBidirectional": false,
+          "qualifier": "order"
+        },
+        {
+          "id": "a-p-sales-t-confirm-19",
+          "source": "p-sales",
+          "target": "t-confirm",
+          "inscription": "sp",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "sales person",
+          "labelOffset": {
+            "x": 23.317721584655292,
+            "y": 4.996654625283277
+          }
+        },
+        {
+          "id": "a-t-confirm-p-sales-20",
+          "source": "t-confirm",
+          "target": "p-sales",
+          "inscription": "sp",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "sales person",
+          "labelOffset": {
+            "x": -23.317721584655292,
+            "y": 9.160533479686007
+          }
+        },
+        {
+          "id": "a-t-confirm-p-topay-21",
+          "source": "t-confirm",
+          "target": "p-topay",
+          "inscription": "ord",
+          "delay": "shift_delay(delay_days(exponential(1.0 / 7.0).to_int() + 1), 8, 20)",
+          "isBidirectional": false,
+          "qualifier": "order"
+        },
+        {
+          "id": "a-p-topay-t-paycheck-22",
+          "source": "p-topay",
+          "target": "t-paycheck",
+          "inscription": "ord",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "a-t-paycheck-p-payok-23",
+          "source": "t-paycheck",
+          "target": "p-payok",
+          "inscription": "if ok { [ord] } else { [] }",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 69.25511805321648,
+            "y": 10.470063202800016
+          }
+        },
+        {
+          "id": "a-t-paycheck-p-paylate-24",
+          "source": "t-paycheck",
+          "target": "p-paylate",
+          "inscription": "if ok { [] } else { [ord] }",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "a-p-payok-t-pay-25",
+          "source": "p-payok",
+          "target": "t-pay",
+          "inscription": "ord",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "order",
+          "labelOffset": {
+            "x": -5.430038777297354,
+            "y": 6.335045240180246
+          }
+        },
+        {
+          "id": "a-t-pay-p-paid-26",
+          "source": "t-pay",
+          "target": "p-paid",
+          "inscription": "ord",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "order",
+          "labelOffset": {
+            "x": -3.6200258515315697,
+            "y": 6.335045240180246
+          }
+        },
+        {
+          "id": "a-p-paylate-t-remind-27",
+          "source": "p-paylate",
+          "target": "t-remind",
+          "inscription": "ord",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "order",
+          "labelOffset": {
+            "x": 2.715019388648677,
+            "y": 3.6200258515315697
+          }
+        },
+        {
+          "id": "a-t-remind-p-topay-28",
+          "source": "t-remind",
+          "target": "p-topay",
+          "inscription": "ord",
+          "delay": "shift_delay(delay_days(exponential(1.0 / 20.0).to_int() + 1), 8, 20)",
+          "isBidirectional": false,
+          "qualifier": "order",
+          "labelOffset": {
+            "x": 11.765084017477601,
+            "y": 3.6200258515315697
+          }
+        },
+        {
+          "id": "a-p-fulfil-t-explode-29",
+          "source": "p-fulfil",
+          "target": "t-explode",
+          "inscription": "ord",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "a-t-explode-p-topick-30",
+          "source": "t-explode",
+          "target": "p-topick",
+          "inscription": "ord.items",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 3.9971244752760597,
+            "y": -6.6618741254601
+          }
+        },
+        {
+          "id": "a-t-explode-p-await-31",
+          "source": "t-explode",
+          "target": "p-await",
+          "inscription": "[ord, ord.items.len()]",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "a-p-topick-t-stockcheck-32",
+          "source": "p-topick",
+          "target": "t-stockcheck",
+          "inscription": "item",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "a-t-stockcheck-p-instock-33",
+          "source": "t-stockcheck",
+          "target": "p-instock",
+          "inscription": "if ok { [item] } else { [] }",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 71.59164966437251,
+            "y": 2.5321632598271453
+          }
+        },
+        {
+          "id": "a-t-stockcheck-p-nostock-34",
+          "source": "t-stockcheck",
+          "target": "p-nostock",
+          "inscription": "if ok { [] } else { [item] }",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "a-p-instock-t-pick-35",
+          "source": "p-instock",
+          "target": "t-pick",
+          "inscription": "item",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "item"
+        },
+        {
+          "id": "a-p-await-t-pick-36",
+          "source": "p-await",
+          "target": "t-pick",
+          "inscription": "[ord, n]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "order",
+          "labelOffset": {
+            "x": 43.54963890884727,
+            "y": 5.559528371342204
+          }
+        },
+        {
+          "id": "a-t-pick-p-await-37",
+          "source": "t-pick",
+          "target": "p-await",
+          "inscription": "[ord, n - 1]",
+          "delay": "shift_delay(delay_min(exponential(1.0 / 25.0).to_int() + 5), 8, 17)",
+          "isBidirectional": false,
+          "qualifier": "order",
+          "labelOffset": {
+            "x": -60.22822402287388,
+            "y": 0
+          }
+        },
+        {
+          "id": "a-p-wh-t-pick-38",
+          "source": "p-wh",
+          "target": "t-pick",
+          "inscription": "wh",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "employee",
+          "labelOffset": {
+            "x": -16.482777921033257,
+            "y": 22.58751048437891
+          }
+        },
+        {
+          "id": "a-t-pick-p-wh-39",
+          "source": "t-pick",
+          "target": "p-wh",
+          "inscription": "wh",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "employee",
+          "labelOffset": {
+            "x": -19.535144202706086,
+            "y": 2.4418930253382607
+          }
+        },
+        {
+          "id": "a-p-nostock-t-oos-40",
+          "source": "p-nostock",
+          "target": "t-oos",
+          "inscription": "item",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "item"
+        },
+        {
+          "id": "a-t-oos-p-reorder-41",
+          "source": "t-oos",
+          "target": "p-reorder",
+          "inscription": "item",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "item",
+          "labelOffset": {
+            "x": -0.6104732563345652,
+            "y": 9.157098845018478
+          }
+        },
+        {
+          "id": "a-p-wh-t-oos-42",
+          "source": "p-wh",
+          "target": "t-oos",
+          "inscription": "wh",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "employee",
+          "labelOffset": {
+            "x": 25.02940350971717,
+            "y": 17.70372443370239
+          }
+        },
+        {
+          "id": "a-t-oos-p-wh-43",
+          "source": "t-oos",
+          "target": "p-wh",
+          "inscription": "wh",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "employee",
+          "labelOffset": {
+            "x": 20.145617459040654,
+            "y": 0
+          }
+        },
+        {
+          "id": "a-p-reorder-t-reorder-44",
+          "source": "p-reorder",
+          "target": "t-reorder",
+          "inscription": "item",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "item",
+          "labelOffset": {
+            "x": -7.325679076014782,
+            "y": 10.378045357687608
+          }
+        },
+        {
+          "id": "a-t-reorder-p-topick-45",
+          "source": "t-reorder",
+          "target": "p-topick",
+          "inscription": "item",
+          "delay": "shift_delay(delay_days(exponential(1.0 / 4.0).to_int() + 1), 8, 17)",
+          "isBidirectional": false,
+          "qualifier": "item"
+        },
+        {
+          "id": "a-p-wh-t-reorder-46",
+          "source": "p-wh",
+          "target": "t-reorder",
+          "inscription": "wh",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "employee",
+          "labelOffset": {
+            "x": 24.418930253382605,
+            "y": 6.715205819680216
+          }
+        },
+        {
+          "id": "a-t-reorder-p-wh-47",
+          "source": "t-reorder",
+          "target": "p-wh",
+          "inscription": "wh",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "employee",
+          "labelOffset": {
+            "x": -22.58751048437891,
+            "y": 10.378045357687608
+          }
+        },
+        {
+          "id": "a-p-await-t-pack-48",
+          "source": "p-await",
+          "target": "t-pack",
+          "inscription": "[ord, n]",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "order"
+        },
+        {
+          "id": "a-p-ids-t-pack-49",
+          "source": "p-ids",
+          "target": "t-pack",
+          "inscription": "ct",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 24.389635805960513,
+            "y": 24.783017028637296
+          }
+        },
+        {
+          "id": "a-t-pack-p-ids-50",
+          "source": "t-pack",
+          "target": "p-ids",
+          "inscription": "ct + 1",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": -31.863879036819384,
+            "y": -4.72057467212139
+          }
+        },
+        {
+          "id": "a-p-wh-t-pack-51",
+          "source": "p-wh",
+          "target": "t-pack",
+          "inscription": "packer",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "packer",
+          "labelOffset": {
+            "x": -40.2912349180813,
+            "y": 7.936152332349347
+          }
+        },
+        {
+          "id": "a-t-pack-p-wh-52",
+          "source": "t-pack",
+          "target": "p-wh",
+          "inscription": "packer",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "packer",
+          "labelOffset": {
+            "x": -1.2209465126691303,
+            "y": -9.157098845018478
+          }
+        },
+        {
+          "id": "a-p-shp-t-pack-53",
+          "source": "p-shp",
+          "target": "t-pack",
+          "inscription": "shp",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "shipper",
+          "labelOffset": {
+            "x": 0.5048965004964323,
+            "y": 1.25
+          }
+        },
+        {
+          "id": "a-t-pack-p-shp-54",
+          "source": "t-pack",
+          "target": "p-shp",
+          "inscription": "shp",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "shipper",
+          "labelOffset": {
+            "x": -34.515721775708,
+            "y": 4.281443551416007
+          }
+        },
+        {
+          "id": "a-t-pack-p-toship-55",
+          "source": "t-pack",
+          "target": "p-toship",
+          "inscription": "pkg",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "creates"
+        },
+        {
+          "id": "a-p-toship-t-send-56",
+          "source": "p-toship",
+          "target": "t-send",
+          "inscription": "pkg",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "shipped package"
+        },
+        {
+          "id": "a-t-send-p-transit-57",
+          "source": "t-send",
+          "target": "p-transit",
+          "inscription": "pkg",
+          "delay": "shift_delay(delay_hours(exponential(1.0 / 30.0).to_int() + 1), 8, 17)",
+          "isBidirectional": false,
+          "qualifier": "shipped package",
+          "labelOffset": {
+            "x": 0,
+            "y": 0
+          }
+        },
+        {
+          "id": "a-p-wh-t-send-58",
+          "source": "p-wh",
+          "target": "t-send",
+          "inscription": "fwd",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "forwarder",
+          "labelOffset": {
+            "x": -3.052366281672825,
+            "y": 7.936152332349348
+          }
+        },
+        {
+          "id": "a-t-send-p-wh-59",
+          "source": "t-send",
+          "target": "p-wh",
+          "inscription": "fwd",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "forwarder",
+          "labelOffset": {
+            "x": 26.250350022386296,
+            "y": 19.53514420270608
+          }
+        },
+        {
+          "id": "a-p-transit-t-delcheck-60",
+          "source": "p-transit",
+          "target": "t-delcheck",
+          "inscription": "pkg",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "a-t-delcheck-p-delok-61",
+          "source": "t-delcheck",
+          "target": "p-delok",
+          "inscription": "if ok { [pkg] } else { [] }",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "a-t-delcheck-p-delfail-62",
+          "source": "t-delcheck",
+          "target": "p-delfail",
+          "inscription": "if ok { [] } else { [pkg] }",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 92.66804303229162,
+            "y": 2.895876344759113
+          }
+        },
+        {
+          "id": "a-p-delok-t-deliver-63",
+          "source": "p-delok",
+          "target": "t-deliver",
+          "inscription": "pkg",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "shipped package"
+        },
+        {
+          "id": "a-t-deliver-p-done-64",
+          "source": "t-deliver",
+          "target": "p-done",
+          "inscription": "pkg",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "shipped package"
+        },
+        {
+          "id": "a-p-delfail-t-fail-65",
+          "source": "p-delfail",
+          "target": "t-fail",
+          "inscription": "pkg",
+          "delay": "",
+          "isBidirectional": false,
+          "qualifier": "shipped package"
+        },
+        {
+          "id": "a-t-fail-p-transit-66",
+          "source": "t-fail",
+          "target": "p-transit",
+          "inscription": "pkg",
+          "delay": "shift_delay(delay_days(exponential(1.0 / 2.0).to_int() + 1), 8, 17)",
+          "isBidirectional": false,
+          "qualifier": "shipped package",
+          "labelOffset": {
+            "x": 12.30747446522623,
+            "y": 11.583505379036453
+          }
+        },
+        {
+          "id": "a-p-inflclk-t-infl-67",
+          "source": "p-inflclk",
+          "target": "t-infl",
+          "inscription": "u",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": -1.1102230246251565e-16,
+            "y": 29.979927751699666
+          }
+        },
+        {
+          "id": "a-t-infl-p-inflclk-68",
+          "source": "t-infl",
+          "target": "p-inflclk",
+          "inscription": "u",
+          "delay": "shift_delay(delay_days(normal(60.0, 5.0).to_int()), 8, 17)",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 1.6655515417610924,
+            "y": 7.494981937924916
+          }
+        },
+        {
+          "id": "a-p-infl-t-infl-69",
+          "source": "p-infl",
+          "target": "t-infl",
+          "inscription": "[r, d, c]",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 2.4983273126416385,
+            "y": 6.66220616704437
+          }
+        },
+        {
+          "id": "a-t-infl-p-infl-70",
+          "source": "t-infl",
+          "target": "p-infl",
+          "inscription": "[r + 1, nd, c + nd]",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 6.662206167044371,
+            "y": 29.979927751699663
+          }
+        },
+        {
+          "id": "a-p-catalog-t-price-71",
+          "source": "p-catalog",
+          "target": "t-price",
+          "inscription": "[prod, r0]",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 7.105427357601002e-15,
+            "y": 7.494981937924912
+          }
+        },
+        {
+          "id": "a-t-price-p-catalog-72",
+          "source": "t-price",
+          "target": "p-catalog",
+          "inscription": "[prod2, r]",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 0.8327757708805454,
+            "y": 30.812703522580208
+          }
+        },
+        {
+          "id": "a-p-infl-t-price-73",
+          "source": "p-infl",
+          "target": "t-price",
+          "inscription": "[r, d, c]",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 1.7752226745389874,
+            "y": 29.2911741298933
+          }
+        },
+        {
+          "id": "a-t-price-p-infl-74",
+          "source": "t-price",
+          "target": "p-infl",
+          "inscription": "[r, d, c]",
+          "delay": "",
+          "isBidirectional": false,
+          "labelOffset": {
+            "x": 0.887611337269494,
+            "y": 7.988502035425448
+          }
+        }
+      ],
+      "declareConstraints": []
+    }
+  ],
+  "colorSets": [
+    {
+      "id": "cs-UNIT",
+      "name": "UNIT",
+      "type": "basic",
+      "definition": "colset UNIT = unit timed;",
+      "color": "#3b82f6",
+      "timed": true
+    },
+    {
+      "id": "cs-BOOL",
+      "name": "BOOL",
+      "type": "basic",
+      "definition": "colset BOOL = bool;",
+      "color": "#10b981"
+    },
+    {
+      "id": "cs-INT",
+      "name": "INT",
+      "type": "basic",
+      "definition": "colset INT = int;",
+      "color": "#3b82f6"
+    },
+    {
+      "id": "cs-REAL",
+      "name": "REAL",
+      "type": "basic",
+      "definition": "colset REAL = real;",
+      "color": "#ef4444"
+    },
+    {
+      "id": "cs-STRING",
+      "name": "STRING",
+      "type": "basic",
+      "definition": "colset STRING = string;",
+      "color": "#f59e0b"
+    },
+    {
+      "id": "cs-Employee",
+      "name": "Employee",
+      "type": "record",
+      "definition": "colset Employee = record id: STRING * role: STRING timed;",
+      "color": "hsl(20, 70%, 55%)",
+      "timed": true
+    },
+    {
+      "id": "cs-Product",
+      "name": "Product",
+      "type": "record",
+      "definition": "colset Product = record id: STRING * weight: REAL * price: REAL timed;",
+      "color": "hsl(140, 70%, 45%)",
+      "timed": true
+    },
+    {
+      "id": "cs-Customer",
+      "name": "Customer",
+      "type": "record",
+      "definition": "colset Customer = record id: STRING * primary: STRING * secondary: STRING timed;",
+      "color": "hsl(280, 60%, 60%)",
+      "timed": true,
+      "refs": [
+        {
+          "field": "primary",
+          "target": "Employee",
+          "qualifier": "primarySalesRep"
+        },
+        {
+          "field": "secondary",
+          "target": "Employee",
+          "qualifier": "secondarySalesRep"
+        }
+      ]
+    },
+    {
+      "id": "cs-Item",
+      "name": "Item",
+      "type": "record",
+      "definition": "colset Item = record id: STRING * product: STRING * weight: REAL * price: REAL * order: STRING timed;",
+      "color": "hsl(200, 70%, 55%)",
+      "timed": true,
+      "refs": [
+        {
+          "field": "product",
+          "target": "Product",
+          "qualifier": "is a",
+          "eventQualifier": "product"
+        },
+        {
+          "field": "order",
+          "target": "Order",
+          "qualifier": "comprises",
+          "reverse": true,
+          "eventQualifier": "order"
+        }
+      ]
+    },
+    {
+      "id": "cs-Items",
+      "name": "Items",
+      "type": "list",
+      "definition": "colset Items = list Item;",
+      "color": "hsl(200, 40%, 70%)"
+    },
+    {
+      "id": "cs-Order",
+      "name": "Order",
+      "type": "record",
+      "definition": "colset Order = record id: STRING * items: Items * customer: STRING * price: REAL timed;",
+      "color": "hsl(45, 85%, 55%)",
+      "timed": true,
+      "refs": [
+        {
+          "field": "items",
+          "target": "Item",
+          "qualifier": "comprises",
+          "eventQualifier": "item"
+        },
+        {
+          "field": "customer",
+          "target": "Customer",
+          "qualifier": "places",
+          "reverse": true,
+          "eventQualifier": "customer"
+        }
+      ]
+    },
+    {
+      "id": "cs-Package",
+      "name": "Package",
+      "type": "record",
+      "definition": "colset Package = record id: STRING * items: Items * weight: REAL * shipper: STRING timed;",
+      "color": "hsl(340, 70%, 55%)",
+      "timed": true,
+      "refs": [
+        {
+          "field": "items",
+          "target": "Item",
+          "qualifier": "contains",
+          "eventQualifier": "item"
+        },
+        {
+          "field": "shipper",
+          "target": "Employee",
+          "qualifier": "shipped by",
+          "eventQualifier": "shipper"
+        }
+      ]
+    },
+    {
+      "id": "cs-Catalog",
+      "name": "Catalog",
+      "type": "product",
+      "definition": "colset Catalog = product Product * INT timed;",
+      "color": "hsl(140, 40%, 65%)",
+      "timed": true
+    },
+    {
+      "id": "cs-Draft",
+      "name": "Draft",
+      "type": "product",
+      "definition": "colset Draft = product STRING * Items * STRING * INT timed;",
+      "color": "hsl(45, 30%, 78%)",
+      "timed": true
+    },
+    {
+      "id": "cs-OrderCount",
+      "name": "OrderCount",
+      "type": "product",
+      "definition": "colset OrderCount = product Order * INT timed;",
+      "color": "hsl(45, 50%, 70%)",
+      "timed": true
+    },
+    {
+      "id": "cs-Inflation",
+      "name": "Inflation",
+      "type": "product",
+      "definition": "colset Inflation = product INT * REAL * REAL timed;",
+      "color": "hsl(0, 0%, 60%)",
+      "timed": true
+    }
+  ],
+  "variables": [
+    {
+      "id": "v-u",
+      "name": "u",
+      "colorSet": "UNIT"
+    },
+    {
+      "id": "v-ct",
+      "name": "ct",
+      "colorSet": "INT"
+    },
+    {
+      "id": "v-k",
+      "name": "k",
+      "colorSet": "INT"
+    },
+    {
+      "id": "v-n",
+      "name": "n",
+      "colorSet": "INT"
+    },
+    {
+      "id": "v-r",
+      "name": "r",
+      "colorSet": "INT"
+    },
+    {
+      "id": "v-r0",
+      "name": "r0",
+      "colorSet": "INT"
+    },
+    {
+      "id": "v-d",
+      "name": "d",
+      "colorSet": "REAL"
+    },
+    {
+      "id": "v-c",
+      "name": "c",
+      "colorSet": "REAL"
+    },
+    {
+      "id": "v-oid",
+      "name": "oid",
+      "colorSet": "STRING"
+    },
+    {
+      "id": "v-cid",
+      "name": "cid",
+      "colorSet": "STRING"
+    },
+    {
+      "id": "v-its",
+      "name": "its",
+      "colorSet": "Items"
+    },
+    {
+      "id": "v-ord",
+      "name": "ord",
+      "colorSet": "Order"
+    },
+    {
+      "id": "v-ord2",
+      "name": "ord2",
+      "colorSet": "Order"
+    },
+    {
+      "id": "v-item",
+      "name": "item",
+      "colorSet": "Item"
+    },
+    {
+      "id": "v-prod",
+      "name": "prod",
+      "colorSet": "Product"
+    },
+    {
+      "id": "v-prod2",
+      "name": "prod2",
+      "colorSet": "Product"
+    },
+    {
+      "id": "v-cust",
+      "name": "cust",
+      "colorSet": "Customer"
+    },
+    {
+      "id": "v-sp",
+      "name": "sp",
+      "colorSet": "Employee"
+    },
+    {
+      "id": "v-wh",
+      "name": "wh",
+      "colorSet": "Employee"
+    },
+    {
+      "id": "v-packer",
+      "name": "packer",
+      "colorSet": "Employee"
+    },
+    {
+      "id": "v-shp",
+      "name": "shp",
+      "colorSet": "Employee"
+    },
+    {
+      "id": "v-fwd",
+      "name": "fwd",
+      "colorSet": "Employee"
+    },
+    {
+      "id": "v-pkg",
+      "name": "pkg",
+      "colorSet": "Package"
+    }
+  ],
+  "priorities": [
+    {
+      "id": "pr-high",
+      "name": "P_HIGH",
+      "level": 100
+    },
+    {
+      "id": "pr-normal",
+      "name": "P_NORMAL",
+      "level": 1000
+    },
+    {
+      "id": "pr-low",
+      "name": "P_LOW",
+      "level": 10000
+    }
+  ],
+  "functions": [
+    {
+      "id": "fn-shift",
+      "name": "shift_delay",
+      "code": "fn shift_midnight(t) {\n    // Absolute midnight of t's day, expressed in simulation time. hour_of_day and\n    // friends report the wall clock, so subtracting them is epoch-alignment safe.\n    t - hour_of_day(t) * 3600000 - minute_of_hour(t) * 60000 - second_of_minute(t) * 1000\n}\n\nfn snap_to_shift(t, from_h, to_h) {\n    // First instant at or after t that falls inside [from_h, to_h) on a working day.\n    // This is the whole of sim-utils.sml's at_*/st_* intensity machinery, expressed\n    // with the simulator's own calendar predicates: work does not happen at night or\n    // at the weekend, so a delay landing there waits for the next shift to open.\n    let x = t;\n    let guard = 0;\n    while guard < 10 {\n        let h = hour_of_day(x);\n        if is_workday(x) && h >= from_h && h < to_h { return x; }\n        if is_workday(x) && h < from_h {\n            x = shift_midnight(x) + from_h * 3600000;      // earlier the same day\n        } else {\n            x = shift_midnight(x) + 86400000 + from_h * 3600000;  // after hours or weekend\n        }\n        guard += 1;\n    }\n    x\n}\n\nfn shift_delay(base, from_h, to_h) {\n    // Delay that lands the produced token inside the next shift. Work that had to wait\n    // for the shift to open is spread across it rather than fired at the opening second:\n    // the legacy model gets that spread from consuming delays in working time, which is\n    // the behaviour this approximates. 55 min per shift-hour keeps the jitter inside the\n    // window.\n    let due = current_time() + base;\n    let open = snap_to_shift(due, from_h, to_h);\n    if open > due { open = open + delay_min(uniform(0.0, (to_h - from_h) * 55.0).to_int()); }\n    open - current_time()\n}"
+    }
+  ],
+  "uses": [],
+  "values": [],
+  "fusionSets": [],
+  "simulationSettings": {
+    "stepsPerRun": 500,
+    "animationDelayMs": 100,
+    "simulationEpoch": "2023-04-03T00:00:00.000Z",
+    "endTimeMs": null,
+    "keepAwakeWhileRunning": true
+  },
+  "simulationEpoch": "2023-04-03T00:00:00.000Z",
+  "viewSettings": {
+    "showMarkingDisplay": false,
+    "showDeclareLayer": true
+  }
+}

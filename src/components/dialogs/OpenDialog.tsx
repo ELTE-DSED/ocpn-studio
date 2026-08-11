@@ -10,9 +10,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Upload, FileUp, Plane } from "lucide-react"
+import { Upload, FileUp, Plane, Package } from "lucide-react"
 import { toast } from "sonner"
 import * as fsa from "@/utils/fileSystemAccess"
+
+/**
+ * Bundled models offered as a starting point. Each `file` is served from public/examples,
+ * so adding one is a matter of dropping the .ocpn in there and adding a row here.
+ */
+const EXAMPLES = [
+  { file: "airport.ocpn", label: "Airport Ground Handling", icon: Plane },
+  { file: "order-management.ocpn", label: "Order Management", icon: Package },
+] as const
 
 interface OpenDialogProps {
   open: boolean
@@ -24,7 +33,8 @@ interface OpenDialogProps {
 
 export function OpenDialog({ open, onOpenChange, onFileLoaded }: OpenDialogProps) {
   const [isDragging, setIsDragging] = useState(false)
-  const [isLoadingExample, setIsLoadingExample] = useState(false)
+  // Which example is being fetched, so only that one shows as busy rather than the whole row.
+  const [loadingExample, setLoadingExample] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -101,21 +111,22 @@ export function OpenDialog({ open, onOpenChange, onFileLoaded }: OpenDialogProps
     }
   }
 
-  const handleLoadExample = async () => {
-    setIsLoadingExample(true)
+  const handleLoadExample = async (file: string) => {
+    setLoadingExample(file)
     try {
-      const response = await fetch(`${import.meta.env.BASE_URL}examples/airport.ocpn`)
+      const response = await fetch(`${import.meta.env.BASE_URL}examples/${file}`)
       if (!response.ok) {
-        throw new Error('Failed to load example file')
+        throw new Error(`Failed to load example file (${response.status})`)
       }
       const content = await response.text()
       // An example fetched over HTTP has no file on disk to write back to.
-      onFileLoaded(content, 'airport.ocpn', null)
+      onFileLoaded(content, file, null)
       onOpenChange(false)
     } catch (error) {
       console.error('Error loading example:', error)
+      toast.error("Could not load that example.")
     } finally {
-      setIsLoadingExample(false)
+      setLoadingExample(null)
     }
   }
 
@@ -125,7 +136,8 @@ export function OpenDialog({ open, onOpenChange, onFileLoaded }: OpenDialogProps
         <DialogHeader>
           <DialogTitle>Open Petri Net</DialogTitle>
           <DialogDescription>
-            Load a CPN Tools .cpn, PNML .pnml, or cpn-py JSON file to visualize your Petri Net.
+            Open an OCPN Studio .ocpn model, or import a CPN Tools .cpn, PNML .pnml, or
+            cpn-py JSON file. Imported models are saved as .ocpn.
           </DialogDescription>
         </DialogHeader>
         <div
@@ -153,17 +165,27 @@ export function OpenDialog({ open, onOpenChange, onFileLoaded }: OpenDialogProps
             </Button>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Or try an example:</span>
-          <Button 
-            variant="link" 
-            className="p-0 h-auto text-sm" 
-            onClick={handleLoadExample}
-            disabled={isLoadingExample}
-          >
-            <Plane className="mr-1 h-3 w-3" />
-            Airport Ground Handling
-          </Button>
+        {/* The label sits on its own line rather than inline with the first example: with the
+            label taking up the start of the row, a wrapped second example lands under the
+            label instead of under the example above it, and the column reads as ragged. */}
+        <div className="space-y-1.5 text-sm">
+          <span className="text-muted-foreground">Or try an example:</span>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+            {EXAMPLES.map(({ file, label, icon: Icon }) => (
+              <Button
+                key={file}
+                variant="link"
+                className="p-0 h-auto text-sm justify-start"
+                onClick={() => void handleLoadExample(file)}
+                disabled={loadingExample !== null}
+              >
+                <Icon className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">
+                  {loadingExample === file ? `Loading ${label}\u2026` : label}
+                </span>
+              </Button>
+            ))}
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
