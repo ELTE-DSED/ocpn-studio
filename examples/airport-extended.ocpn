@@ -301,10 +301,10 @@
           }
         },
         {
-          "id": "p-uld-store",
-          "name": "ULD\nStore",
-          "colorSet": "ULD",
-          "initialMarking": "",
+          "id": "p-uld-pool",
+          "name": "Container\nPool",
+          "colorSet": "ULDs",
+          "initialMarking": "[[{\"id\":\"AKH-001\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-002\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-003\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-004\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-005\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-006\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-007\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-008\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-009\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-010\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-011\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-012\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-013\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-014\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-015\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-016\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-017\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-018\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-019\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-020\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-021\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-022\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-023\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-024\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-025\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-026\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-027\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-028\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-029\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-030\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-031\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-032\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-033\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-034\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-035\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-036\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-037\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-038\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-039\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKH-040\",\"kind\":\"AKH\",\"tareKg\":82,\"maxKg\":1134},{\"id\":\"AKE-001\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-002\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-003\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-004\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-005\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-006\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-007\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-008\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-009\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-010\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-011\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-012\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-013\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-014\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-015\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-016\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-017\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-018\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-019\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-020\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-021\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-022\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-023\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-024\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-025\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-026\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-027\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-028\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-029\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-030\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-031\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-032\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-033\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-034\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-035\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-036\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-037\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-038\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-039\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-040\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-041\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-042\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-043\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-044\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-045\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-046\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-047\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-048\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-049\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-050\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-051\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-052\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-053\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-054\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-055\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-056\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-057\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-058\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-059\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-060\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-061\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-062\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-063\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-064\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-065\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-066\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-067\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-068\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-069\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-070\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-071\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-072\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-073\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-074\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-075\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-076\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-077\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-078\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-079\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-080\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-081\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-082\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-083\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-084\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-085\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-086\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-087\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-088\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-089\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"AKE-090\",\"kind\":\"AKE\",\"tareKg\":85,\"maxKg\":1588},{\"id\":\"PMC-001\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-002\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-003\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-004\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-005\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-006\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-007\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-008\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-009\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-010\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-011\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-012\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-013\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-014\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-015\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-016\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-017\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-018\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-019\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-020\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-021\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-022\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-023\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-024\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-025\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-026\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-027\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-028\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-029\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804},{\"id\":\"PMC-030\",\"kind\":\"PMC\",\"tareKg\":110,\"maxKg\":6804}]]",
           "marking": [],
           "position": {
             "x": 1620,
@@ -460,8 +460,8 @@
               "socketPlaceId": "p-thread-done"
             },
             {
-              "portPlaceId": "r-uld-out",
-              "socketPlaceId": "p-uld-store"
+              "portPlaceId": "r-uld-pool",
+              "socketPlaceId": "p-uld-pool"
             }
           ]
         },
@@ -857,14 +857,22 @@
         },
         {
           "id": "e36",
-          "source": "st-ramp",
-          "target": "p-uld-store",
-          "inscription": "uld",
+          "source": "p-uld-pool",
+          "target": "st-ramp",
+          "inscription": "pool",
           "delay": "",
           "isBidirectional": false
         },
         {
           "id": "e37",
+          "source": "st-ramp",
+          "target": "p-uld-pool",
+          "inscription": "pool",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e38",
           "source": "p-plan-in",
           "target": "st-departure",
           "inscription": "tr",
@@ -872,7 +880,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e38",
+          "id": "e39",
           "source": "st-departure",
           "target": "p-thread-done",
           "inscription": "tr",
@@ -880,7 +888,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e39",
+          "id": "e40",
           "source": "p-runways",
           "target": "st-departure",
           "inscription": "rw",
@@ -888,7 +896,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e40",
+          "id": "e41",
           "source": "st-departure",
           "target": "p-runways",
           "inscription": "rw",
@@ -896,7 +904,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e41",
+          "id": "e42",
           "source": "st-departure",
           "target": "p-stands",
           "inscription": "st",
@@ -904,7 +912,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e42",
+          "id": "e43",
           "source": "p-twy-main",
           "target": "st-departure",
           "inscription": "sg",
@@ -912,7 +920,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e43",
+          "id": "e44",
           "source": "st-departure",
           "target": "p-twy-main",
           "inscription": "sg",
@@ -920,7 +928,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e44",
+          "id": "e45",
           "source": "p-twy-apron-out",
           "target": "st-departure",
           "inscription": "sg",
@@ -928,7 +936,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e45",
+          "id": "e46",
           "source": "st-departure",
           "target": "p-twy-apron-out",
           "inscription": "sg",
@@ -1025,7 +1033,7 @@
       ],
       "arcs": [
         {
-          "id": "e46",
+          "id": "e47",
           "source": "s-clock",
           "target": "s-t-file",
           "inscription": "u",
@@ -1033,7 +1041,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e47",
+          "id": "e48",
           "source": "s-seq",
           "target": "s-t-file",
           "inscription": "k",
@@ -1041,7 +1049,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e48",
+          "id": "e49",
           "source": "s-fleet",
           "target": "s-t-file",
           "inscription": "ac",
@@ -1050,7 +1058,7 @@
           "qualifier": "aircraft"
         },
         {
-          "id": "e49",
+          "id": "e50",
           "source": "s-t-file",
           "target": "s-clock",
           "inscription": "u",
@@ -1058,7 +1066,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e50",
+          "id": "e51",
           "source": "s-t-file",
           "target": "s-seq",
           "inscription": "k + 1",
@@ -1066,7 +1074,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e51",
+          "id": "e52",
           "source": "s-t-file",
           "target": "s-out",
           "inscription": "fl",
@@ -1372,7 +1380,7 @@
           "guard": "runway_fits(rw, fl.aircraft)",
           "time": "",
           "priority": "",
-          "codeSegment": "// The turnaround object is created once the stand is known: from here on the\n// inbound leg, the outbound leg, the airframe and the stand travel together.\nlet dep_lh = fl.aircraft.body == \"wide\" || fl.aircraft.body == \"superheavy\";\nlet dep = make_flight(fl.id.sub_string(4), \"DEP\", fl.aircraft, fl.schengen, dep_lh);\nlet tr = #{\n    id: \"TA-\" + fl.id.sub_string(4),\n    arr: fl,\n    dep: dep,\n    stand: st,\n    upliftL: uplift_l(fl.aircraft.body, dep.sectorMin),\n    hold: hold_kind(fl.aircraft.typeCode, fl.carrierType),\n    ulds: uld_count(hold_kind(fl.aircraft.typeCode, fl.carrierType), fl.aircraft.body, fl.pax),\n    depUlds: uld_count(hold_kind(fl.aircraft.typeCode, fl.carrierType), fl.aircraft.body, dep.pax),\n    // Which optional services this rotation needs is decided once, here, so that the\n    // guards downstream are deterministic: a die rolled separately in two mutually\n    // exclusive guards can come up \"no\" in both and strand the token.\n    needCater: if dep_lh || fl.aircraft.body == \"wide\" || fl.aircraft.body == \"superheavy\" { true }\n               else if fl.carrierType == \"full\" { bernoulli(0.85) == 1 }\n               else { bernoulli(0.35) == 1 },\n    needWater: if dep.sectorMin > 300 { true } else { bernoulli(0.55) == 1 }\n};",
+          "codeSegment": "// The turnaround object is created once the stand is known: from here on the\n// inbound leg, the outbound leg, the airframe and the stand travel together.\nlet dep_lh = fl.aircraft.body == \"wide\" || fl.aircraft.body == \"superheavy\";\nlet dep = make_flight(fl.id.sub_string(4), \"DEP\", fl.aircraft, fl.schengen, dep_lh);\nlet tr = #{\n    id: \"TA-\" + fl.id.sub_string(4),\n    arr: fl,\n    dep: dep,\n    stand: st,\n    upliftL: uplift_l(fl.aircraft.body, dep.sectorMin),\n    hold: hold_kind(fl.aircraft.typeCode, fl.carrierType),\n    nUlds: uld_count(hold_kind(fl.aircraft.typeCode, fl.carrierType), fl.aircraft.body, fl.pax),\n    nDepUlds: uld_count(hold_kind(fl.aircraft.typeCode, fl.carrierType), fl.aircraft.body, dep.pax),\n    // The boxes themselves are attached once they are actually worked, at unload.\n    ulds: [],\n    // Which optional services this rotation needs is decided once, here, so that the\n    // guards downstream are deterministic: a die rolled separately in two mutually\n    // exclusive guards can come up \"no\" in both and strand the token.\n    needCater: if dep_lh || fl.aircraft.body == \"wide\" || fl.aircraft.body == \"superheavy\" { true }\n               else if fl.carrierType == \"full\" { bernoulli(0.85) == 1 }\n               else { bernoulli(0.35) == 1 },\n    needWater: if dep.sectorMin > 300 { true } else { bernoulli(0.55) == 1 }\n};",
           "position": {
             "x": 870,
             "y": 300
@@ -1471,7 +1479,7 @@
       ],
       "arcs": [
         {
-          "id": "e52",
+          "id": "e53",
           "source": "a-in",
           "target": "a-t-dep-out",
           "inscription": "fl",
@@ -1480,7 +1488,7 @@
           "qualifier": "flight"
         },
         {
-          "id": "e53",
+          "id": "e54",
           "source": "a-t-dep-out",
           "target": "a-enroute",
           "inscription": "fl",
@@ -1488,7 +1496,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e54",
+          "id": "e55",
           "source": "a-enroute",
           "target": "a-t-tma",
           "inscription": "fl",
@@ -1497,7 +1505,7 @@
           "qualifier": "flight"
         },
         {
-          "id": "e55",
+          "id": "e56",
           "source": "a-t-tma",
           "target": "a-tma",
           "inscription": "fl",
@@ -1505,7 +1513,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e56",
+          "id": "e57",
           "source": "a-tma",
           "target": "a-t-stand-contact",
           "inscription": "fl",
@@ -1514,7 +1522,7 @@
           "qualifier": "flight"
         },
         {
-          "id": "e57",
+          "id": "e58",
           "source": "a-stands",
           "target": "a-t-stand-contact",
           "inscription": "st",
@@ -1523,7 +1531,7 @@
           "qualifier": "stand"
         },
         {
-          "id": "e58",
+          "id": "e59",
           "source": "a-t-stand-contact",
           "target": "a-planned",
           "inscription": "[fl, st]",
@@ -1531,7 +1539,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e59",
+          "id": "e60",
           "source": "a-tma",
           "target": "a-t-stand-remote",
           "inscription": "fl",
@@ -1540,7 +1548,7 @@
           "qualifier": "flight"
         },
         {
-          "id": "e60",
+          "id": "e61",
           "source": "a-stands",
           "target": "a-t-stand-remote",
           "inscription": "st",
@@ -1549,7 +1557,7 @@
           "qualifier": "stand"
         },
         {
-          "id": "e61",
+          "id": "e62",
           "source": "a-t-stand-remote",
           "target": "a-planned",
           "inscription": "[fl, st]",
@@ -1557,7 +1565,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e62",
+          "id": "e63",
           "source": "a-planned",
           "target": "a-t-final",
           "inscription": "[fl, st]",
@@ -1565,7 +1573,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e63",
+          "id": "e64",
           "source": "a-rwy",
           "target": "a-t-final",
           "inscription": "rw",
@@ -1574,7 +1582,7 @@
           "qualifier": "runway"
         },
         {
-          "id": "e64",
+          "id": "e65",
           "source": "a-t-final",
           "target": "a-final",
           "inscription": "[tr, rw]",
@@ -1582,7 +1590,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e65",
+          "id": "e66",
           "source": "a-final",
           "target": "a-t-land",
           "inscription": "[tr, rw]",
@@ -1591,7 +1599,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e66",
+          "id": "e67",
           "source": "a-t-land",
           "target": "a-roll",
           "inscription": "[tr, rw]",
@@ -1599,7 +1607,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e67",
+          "id": "e68",
           "source": "a-roll",
           "target": "a-t-vacate",
           "inscription": "[tr, rw]",
@@ -1608,7 +1616,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e68",
+          "id": "e69",
           "source": "a-t-vacate",
           "target": "a-rwy",
           "inscription": "rw",
@@ -1616,7 +1624,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e69",
+          "id": "e70",
           "source": "a-t-vacate",
           "target": "a-vacated",
           "inscription": "tr",
@@ -1624,7 +1632,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e70",
+          "id": "e71",
           "source": "a-vacated",
           "target": "a-t-twy-main",
           "inscription": "tr",
@@ -1633,7 +1641,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e71",
+          "id": "e72",
           "source": "a-twy-main",
           "target": "a-t-twy-main",
           "inscription": "sg",
@@ -1642,7 +1650,7 @@
           "qualifier": "taxiway"
         },
         {
-          "id": "e72",
+          "id": "e73",
           "source": "a-t-twy-main",
           "target": "a-taxi1",
           "inscription": "[tr, sg]",
@@ -1650,7 +1658,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e73",
+          "id": "e74",
           "source": "a-taxi1",
           "target": "a-t-apron",
           "inscription": "[tr, sg]",
@@ -1659,7 +1667,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e74",
+          "id": "e75",
           "source": "a-twy-apron",
           "target": "a-t-apron",
           "inscription": "sg2",
@@ -1668,7 +1676,7 @@
           "qualifier": "taxiway"
         },
         {
-          "id": "e75",
+          "id": "e76",
           "source": "a-t-apron",
           "target": "a-twy-main",
           "inscription": "sg",
@@ -1676,7 +1684,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e76",
+          "id": "e77",
           "source": "a-t-apron",
           "target": "a-taxi2",
           "inscription": "[tr, sg2]",
@@ -1684,7 +1692,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e77",
+          "id": "e78",
           "source": "a-taxi2",
           "target": "a-t-inblock",
           "inscription": "[tr, sg]",
@@ -1693,7 +1701,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e78",
+          "id": "e79",
           "source": "a-t-inblock",
           "target": "a-twy-apron",
           "inscription": "sg",
@@ -1701,7 +1709,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e79",
+          "id": "e80",
           "source": "a-t-inblock",
           "target": "a-out",
           "inscription": "tr",
@@ -2314,7 +2322,7 @@
       ],
       "arcs": [
         {
-          "id": "e80",
+          "id": "e81",
           "source": "c-in",
           "target": "c-t-deb-bridge",
           "inscription": "tr",
@@ -2323,7 +2331,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e81",
+          "id": "e82",
           "source": "c-t-deb-bridge",
           "target": "c-deboarding",
           "inscription": "tr",
@@ -2331,7 +2339,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e82",
+          "id": "e83",
           "source": "c-in",
           "target": "c-t-deb-bus",
           "inscription": "tr",
@@ -2340,16 +2348,15 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e83",
+          "id": "e84",
           "source": "c-buses",
           "target": "c-t-deb-bus",
           "inscription": "bus",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "bus"
+          "isBidirectional": false
         },
         {
-          "id": "e84",
+          "id": "e85",
           "source": "c-t-deb-bus",
           "target": "c-deboarding-bus",
           "inscription": "[tr, bus]",
@@ -2357,7 +2364,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e85",
+          "id": "e86",
           "source": "c-deboarding",
           "target": "c-t-deb-bridge-end",
           "inscription": "tr",
@@ -2366,7 +2373,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e86",
+          "id": "e87",
           "source": "c-t-deb-bridge-end",
           "target": "c-prmq",
           "inscription": "[tr, tr.arr.prm]",
@@ -2374,7 +2381,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e87",
+          "id": "e88",
           "source": "c-deboarding-bus",
           "target": "c-t-deb-bus-end",
           "inscription": "[tr, bus]",
@@ -2383,7 +2390,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e88",
+          "id": "e89",
           "source": "c-t-deb-bus-end",
           "target": "c-buses",
           "inscription": "#{ id: bus.id, cap: bus.cap, x: tr.stand.x, y: tr.stand.y }",
@@ -2391,7 +2398,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e89",
+          "id": "e90",
           "source": "c-t-deb-bus-end",
           "target": "c-prmq",
           "inscription": "[tr, tr.arr.prm]",
@@ -2399,7 +2406,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e90",
+          "id": "e91",
           "source": "c-prmq",
           "target": "c-t-prm-deb-agent",
           "inscription": "[tr, n]",
@@ -2408,16 +2415,15 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e91",
+          "id": "e92",
           "source": "c-agents",
           "target": "c-t-prm-deb-agent",
           "inscription": "agt",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "assistance agent"
+          "isBidirectional": false
         },
         {
-          "id": "e92",
+          "id": "e93",
           "source": "c-t-prm-deb-agent",
           "target": "c-prmq",
           "inscription": "[tr, n - 1]",
@@ -2425,7 +2431,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e93",
+          "id": "e94",
           "source": "c-t-prm-deb-agent",
           "target": "c-agents",
           "inscription": "#{ id: agt.id, x: tr.stand.x, y: tr.stand.y }",
@@ -2433,7 +2439,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e94",
+          "id": "e95",
           "source": "c-t-prm-deb-agent",
           "target": "c-prm-out",
           "inscription": "prm",
@@ -2442,7 +2448,7 @@
           "qualifier": "assisted passenger"
         },
         {
-          "id": "e95",
+          "id": "e96",
           "source": "c-prmq",
           "target": "c-t-prm-deb-ambu",
           "inscription": "[tr, n]",
@@ -2451,16 +2457,15 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e96",
+          "id": "e97",
           "source": "c-ambu",
           "target": "c-t-prm-deb-ambu",
           "inscription": "amb",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "ambulift"
+          "isBidirectional": false
         },
         {
-          "id": "e97",
+          "id": "e98",
           "source": "c-t-prm-deb-ambu",
           "target": "c-prmq",
           "inscription": "[tr, n - 1]",
@@ -2468,7 +2473,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e98",
+          "id": "e99",
           "source": "c-t-prm-deb-ambu",
           "target": "c-ambu",
           "inscription": "#{ id: amb.id, x: tr.stand.x, y: tr.stand.y }",
@@ -2476,7 +2481,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e99",
+          "id": "e100",
           "source": "c-t-prm-deb-ambu",
           "target": "c-prm-out",
           "inscription": "prm",
@@ -2485,7 +2490,7 @@
           "qualifier": "assisted passenger"
         },
         {
-          "id": "e100",
+          "id": "e101",
           "source": "c-prmq",
           "target": "c-t-clean-start",
           "inscription": "[tr, n]",
@@ -2494,16 +2499,15 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e101",
+          "id": "e102",
           "source": "c-clean",
           "target": "c-t-clean-start",
           "inscription": "cln",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "cleaning team"
+          "isBidirectional": false
         },
         {
-          "id": "e102",
+          "id": "e103",
           "source": "c-t-clean-start",
           "target": "c-cleaning",
           "inscription": "[tr, cln]",
@@ -2511,7 +2515,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e103",
+          "id": "e104",
           "source": "c-cleaning",
           "target": "c-t-clean-end",
           "inscription": "[tr, cln]",
@@ -2520,7 +2524,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e104",
+          "id": "e105",
           "source": "c-t-clean-end",
           "target": "c-clean",
           "inscription": "#{ id: cln.id, size: cln.size, x: tr.stand.x, y: tr.stand.y }",
@@ -2528,7 +2532,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e105",
+          "id": "e106",
           "source": "c-t-clean-end",
           "target": "c-prmbq",
           "inscription": "[tr, tr.dep.prm]",
@@ -2536,7 +2540,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e106",
+          "id": "e107",
           "source": "c-cater-in",
           "target": "c-t-cater-skip",
           "inscription": "tr",
@@ -2544,7 +2548,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e107",
+          "id": "e108",
           "source": "c-t-cater-skip",
           "target": "c-done",
           "inscription": "tr",
@@ -2552,7 +2556,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e108",
+          "id": "e109",
           "source": "c-cater-in",
           "target": "c-t-cater-start",
           "inscription": "tr",
@@ -2561,16 +2565,15 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e109",
+          "id": "e110",
           "source": "c-cater",
           "target": "c-t-cater-start",
           "inscription": "cat",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "catering truck"
+          "isBidirectional": false
         },
         {
-          "id": "e110",
+          "id": "e111",
           "source": "c-t-cater-start",
           "target": "c-catering",
           "inscription": "[tr, cat]",
@@ -2578,7 +2581,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e111",
+          "id": "e112",
           "source": "c-catering",
           "target": "c-t-cater-end",
           "inscription": "[tr, cat]",
@@ -2587,7 +2590,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e112",
+          "id": "e113",
           "source": "c-t-cater-end",
           "target": "c-cater",
           "inscription": "#{ id: cat.id, x: tr.stand.x, y: tr.stand.y }",
@@ -2595,7 +2598,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e113",
+          "id": "e114",
           "source": "c-t-cater-end",
           "target": "c-done",
           "inscription": "tr",
@@ -2603,7 +2606,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e114",
+          "id": "e115",
           "source": "c-prmbq",
           "target": "c-t-prm-brd-agent",
           "inscription": "[tr, n]",
@@ -2612,16 +2615,15 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e115",
+          "id": "e116",
           "source": "c-agents",
           "target": "c-t-prm-brd-agent",
           "inscription": "agt",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "assistance agent"
+          "isBidirectional": false
         },
         {
-          "id": "e116",
+          "id": "e117",
           "source": "c-t-prm-brd-agent",
           "target": "c-prmbq",
           "inscription": "[tr, n - 1]",
@@ -2629,7 +2631,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e117",
+          "id": "e118",
           "source": "c-t-prm-brd-agent",
           "target": "c-agents",
           "inscription": "#{ id: agt.id, x: tr.stand.x, y: tr.stand.y }",
@@ -2637,7 +2639,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e118",
+          "id": "e119",
           "source": "c-t-prm-brd-agent",
           "target": "c-prm-out",
           "inscription": "prm",
@@ -2646,7 +2648,7 @@
           "qualifier": "assisted passenger"
         },
         {
-          "id": "e119",
+          "id": "e120",
           "source": "c-prmbq",
           "target": "c-t-prm-brd-ambu",
           "inscription": "[tr, n]",
@@ -2655,16 +2657,15 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e120",
+          "id": "e121",
           "source": "c-ambu",
           "target": "c-t-prm-brd-ambu",
           "inscription": "amb",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "ambulift"
+          "isBidirectional": false
         },
         {
-          "id": "e121",
+          "id": "e122",
           "source": "c-t-prm-brd-ambu",
           "target": "c-prmbq",
           "inscription": "[tr, n - 1]",
@@ -2672,7 +2673,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e122",
+          "id": "e123",
           "source": "c-t-prm-brd-ambu",
           "target": "c-ambu",
           "inscription": "#{ id: amb.id, x: tr.stand.x, y: tr.stand.y }",
@@ -2680,7 +2681,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e123",
+          "id": "e124",
           "source": "c-t-prm-brd-ambu",
           "target": "c-prm-out",
           "inscription": "prm",
@@ -2689,7 +2690,7 @@
           "qualifier": "assisted passenger"
         },
         {
-          "id": "e124",
+          "id": "e125",
           "source": "c-prmbq",
           "target": "c-t-board-bridge",
           "inscription": "[tr, n]",
@@ -2698,7 +2699,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e125",
+          "id": "e126",
           "source": "c-t-board-bridge",
           "target": "c-boarding",
           "inscription": "tr",
@@ -2706,7 +2707,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e126",
+          "id": "e127",
           "source": "c-prmbq",
           "target": "c-t-board-bus",
           "inscription": "[tr, n]",
@@ -2715,16 +2716,15 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e127",
+          "id": "e128",
           "source": "c-buses",
           "target": "c-t-board-bus",
           "inscription": "bus",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "bus"
+          "isBidirectional": false
         },
         {
-          "id": "e128",
+          "id": "e129",
           "source": "c-t-board-bus",
           "target": "c-boarding-bus",
           "inscription": "[tr, bus]",
@@ -2732,7 +2732,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e129",
+          "id": "e130",
           "source": "c-boarding",
           "target": "c-t-board-bridge-end",
           "inscription": "tr",
@@ -2741,7 +2741,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e130",
+          "id": "e131",
           "source": "c-t-board-bridge-end",
           "target": "c-doorq",
           "inscription": "tr",
@@ -2749,7 +2749,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e131",
+          "id": "e132",
           "source": "c-boarding-bus",
           "target": "c-t-board-bus-end",
           "inscription": "[tr, bus]",
@@ -2758,7 +2758,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e132",
+          "id": "e133",
           "source": "c-t-board-bus-end",
           "target": "c-buses",
           "inscription": "#{ id: bus.id, cap: bus.cap, x: tr.stand.x, y: tr.stand.y }",
@@ -2766,7 +2766,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e133",
+          "id": "e134",
           "source": "c-t-board-bus-end",
           "target": "c-doorq",
           "inscription": "tr",
@@ -2774,7 +2774,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e134",
+          "id": "e135",
           "source": "c-doorq",
           "target": "c-t-doors",
           "inscription": "tr",
@@ -2783,7 +2783,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e135",
+          "id": "e136",
           "source": "c-t-doors",
           "target": "c-done",
           "inscription": "tr",
@@ -2861,9 +2861,9 @@
           "portType": "out"
         },
         {
-          "id": "r-uld-out",
-          "name": "ULD\nStore",
-          "colorSet": "ULD",
+          "id": "r-uld-pool",
+          "name": "Container\nPool",
+          "colorSet": "ULDs",
           "initialMarking": "",
           "marking": [],
           "position": {
@@ -2874,7 +2874,7 @@
             "width": 70,
             "height": 44
           },
-          "portType": "out"
+          "portType": "io"
         },
         {
           "id": "r-teams",
@@ -2895,7 +2895,7 @@
           "id": "r-fuellers",
           "name": "Fuellers\n(hydrant / tanker)",
           "colorSet": "Fueller",
-          "initialMarking": "[{\"id\":\"HYD-1\",\"kind\":\"hydrant\",\"rateLpm\":2500,\"tankL\":999000000,\"loadL\":999000000,\"x\":640,\"y\":400},{\"id\":\"HYD-2\",\"kind\":\"hydrant\",\"rateLpm\":2500,\"tankL\":999000000,\"loadL\":999000000,\"x\":640,\"y\":400},{\"id\":\"HYD-3\",\"kind\":\"hydrant\",\"rateLpm\":2500,\"tankL\":999000000,\"loadL\":999000000,\"x\":640,\"y\":400},{\"id\":\"HYD-4\",\"kind\":\"hydrant\",\"rateLpm\":2500,\"tankL\":999000000,\"loadL\":999000000,\"x\":640,\"y\":400},{\"id\":\"TNK-1\",\"kind\":\"tanker\",\"rateLpm\":1200,\"tankL\":40000,\"loadL\":40000,\"x\":1650,\"y\":400},{\"id\":\"TNK-2\",\"kind\":\"tanker\",\"rateLpm\":1200,\"tankL\":40000,\"loadL\":40000,\"x\":1650,\"y\":400},{\"id\":\"TNK-3\",\"kind\":\"tanker\",\"rateLpm\":1200,\"tankL\":40000,\"loadL\":40000,\"x\":1650,\"y\":400},{\"id\":\"TNK-4\",\"kind\":\"tanker\",\"rateLpm\":1200,\"tankL\":40000,\"loadL\":40000,\"x\":1650,\"y\":400}]",
+          "initialMarking": "[{\"id\":\"HYD-1\",\"kind\":\"hydrant\",\"rateLpm\":2500,\"tankL\":0,\"loadL\":0,\"x\":640,\"y\":400},{\"id\":\"HYD-2\",\"kind\":\"hydrant\",\"rateLpm\":2500,\"tankL\":0,\"loadL\":0,\"x\":640,\"y\":400},{\"id\":\"HYD-3\",\"kind\":\"hydrant\",\"rateLpm\":2500,\"tankL\":0,\"loadL\":0,\"x\":640,\"y\":400},{\"id\":\"HYD-4\",\"kind\":\"hydrant\",\"rateLpm\":2500,\"tankL\":0,\"loadL\":0,\"x\":640,\"y\":400},{\"id\":\"TNK-1\",\"kind\":\"tanker\",\"rateLpm\":1200,\"tankL\":40000,\"loadL\":40000,\"x\":1650,\"y\":400},{\"id\":\"TNK-2\",\"kind\":\"tanker\",\"rateLpm\":1200,\"tankL\":40000,\"loadL\":40000,\"x\":1650,\"y\":400},{\"id\":\"TNK-3\",\"kind\":\"tanker\",\"rateLpm\":1200,\"tankL\":40000,\"loadL\":40000,\"x\":1650,\"y\":400},{\"id\":\"TNK-4\",\"kind\":\"tanker\",\"rateLpm\":1200,\"tankL\":40000,\"loadL\":40000,\"x\":1650,\"y\":400}]",
           "marking": [],
           "position": {
             "x": 500,
@@ -2952,13 +2952,13 @@
           }
         },
         {
-          "id": "r-uldq",
-          "name": "ULDs to\nUnload",
-          "colorSet": "TurnCount",
+          "id": "r-loadq",
+          "name": "Hold\nEmptied",
+          "colorSet": "Turnaround",
           "initialMarking": "",
           "marking": [],
           "position": {
-            "x": 900,
+            "x": 1000,
             "y": 200
           },
           "size": {
@@ -2974,21 +2974,6 @@
           "marking": [],
           "position": {
             "x": 1500,
-            "y": 200
-          },
-          "size": {
-            "width": 70,
-            "height": 44
-          }
-        },
-        {
-          "id": "r-uldq2",
-          "name": "ULDs to\nLoad",
-          "colorSet": "TurnCount",
-          "initialMarking": "",
-          "marking": [],
-          "position": {
-            "x": 1860,
             "y": 200
           },
           "size": {
@@ -3096,27 +3081,10 @@
           "guard": "",
           "time": "",
           "priority": "",
-          "codeSegment": "",
+          "codeSegment": "// The boxes that came out of the hold are real containers from the pool.\nlet picked = pick_ulds(pool, tr.arr.aircraft.body, tr.nUlds);\nlet tr2 = tr;\ntr2.ulds = picked;",
           "position": {
-            "x": 700,
+            "x": 760,
             "y": 200
-          },
-          "size": {
-            "width": 78,
-            "height": 46
-          },
-          "includeInOcel": true
-        },
-        {
-          "id": "r-t-uld-off",
-          "name": "Offload ULD",
-          "guard": "n > 0",
-          "time": "",
-          "priority": "P_HIGH",
-          "codeSegment": "let uld = #{ id: tr.arr.id + \"-U\" + n, kind: uld_kind(tr.arr.aircraft.body, n), weightKg: (uniform(180.0, 1150.0) * 10.0).round() / 10.0, flight: tr.arr.id };",
-          "position": {
-            "x": 1080,
-            "y": 120
           },
           "size": {
             "width": 78,
@@ -3127,7 +3095,7 @@
         {
           "id": "r-t-load-start",
           "name": "Baggage Load\nStart",
-          "guard": "n == 0 && loader_fits(ldr.kind, tr.hold)",
+          "guard": "loader_fits(ldr.kind, tr.hold)",
           "time": "",
           "priority": "",
           "codeSegment": "",
@@ -3143,47 +3111,13 @@
         },
         {
           "id": "r-t-load-end",
-          "name": "Baggage Load\nComplete",
+          "name": "Hold Closed",
           "guard": "",
           "time": "",
           "priority": "",
-          "codeSegment": "",
+          "codeSegment": "// Outbound containers, again from the pool; the turnaround ends up carrying every\n// box it handled, inbound and outbound.\nlet more = pick_ulds(pool, tr.dep.aircraft.body, tr.nDepUlds);\nlet all = tr.ulds;\nfor b in more { all.push(b); }\nlet tr2 = tr;\ntr2.ulds = all;",
           "position": {
-            "x": 1700,
-            "y": 200
-          },
-          "size": {
-            "width": 78,
-            "height": 46
-          },
-          "includeInOcel": true
-        },
-        {
-          "id": "r-t-uld-on",
-          "name": "Load ULD",
-          "guard": "n > 0",
-          "time": "",
-          "priority": "P_HIGH",
-          "codeSegment": "let uld = #{ id: tr.dep.id + \"-U\" + n, kind: uld_kind(tr.dep.aircraft.body, n), weightKg: (uniform(180.0, 1150.0) * 10.0).round() / 10.0, flight: tr.dep.id };",
-          "position": {
-            "x": 2040,
-            "y": 120
-          },
-          "size": {
-            "width": 78,
-            "height": 46
-          },
-          "includeInOcel": true
-        },
-        {
-          "id": "r-t-hold-done",
-          "name": "Hold Closed",
-          "guard": "n == 0",
-          "time": "",
-          "priority": "P_HIGH",
-          "codeSegment": "",
-          "position": {
-            "x": 2260,
+            "x": 1760,
             "y": 200
           },
           "size": {
@@ -3365,7 +3299,7 @@
       ],
       "arcs": [
         {
-          "id": "e136",
+          "id": "e137",
           "source": "r-hold-in",
           "target": "r-t-unload-start",
           "inscription": "tr",
@@ -3374,33 +3308,31 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e137",
+          "id": "e138",
           "source": "r-teams",
           "target": "r-t-unload-start",
           "inscription": "rmp",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "ramp team"
+          "isBidirectional": false
         },
         {
-          "id": "e138",
+          "id": "e139",
           "source": "r-loaders",
           "target": "r-t-unload-start",
           "inscription": "ldr",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "loader"
-        },
-        {
-          "id": "e139",
-          "source": "r-t-unload-start",
-          "target": "r-unloading",
-          "inscription": "[tr, rmp, ldr]",
-          "delay": "delay_sec(drive_sec_between(ldr.x, ldr.y, tr.stand.x, tr.stand.y) + hold_sec(tr.hold, tr.arr.pax, tr.ulds, false))",
           "isBidirectional": false
         },
         {
           "id": "e140",
+          "source": "r-t-unload-start",
+          "target": "r-unloading",
+          "inscription": "[tr, rmp, ldr]",
+          "delay": "delay_sec(drive_sec_between(ldr.x, ldr.y, tr.stand.x, tr.stand.y) + hold_sec(tr.hold, tr.arr.pax, tr.nUlds, false))",
+          "isBidirectional": false
+        },
+        {
+          "id": "e141",
           "source": "r-unloading",
           "target": "r-t-unload-end",
           "inscription": "[tr, rmp, ldr]",
@@ -3409,7 +3341,23 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e141",
+          "id": "e142",
+          "source": "r-uld-pool",
+          "target": "r-t-unload-end",
+          "inscription": "pool",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e143",
+          "source": "r-t-unload-end",
+          "target": "r-uld-pool",
+          "inscription": "pool",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e144",
           "source": "r-t-unload-end",
           "target": "r-teams",
           "inscription": "#{ id: rmp.id, size: rmp.size, x: tr.stand.x, y: tr.stand.y }",
@@ -3417,7 +3365,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e142",
+          "id": "e145",
           "source": "r-t-unload-end",
           "target": "r-loaders",
           "inscription": "#{ id: ldr.id, kind: ldr.kind, x: tr.stand.x, y: tr.stand.y }",
@@ -3425,44 +3373,18 @@
           "isBidirectional": false
         },
         {
-          "id": "e143",
-          "source": "r-t-unload-end",
-          "target": "r-uldq",
-          "inscription": "[tr, tr.ulds]",
-          "delay": "",
-          "isBidirectional": false
-        },
-        {
-          "id": "e144",
-          "source": "r-uldq",
-          "target": "r-t-uld-off",
-          "inscription": "[tr, n]",
-          "delay": "",
-          "isBidirectional": false,
-          "qualifier": "turnaround"
-        },
-        {
-          "id": "e145",
-          "source": "r-t-uld-off",
-          "target": "r-uldq",
-          "inscription": "[tr, n - 1]",
-          "delay": "",
-          "isBidirectional": false
-        },
-        {
           "id": "e146",
-          "source": "r-t-uld-off",
-          "target": "r-uld-out",
-          "inscription": "uld",
+          "source": "r-t-unload-end",
+          "target": "r-loadq",
+          "inscription": "tr2",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "container"
+          "isBidirectional": false
         },
         {
           "id": "e147",
-          "source": "r-uldq",
+          "source": "r-loadq",
           "target": "r-t-load-start",
-          "inscription": "[tr, n]",
+          "inscription": "tr",
           "delay": "",
           "isBidirectional": false,
           "qualifier": "turnaround"
@@ -3473,8 +3395,7 @@
           "target": "r-t-load-start",
           "inscription": "rmp",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "ramp team"
+          "isBidirectional": false
         },
         {
           "id": "e149",
@@ -3482,15 +3403,14 @@
           "target": "r-t-load-start",
           "inscription": "ldr",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "loader"
+          "isBidirectional": false
         },
         {
           "id": "e150",
           "source": "r-t-load-start",
           "target": "r-loading",
           "inscription": "[tr, rmp, ldr]",
-          "delay": "delay_sec(drive_sec_between(ldr.x, ldr.y, tr.stand.x, tr.stand.y) + hold_sec(tr.hold, tr.dep.pax, tr.depUlds, true))",
+          "delay": "delay_sec(drive_sec_between(ldr.x, ldr.y, tr.stand.x, tr.stand.y) + hold_sec(tr.hold, tr.dep.pax, tr.nDepUlds, true))",
           "isBidirectional": false
         },
         {
@@ -3504,6 +3424,22 @@
         },
         {
           "id": "e152",
+          "source": "r-uld-pool",
+          "target": "r-t-load-end",
+          "inscription": "pool",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e153",
+          "source": "r-t-load-end",
+          "target": "r-uld-pool",
+          "inscription": "pool",
+          "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e154",
           "source": "r-t-load-end",
           "target": "r-teams",
           "inscription": "#{ id: rmp.id, size: rmp.size, x: tr.stand.x, y: tr.stand.y }",
@@ -3511,7 +3447,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e153",
+          "id": "e155",
           "source": "r-t-load-end",
           "target": "r-loaders",
           "inscription": "#{ id: ldr.id, kind: ldr.kind, x: tr.stand.x, y: tr.stand.y }",
@@ -3519,60 +3455,42 @@
           "isBidirectional": false
         },
         {
-          "id": "e154",
-          "source": "r-t-load-end",
-          "target": "r-uldq2",
-          "inscription": "[tr, tr.depUlds]",
-          "delay": "",
-          "isBidirectional": false
-        },
-        {
-          "id": "e155",
-          "source": "r-uldq2",
-          "target": "r-t-uld-on",
-          "inscription": "[tr, n]",
-          "delay": "",
-          "isBidirectional": false,
-          "qualifier": "turnaround"
-        },
-        {
           "id": "e156",
-          "source": "r-t-uld-on",
-          "target": "r-uldq2",
-          "inscription": "[tr, n - 1]",
+          "source": "r-t-load-end",
+          "target": "r-done",
+          "inscription": "tr2",
           "delay": "",
           "isBidirectional": false
         },
         {
           "id": "e157",
-          "source": "r-t-uld-on",
-          "target": "r-uld-out",
-          "inscription": "uld",
-          "delay": "",
-          "isBidirectional": false,
-          "qualifier": "container"
-        },
-        {
-          "id": "e158",
-          "source": "r-uldq2",
-          "target": "r-t-hold-done",
-          "inscription": "[tr, n]",
+          "source": "r-fuel-in",
+          "target": "r-t-fuel-hyd",
+          "inscription": "tr",
           "delay": "",
           "isBidirectional": false,
           "qualifier": "turnaround"
         },
         {
-          "id": "e159",
-          "source": "r-t-hold-done",
-          "target": "r-done",
-          "inscription": "tr",
+          "id": "e158",
+          "source": "r-fuellers",
+          "target": "r-t-fuel-hyd",
+          "inscription": "fu",
           "delay": "",
+          "isBidirectional": false
+        },
+        {
+          "id": "e159",
+          "source": "r-t-fuel-hyd",
+          "target": "r-driving",
+          "inscription": "[tr, fu]",
+          "delay": "delay_sec(drive_sec_between(fu.x, fu.y, tr.stand.x, tr.stand.y))",
           "isBidirectional": false
         },
         {
           "id": "e160",
           "source": "r-fuel-in",
-          "target": "r-t-fuel-hyd",
+          "target": "r-t-fuel-tnk",
           "inscription": "tr",
           "delay": "",
           "isBidirectional": false,
@@ -3581,40 +3499,13 @@
         {
           "id": "e161",
           "source": "r-fuellers",
-          "target": "r-t-fuel-hyd",
+          "target": "r-t-fuel-tnk",
           "inscription": "fu",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "fueller"
-        },
-        {
-          "id": "e162",
-          "source": "r-t-fuel-hyd",
-          "target": "r-driving",
-          "inscription": "[tr, fu]",
-          "delay": "delay_sec(drive_sec_between(fu.x, fu.y, tr.stand.x, tr.stand.y))",
           "isBidirectional": false
         },
         {
-          "id": "e163",
-          "source": "r-fuel-in",
-          "target": "r-t-fuel-tnk",
-          "inscription": "tr",
-          "delay": "",
-          "isBidirectional": false,
-          "qualifier": "turnaround"
-        },
-        {
-          "id": "e164",
-          "source": "r-fuellers",
-          "target": "r-t-fuel-tnk",
-          "inscription": "fu",
-          "delay": "",
-          "isBidirectional": false,
-          "qualifier": "fueller"
-        },
-        {
-          "id": "e165",
+          "id": "e162",
           "source": "r-t-fuel-tnk",
           "target": "r-driving",
           "inscription": "[tr, fu]",
@@ -3622,7 +3513,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e166",
+          "id": "e163",
           "source": "r-driving",
           "target": "r-t-fuel-start",
           "inscription": "[tr, fu]",
@@ -3631,7 +3522,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e167",
+          "id": "e164",
           "source": "r-t-fuel-start",
           "target": "r-fuelling",
           "inscription": "[tr, fu]",
@@ -3639,7 +3530,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e168",
+          "id": "e165",
           "source": "r-fuelling",
           "target": "r-t-fuel-end",
           "inscription": "[tr, fu]",
@@ -3648,7 +3539,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e169",
+          "id": "e166",
           "source": "r-t-fuel-end",
           "target": "r-fuellers",
           "inscription": "#{ id: fu.id, kind: fu.kind, rateLpm: fu.rateLpm, tankL: fu.tankL, loadL: if fu.kind == \"tanker\" { fu.loadL - tr.upliftL } else { fu.loadL }, x: tr.stand.x, y: tr.stand.y }",
@@ -3656,7 +3547,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e170",
+          "id": "e167",
           "source": "r-t-fuel-end",
           "target": "r-done",
           "inscription": "tr",
@@ -3664,16 +3555,15 @@
           "isBidirectional": false
         },
         {
-          "id": "e171",
+          "id": "e168",
           "source": "r-fuellers",
           "target": "r-t-tanker-refill",
           "inscription": "fu",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "fueller"
+          "isBidirectional": false
         },
         {
-          "id": "e172",
+          "id": "e169",
           "source": "r-t-tanker-refill",
           "target": "r-fuellers",
           "inscription": "#{ id: fu.id, kind: fu.kind, rateLpm: fu.rateLpm, tankL: fu.tankL, loadL: fu.tankL, x: 1650, y: 400 }",
@@ -3681,7 +3571,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e173",
+          "id": "e170",
           "source": "r-svc-in",
           "target": "r-t-water-skip",
           "inscription": "tr",
@@ -3689,7 +3579,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e174",
+          "id": "e171",
           "source": "r-t-water-skip",
           "target": "r-done",
           "inscription": "tr",
@@ -3697,7 +3587,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e175",
+          "id": "e172",
           "source": "r-svc-in",
           "target": "r-t-water-start",
           "inscription": "tr",
@@ -3706,16 +3596,15 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e176",
+          "id": "e173",
           "source": "r-service",
           "target": "r-t-water-start",
           "inscription": "svc",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "service truck"
+          "isBidirectional": false
         },
         {
-          "id": "e177",
+          "id": "e174",
           "source": "r-t-water-start",
           "target": "r-watering",
           "inscription": "[tr, svc]",
@@ -3723,7 +3612,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e178",
+          "id": "e175",
           "source": "r-watering",
           "target": "r-t-water-end",
           "inscription": "[tr, svc]",
@@ -3732,7 +3621,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e179",
+          "id": "e176",
           "source": "r-t-water-end",
           "target": "r-lavq",
           "inscription": "[tr, svc]",
@@ -3740,7 +3629,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e180",
+          "id": "e177",
           "source": "r-lavq",
           "target": "r-t-lav-start",
           "inscription": "[tr, svc]",
@@ -3749,7 +3638,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e181",
+          "id": "e178",
           "source": "r-t-lav-start",
           "target": "r-lav",
           "inscription": "[tr, svc]",
@@ -3757,7 +3646,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e182",
+          "id": "e179",
           "source": "r-lav",
           "target": "r-t-lav-end",
           "inscription": "[tr, svc]",
@@ -3766,7 +3655,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e183",
+          "id": "e180",
           "source": "r-t-lav-end",
           "target": "r-service",
           "inscription": "#{ id: svc.id, x: tr.stand.x, y: tr.stand.y }",
@@ -3774,7 +3663,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e184",
+          "id": "e181",
           "source": "r-t-lav-end",
           "target": "r-done",
           "inscription": "tr",
@@ -4401,7 +4290,7 @@
       ],
       "arcs": [
         {
-          "id": "e185",
+          "id": "e182",
           "source": "d-plan-in",
           "target": "d-t-tobt",
           "inscription": "tr",
@@ -4410,7 +4299,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e186",
+          "id": "e183",
           "source": "d-t-tobt",
           "target": "d-tsatq",
           "inscription": "tr",
@@ -4418,7 +4307,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e187",
+          "id": "e184",
           "source": "d-tsatq",
           "target": "d-t-tsat",
           "inscription": "tr",
@@ -4427,7 +4316,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e188",
+          "id": "e185",
           "source": "d-t-tsat",
           "target": "d-plan-out",
           "inscription": "tr",
@@ -4435,7 +4324,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e189",
+          "id": "e186",
           "source": "d-in",
           "target": "d-t-ardt",
           "inscription": "tr",
@@ -4444,7 +4333,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e190",
+          "id": "e187",
           "source": "d-t-ardt",
           "target": "d-asrtq",
           "inscription": "tr",
@@ -4452,7 +4341,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e191",
+          "id": "e188",
           "source": "d-tugged",
           "target": "d-t-asrt",
           "inscription": "[tr, tug]",
@@ -4461,7 +4350,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e192",
+          "id": "e189",
           "source": "d-t-asrt",
           "target": "d-asatq",
           "inscription": "[tr, tug]",
@@ -4469,7 +4358,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e193",
+          "id": "e190",
           "source": "d-asatq",
           "target": "d-t-asat",
           "inscription": "[tr, tug]",
@@ -4478,7 +4367,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e194",
+          "id": "e191",
           "source": "d-t-asat",
           "target": "d-pushq",
           "inscription": "[tr, tug]",
@@ -4486,7 +4375,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e195",
+          "id": "e192",
           "source": "d-asrtq",
           "target": "d-t-tug-attach",
           "inscription": "tr",
@@ -4495,16 +4384,15 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e196",
+          "id": "e193",
           "source": "d-tugs",
           "target": "d-t-tug-attach",
           "inscription": "tug",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "tug"
+          "isBidirectional": false
         },
         {
-          "id": "e197",
+          "id": "e194",
           "source": "d-t-tug-attach",
           "target": "d-tugged",
           "inscription": "[tr, tug]",
@@ -4512,7 +4400,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e198",
+          "id": "e195",
           "source": "d-pushq",
           "target": "d-t-push-start",
           "inscription": "[tr, tug]",
@@ -4521,7 +4409,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e199",
+          "id": "e196",
           "source": "d-t-push-start",
           "target": "d-pushing",
           "inscription": "[tr, tug]",
@@ -4529,7 +4417,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e200",
+          "id": "e197",
           "source": "d-pushing",
           "target": "d-t-push-end",
           "inscription": "[tr, tug]",
@@ -4538,7 +4426,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e201",
+          "id": "e198",
           "source": "d-t-push-end",
           "target": "d-tugs",
           "inscription": "#{ id: tug.id, maxCode: tug.maxCode, x: tr.stand.x, y: tr.stand.y }",
@@ -4546,7 +4434,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e202",
+          "id": "e199",
           "source": "d-t-push-end",
           "target": "d-stands",
           "inscription": "tr.stand",
@@ -4555,7 +4443,7 @@
           "qualifier": "stand"
         },
         {
-          "id": "e203",
+          "id": "e200",
           "source": "d-t-push-end",
           "target": "d-deiceq",
           "inscription": "tr",
@@ -4563,7 +4451,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e204",
+          "id": "e201",
           "source": "d-deiceq",
           "target": "d-t-deice-start",
           "inscription": "tr",
@@ -4572,16 +4460,15 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e205",
+          "id": "e202",
           "source": "d-deicers",
           "target": "d-t-deice-start",
           "inscription": "dei",
           "delay": "",
-          "isBidirectional": false,
-          "qualifier": "de-icing truck"
+          "isBidirectional": false
         },
         {
-          "id": "e206",
+          "id": "e203",
           "source": "d-t-deice-start",
           "target": "d-deicing",
           "inscription": "[tr, dei]",
@@ -4589,7 +4476,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e207",
+          "id": "e204",
           "source": "d-deicing",
           "target": "d-t-deice-end",
           "inscription": "[tr, dei]",
@@ -4598,7 +4485,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e208",
+          "id": "e205",
           "source": "d-t-deice-end",
           "target": "d-deicers",
           "inscription": "#{ id: dei.id, fluidL: dei.fluidL, x: tr.stand.x, y: tr.stand.y }",
@@ -4606,7 +4493,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e209",
+          "id": "e206",
           "source": "d-t-deice-end",
           "target": "d-taxiq",
           "inscription": "tr",
@@ -4614,7 +4501,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e210",
+          "id": "e207",
           "source": "d-deiceq",
           "target": "d-t-deice-skip",
           "inscription": "tr",
@@ -4622,7 +4509,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e211",
+          "id": "e208",
           "source": "d-t-deice-skip",
           "target": "d-taxiq",
           "inscription": "tr",
@@ -4630,7 +4517,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e212",
+          "id": "e209",
           "source": "d-taxiq",
           "target": "d-t-taxi-out",
           "inscription": "tr",
@@ -4639,7 +4526,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e213",
+          "id": "e210",
           "source": "d-twy-apron",
           "target": "d-t-taxi-out",
           "inscription": "sg",
@@ -4648,7 +4535,7 @@
           "qualifier": "taxiway"
         },
         {
-          "id": "e214",
+          "id": "e211",
           "source": "d-t-taxi-out",
           "target": "d-taxi1",
           "inscription": "[tr, sg]",
@@ -4656,7 +4543,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e215",
+          "id": "e212",
           "source": "d-taxi1",
           "target": "d-t-taxi-main",
           "inscription": "[tr, sg]",
@@ -4665,7 +4552,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e216",
+          "id": "e213",
           "source": "d-twy-main",
           "target": "d-t-taxi-main",
           "inscription": "sg2",
@@ -4674,7 +4561,7 @@
           "qualifier": "taxiway"
         },
         {
-          "id": "e217",
+          "id": "e214",
           "source": "d-t-taxi-main",
           "target": "d-twy-apron",
           "inscription": "sg",
@@ -4682,7 +4569,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e218",
+          "id": "e215",
           "source": "d-t-taxi-main",
           "target": "d-taxi2",
           "inscription": "[tr, sg2]",
@@ -4690,7 +4577,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e219",
+          "id": "e216",
           "source": "d-taxi2",
           "target": "d-t-lineup",
           "inscription": "[tr, sg]",
@@ -4699,7 +4586,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e220",
+          "id": "e217",
           "source": "d-rwy",
           "target": "d-t-lineup",
           "inscription": "rw",
@@ -4708,7 +4595,7 @@
           "qualifier": "runway"
         },
         {
-          "id": "e221",
+          "id": "e218",
           "source": "d-t-lineup",
           "target": "d-twy-main",
           "inscription": "sg",
@@ -4716,7 +4603,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e222",
+          "id": "e219",
           "source": "d-t-lineup",
           "target": "d-lineup",
           "inscription": "[tr, rw]",
@@ -4724,7 +4611,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e223",
+          "id": "e220",
           "source": "d-lineup",
           "target": "d-t-takeoff",
           "inscription": "[tr, rw]",
@@ -4733,7 +4620,7 @@
           "qualifier": "turnaround"
         },
         {
-          "id": "e224",
+          "id": "e221",
           "source": "d-t-takeoff",
           "target": "d-rwy",
           "inscription": "rw",
@@ -4741,7 +4628,7 @@
           "isBidirectional": false
         },
         {
-          "id": "e225",
+          "id": "e222",
           "source": "d-t-takeoff",
           "target": "d-out",
           "inscription": "tr.dep",
@@ -4750,7 +4637,7 @@
           "qualifier": "flight"
         },
         {
-          "id": "e226",
+          "id": "e223",
           "source": "d-t-takeoff",
           "target": "d-fleet",
           "inscription": "tr.dep.aircraft",
@@ -4849,7 +4736,7 @@
       "id": "cs-turnaround",
       "name": "Turnaround",
       "type": "record",
-      "definition": "colset Turnaround = record id: STRING * arr: Flight * dep: Flight * stand: Stand * upliftL: INT * ulds: INT * depUlds: INT * hold: STRING * needCater: BOOL * needWater: BOOL timed;",
+      "definition": "colset Turnaround = record id: STRING * arr: Flight * dep: Flight * stand: Stand * upliftL: INT * nUlds: INT * nDepUlds: INT * ulds: ULDs * hold: STRING * needCater: BOOL * needWater: BOOL timed;",
       "color": "#e11d48",
       "timed": true,
       "refs": [
@@ -4870,6 +4757,12 @@
           "target": "Stand",
           "qualifier": "parked at",
           "eventQualifier": "stand"
+        },
+        {
+          "field": "ulds",
+          "target": "ULD",
+          "qualifier": "handled",
+          "eventQualifier": "container"
         }
       ]
     },
@@ -4877,17 +4770,16 @@
       "id": "cs-uld",
       "name": "ULD",
       "type": "record",
-      "definition": "colset ULD = record id: STRING * kind: STRING * weightKg: REAL * flight: STRING timed;",
+      "definition": "colset ULD = record id: STRING * kind: STRING * tareKg: REAL * maxKg: REAL timed;",
       "color": "#84cc16",
-      "timed": true,
-      "refs": [
-        {
-          "field": "flight",
-          "target": "Flight",
-          "qualifier": "loaded on",
-          "eventQualifier": "flight"
-        }
-      ]
+      "timed": true
+    },
+    {
+      "id": "cs-ulds",
+      "name": "ULDs",
+      "type": "list",
+      "definition": "colset ULDs = list ULD;",
+      "color": "#65a30d"
     },
     {
       "id": "cs-prmpax",
@@ -5148,8 +5040,8 @@
     },
     {
       "id": "var-11",
-      "name": "uld",
-      "colorSet": "ULD"
+      "name": "pool",
+      "colorSet": "ULDs"
     },
     {
       "id": "var-12",
@@ -5316,9 +5208,14 @@
       "code": "fn uld_count(hold, body, pax) {\n    // Bulk-loaded aircraft carry no containers at all: the unit of handling is the\n    // individual bag, so there is nothing here to become a ULD object.\n    if hold == \"bulk\" { return 0; }\n    let base = if body == \"wide\" { 12 } else if body == \"superheavy\" { 22 } else { 3 };\n    base + pax / 60\n}"
     },
     {
-      "id": "fn-uld_kind",
-      "name": "uld_kind",
-      "code": "fn uld_kind(body, n) {\n    // The A320 family takes the reduced-height LD3-45, coded AKH. Wide-bodies take\n    // full-height LD3 (AKE) with pallets for the heavier freight.\n    if body == \"wide\" || body == \"superheavy\" {\n        if n % 4 == 0 { \"PMC\" } else { \"AKE\" }\n    } else { \"AKH\" }\n}"
+      "id": "fn-uld_fits",
+      "name": "uld_fits",
+      "code": "fn uld_fits(kind, body) {\n    // A container's type belongs to the box. The A320 family only takes the\n    // reduced-height LD3-45 (AKH); wide-bodies take full-height LD3 (AKE) and PMC pallets.\n    if body == \"wide\" || body == \"superheavy\" { kind == \"AKE\" || kind == \"PMC\" }\n    else { kind == \"AKH\" }\n}"
+    },
+    {
+      "id": "fn-pick_ulds",
+      "name": "pick_ulds",
+      "code": "fn pick_ulds(boxes, body, n) {\n    // Which physical containers this turnaround handles. Boxes are drawn from the\n    // airport's pool and stay in it, so the same container is worked by many flights\n    // across a run instead of being invented once and discarded.\n    let out = [];\n    if n <= 0 { return out; }\n    let len = boxes.len();\n    if len == 0 { return out; }\n    let start = discrete(0, len - 1);\n    let i = 0;\n    while i < len {\n        if out.len() >= n { break; }\n        let b = boxes[(start + i) % len];\n        if uld_fits(b.kind, body) { out.push(b); }\n        i += 1;\n    }\n    out\n}"
     },
     {
       "id": "fn-loader_fits",
