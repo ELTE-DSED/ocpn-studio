@@ -75,14 +75,14 @@ importers:
         specifier: ^1.2.7
         version: 1.2.11(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@rwth-pads/cpnsim':
-        specifier: ^0.6.0
-        version: 0.6.0
+        specifier: ^0.6.2
+        version: 0.6.2
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.2.1(esbuild@0.27.3)(jiti@2.7.0)(yaml@2.9.0))
       '@xyflow/react':
-        specifier: ^12.11.2
-        version: 12.11.2(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^12.11.6
+        version: 12.11.6(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -100,7 +100,7 @@ importers:
         version: 1.31.0(react@19.2.8)
       ocpn-viz:
         specifier: git+https://github.com/rwth-pads/ocpn-viz-npm.git
-        version: git+https://github.com/rwth-pads/ocpn-viz-npm.git#fdfe0dc3fb6d0f6dec4f4f58b623a353356e5c64
+        version: https://codeload.github.com/rwth-pads/ocpn-viz-npm/tar.gz/fdfe0dc3fb6d0f6dec4f4f58b623a353356e5c64
       react:
         specifier: ^19.2.7
         version: 19.2.8
@@ -136,10 +136,10 @@ importers:
         version: 14.0.1
       zundo:
         specifier: ^2.3.0
-        version: 2.3.0(zustand@5.0.14(@types/react@19.2.17)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8)))
+        version: 2.3.0(zustand@5.0.14(@types/react@19.2.17)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8)))
       zustand:
         specifier: ^5.0.14
-        version: 5.0.14(@types/react@19.2.17)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
+        version: 5.0.14(@types/react@19.2.17)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8))
     devDependencies:
       '@eslint/js':
         specifier: 10.0.1
@@ -1141,8 +1141,8 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@rwth-pads/cpnsim@0.6.0':
-    resolution: {integrity: sha512-KFdgpaldR5h9sq0j/vbwxzLyg3yl0fG6APBwbUDCqYlPJNt+aDPl6SrtSVIn3i39UgB0/JvHdrNwopko4nYBlA==}
+  '@rwth-pads/cpnsim@0.6.2':
+    resolution: {integrity: sha512-0tdsj8s3G3mmsbzGxR5YNbPG7P83EXuDhUq8GQw/6GsCQif+IsAXXOIOpqhLQ9ysblDICXMQ03ALRpWxdegvRg==}
 
   '@tailwindcss/node@4.3.3':
     resolution: {integrity: sha512-/T8IKEsf9VTU6tLjgC7+sv2mOPtQxzE2jMw7u4Tt40Tx+QSZxpzh95/H6cMKoja9XuW7iMdLJYBB0o9G1CaAgg==}
@@ -1256,8 +1256,8 @@ packages:
   '@types/d3-interpolate@3.0.4':
     resolution: {integrity: sha512-mgLPETlrpVV1YRJIglr4Ez47g7Yxjl1lj7YKsiMCb27VJH9W8NVM6Bb9d8kkpG/uAQS5AmbA48q2IAolKKo1MA==}
 
-  '@types/d3-selection@3.0.11':
-    resolution: {integrity: sha512-bhAXu23DJWsrI45xafYpkQ4NtcKMwWnAC/vKrd2l+nxMFuvOT3XMYTIj2opv8vq8AO5Yh7Qac/nSeP/3zjTK0w==}
+  '@types/d3-selection@3.0.12':
+    resolution: {integrity: sha512-Qe/KWYhEiIIxGs7HrAAjMfShxKldx19SJtr5zu53f3afPsdZNz7HHtdTLXo/kqeiWNXVycI24kSnfzBYkTzpgw==}
 
   '@types/d3-transition@3.0.9':
     resolution: {integrity: sha512-uZS5shfxzO3rGlu0cC3bjmMFKsXv+SmZZcgp0KD22ts4uGXp5EVYGzu/0YdwZeKmddhcAccYtREJKkPfXkZuCg==}
@@ -1364,6 +1364,7 @@ packages:
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
+    deprecated: Potential CWE-502 - Update to 1.3.1 or higher
 
   '@vitejs/plugin-react@6.0.5':
     resolution: {integrity: sha512-BOVzne/NL162sMdResB25mUv+vWMF5NoAjNf09TeGlE7ZpszZWSD3winycicLJw72yeVsoCn/2kOhEuCvEShMA==}
@@ -1378,8 +1379,8 @@ packages:
       babel-plugin-react-compiler:
         optional: true
 
-  '@xyflow/react@12.11.2':
-    resolution: {integrity: sha512-eLAlDWJfWnQEhJwGMjlWdAXO9eYllKpliUmPQlAmOLxz6mExXuzMVDUKLMquixgkrtmMFFtug3jGKmYYld12cA==}
+  '@xyflow/react@12.11.6':
+    resolution: {integrity: sha512-9XsEJNHjatKYndszKTF/bsU7FOP9dJ6V/EQwzy3oMdtqgBuUq7BjKSwkEo+C7s4qHstHQfwwoHA3E8QfpPxZZQ==}
     peerDependencies:
       '@types/react': '>=17'
       '@types/react-dom': '>=17'
@@ -1391,8 +1392,8 @@ packages:
       '@types/react-dom':
         optional: true
 
-  '@xyflow/system@0.0.79':
-    resolution: {integrity: sha512-czLyOh91NF0hIzbNzwi8I6GlqG23BHh2435OddfI6uiaLH3xdrdygO93gqgH1Bv9mhy8XPFQJOBn1FTq4LvEWA==}
+  '@xyflow/system@0.0.82':
+    resolution: {integrity: sha512-4DKnL3CGtCGLRSmgDqaajRVgeksMXq/Yw4wPfdMfm7JvdIiWHGzVYOfFUztiATwdBXZqUU6HhehwUdbV9G23PQ==}
 
   abab@2.0.6:
     resolution: {integrity: sha512-j2afSsaIENvHZN2B8GOpF566vZ5WVk5opAiMTvWgaQT8DkbOqsTfvNAvHoRGU2zzP8cPoqys+xHTRDWW8L+/BA==}
@@ -2751,8 +2752,8 @@ packages:
   oauth-sign@0.9.0:
     resolution: {integrity: sha512-fexhUFFPTGV8ybAtSIGbV6gOkSv8UtRbDBnAyLQw4QPKkgNlsH2ByPGtMUqdWkos6YCRmAqViwgZrJc/mRDzZQ==}
 
-  ocpn-viz@git+https://github.com/rwth-pads/ocpn-viz-npm.git#fdfe0dc3fb6d0f6dec4f4f58b623a353356e5c64:
-    resolution: {commit: fdfe0dc3fb6d0f6dec4f4f58b623a353356e5c64, repo: https://github.com/rwth-pads/ocpn-viz-npm.git, type: git}
+  ocpn-viz@https://codeload.github.com/rwth-pads/ocpn-viz-npm/tar.gz/fdfe0dc3fb6d0f6dec4f4f58b623a353356e5c64:
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/rwth-pads/ocpn-viz-npm/tar.gz/fdfe0dc3fb6d0f6dec4f4f58b623a353356e5c64}
     version: 1.0.1
 
   optionator@0.9.4:
@@ -2899,6 +2900,7 @@ packages:
   qs@6.5.4:
     resolution: {integrity: sha512-0BeLMIVqP5aQ+8izCO5KjIAuwHx4FwA4MtZzA+Q6TqS4Bu+E/TzHArugK5XqzaFmoBugtLH5S/w7pGPxnJfhtQ==}
     engines: {node: '>=0.6'}
+    deprecated: 'This version has regressions from a robustness refactor: parse incorrectly handles keys exceeding the depth option, and stringify incorrectly percent-encodes low-byte characters. Upgrade to 6.5.5.'
 
   querystringify@2.2.0:
     resolution: {integrity: sha512-FIqgj2EUvTa7R50u0rGsyTftzjYmv/a3hO345bZNrqabNqjtgiDMgmo4mkUjd+nzU5oF3dClKqFIPUKybUyqoQ==}
@@ -3320,8 +3322,8 @@ packages:
       '@types/react':
         optional: true
 
-  use-sync-external-store@1.6.0:
-    resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
+  use-sync-external-store@1.7.0:
+    resolution: {integrity: sha512-6L+EeigHMQhdaIPNIFUKwfWJSwWFQ8gJbJ2DLOs5sDIegTwR9fRxvnM3uciHKjIZhFz+KAv2emhWMRvDmMcY8A==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
@@ -4465,7 +4467,7 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@rwth-pads/cpnsim@0.6.0': {}
+  '@rwth-pads/cpnsim@0.6.2': {}
 
   '@tailwindcss/node@4.3.3':
     dependencies:
@@ -4547,22 +4549,22 @@ snapshots:
 
   '@types/d3-drag@3.0.7':
     dependencies:
-      '@types/d3-selection': 3.0.11
+      '@types/d3-selection': 3.0.12
 
   '@types/d3-interpolate@3.0.4':
     dependencies:
       '@types/d3-color': 3.1.3
 
-  '@types/d3-selection@3.0.11': {}
+  '@types/d3-selection@3.0.12': {}
 
   '@types/d3-transition@3.0.9':
     dependencies:
-      '@types/d3-selection': 3.0.11
+      '@types/d3-selection': 3.0.12
 
   '@types/d3-zoom@3.0.8':
     dependencies:
       '@types/d3-interpolate': 3.0.4
-      '@types/d3-selection': 3.0.11
+      '@types/d3-selection': 3.0.12
 
   '@types/debug@4.1.12':
     dependencies:
@@ -4698,9 +4700,9 @@ snapshots:
       '@rolldown/pluginutils': 1.0.1
       vite: 8.2.1(esbuild@0.27.3)(jiti@2.7.0)(yaml@2.9.0)
 
-  '@xyflow/react@12.11.2(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@xyflow/react@12.11.6(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
-      '@xyflow/system': 0.0.79
+      '@xyflow/system': 0.0.82
       classcat: 5.0.5
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
@@ -4711,11 +4713,11 @@ snapshots:
     transitivePeerDependencies:
       - immer
 
-  '@xyflow/system@0.0.79':
+  '@xyflow/system@0.0.82':
     dependencies:
       '@types/d3-drag': 3.0.7
       '@types/d3-interpolate': 3.0.4
-      '@types/d3-selection': 3.0.11
+      '@types/d3-selection': 3.0.12
       '@types/d3-transition': 3.0.9
       '@types/d3-zoom': 3.0.8
       d3-drag: 3.0.0
@@ -6453,7 +6455,7 @@ snapshots:
   oauth-sign@0.9.0:
     optional: true
 
-  ocpn-viz@git+https://github.com/rwth-pads/ocpn-viz-npm.git#fdfe0dc3fb6d0f6dec4f4f58b623a353356e5c64:
+  ocpn-viz@https://codeload.github.com/rwth-pads/ocpn-viz-npm/tar.gz/fdfe0dc3fb6d0f6dec4f4f58b623a353356e5c64:
     dependencies:
       glpk.js: 4.0.2
       kld-intersections: 0.7.0
@@ -7147,7 +7149,7 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.17
 
-  use-sync-external-store@1.6.0(react@19.2.8):
+  use-sync-external-store@1.7.0(react@19.2.8):
     dependencies:
       react: 19.2.8
 
@@ -7335,21 +7337,21 @@ snapshots:
 
   zod@4.3.6: {}
 
-  zundo@2.3.0(zustand@5.0.14(@types/react@19.2.17)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))):
+  zundo@2.3.0(zustand@5.0.14(@types/react@19.2.17)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8))):
     dependencies:
-      zustand: 5.0.14(@types/react@19.2.17)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
+      zustand: 5.0.14(@types/react@19.2.17)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8))
 
   zustand@4.5.7(@types/react@19.2.17)(react@19.2.8):
     dependencies:
-      use-sync-external-store: 1.6.0(react@19.2.8)
+      use-sync-external-store: 1.7.0(react@19.2.8)
     optionalDependencies:
       '@types/react': 19.2.17
       react: 19.2.8
 
-  zustand@5.0.14(@types/react@19.2.17)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8)):
+  zustand@5.0.14(@types/react@19.2.17)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8)):
     optionalDependencies:
       '@types/react': 19.2.17
       react: 19.2.8
-      use-sync-external-store: 1.6.0(react@19.2.8)
+      use-sync-external-store: 1.7.0(react@19.2.8)
 
   zwitch@2.0.4: {}
